@@ -34,13 +34,17 @@
 
 #include "lua_api.h"
 #include "state.h"
+#include "logger.h"
+#include "irc.h"
 
 
 static int api_script_register(lua_State *);
+static int api_signal_add(lua_State *);
 
 static char *env_key = "Env";
 static luaL_Reg api_library[] = {
     { "script_register", api_script_register },
+    { "signal_add",      api_signal_add },
 
     { NULL, NULL }
 };
@@ -112,12 +116,16 @@ script_load(luna_state *state, const char *file)
     if ((luaL_dofile(L, file) == 0) && (script_identify(L, script) == 0))
     {
         list_push_back(state->scripts, script);
+        script_emit(state, script, "load", NULL, NULL);
 
         return 0;
     }
     else
     {
         /* luaL_dofile() failure or invalid script */
+        logger_log(state->logger, LOGLEV_ERROR, "Lua error: %s",
+                   lua_tostring(L, -1));
+
         free(script);
         lua_close(L);
     }
@@ -135,9 +143,135 @@ script_unload(luna_state *state, const char *file)
     if (result)
     {
         /* Call unload signal */
+        script_emit(state, (luna_script *)result, "unload", NULL, NULL);
         list_delete(state->scripts, result, &script_free);
     }
 
+    return 1;
+}
+
+
+int
+api_push_sender(lua_State *L, irc_sender *s)
+{
+    int table_index;
+
+    lua_newtable(L);
+    table_index = lua_gettop(L);
+
+    /* Push nick */
+    lua_pushstring(L, "nick");
+    lua_pushstring(L, s->nick);
+    lua_settable(L, table_index);
+
+    /* Push user */
+    lua_pushstring(L, "user");
+    lua_pushstring(L, s->user);
+    lua_settable(L, table_index);
+
+    /* Push host */
+    lua_pushstring(L, "host");
+    lua_pushstring(L, s->host);
+    lua_settable(L, table_index);
+
+    return 0;
+}
+
+
+int
+signal_dispatch(luna_state *state, const char *sig, const char *fmt, ...)
+{
+    va_list args;
+    list_node *cur;
+
+    for (cur = state->scripts->root; cur != NULL; cur = cur->next)
+    {
+        va_start(args, fmt);
+        script_emit(state, cur->data, sig, fmt, args);
+        va_end(args);
+    }
+
+    return 0;
+}
+
+
+int
+script_emit(luna_state *state, luna_script *script, const char *sig,
+            const char *fmt, va_list args)
+{
+    int api_table;
+    int callbacks_array;
+    int len;
+    int i = 1;
+
+    lua_State *L = script->state;
+
+    lua_getglobal(L, LIBNAME);
+    api_table = lua_gettop(L);
+
+    lua_pushstring(L, "__callbacks");
+    lua_gettable(L, api_table);
+    callbacks_array = lua_gettop(L);
+    len = lua_objlen(L, callbacks_array);
+
+    while (i <= len)
+    {
+        int callback_table;
+        int j = 0;
+
+        lua_rawgeti(L, callbacks_array, i);
+        callback_table = lua_gettop(L);
+
+        lua_pushstring(L, "signal");
+        lua_gettable(L, callback_table);
+
+        if (!strcmp(lua_tostring(L, -1), sig))
+        {
+            /* Emit */
+
+            /* Push function to stack */
+            lua_pushstring(L, "callback");
+            lua_gettable(L, callback_table);
+
+            if (fmt != NULL)
+            {
+                for (j = 0; fmt[j] != 0; ++j)
+                {
+                    switch (fmt[j])
+                    {
+                        case 's':
+                            lua_pushstring(L, va_arg(args, char *));
+                            break;
+
+                        case 'p':
+                            api_push_sender(L, va_arg(args, irc_sender *));
+                            break;
+
+                        case 'n':
+                            lua_pushnumber(L, va_arg(args, double));
+                            break;
+
+                        default:
+                            j--;
+                            break;
+                    }
+                }
+            }
+
+            if (lua_pcall(L, j, 0, 0) != 0)
+                logger_log(state->logger, LOGLEV_ERROR,
+                           "Lua error (signal '%s'): %s",
+                           sig, lua_tostring(L, -1));
+
+            lua_pop(L, -1);
+            return 0;
+        }
+
+        lua_pop(L, 2);
+        ++i;
+    }
+
+    lua_pop(L, -1);
     return 1;
 }
 
@@ -171,7 +305,10 @@ script_identify(lua_State *L, luna_script *script)
 
     /* Is it defined and a table? */
     if (lua_type(L, info_table) != LUA_TTABLE)
+    {
+        lua_pop(L, -1);
         return 1;
+    }
 
     lua_pushstring(L, "name");
     lua_gettable(L, info_table);
@@ -206,12 +343,55 @@ script_identify(lua_State *L, luna_script *script)
         strncpy(script->version, version, sizeof(script->version) - 1);
         strncpy(script->author, author, sizeof(script->author) - 1);
 
+        lua_pop(L, -1);
         return 0;
     }
     else
     {
+        lua_pop(L, -1);
         return 1;
     }
+}
+
+
+static int
+api_signal_add(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int api_table;
+    int callbacks_array;
+    int callback_table;
+    int len;
+
+    if (n != 2)
+        return luaL_error(L, "expected 2 arguments, got %d", n);
+
+    if ((lua_type(L, 1) != LUA_TSTRING) || (lua_type(L, 2) != LUA_TFUNCTION))
+        return luaL_error(L, "expected string and function");
+
+    lua_getglobal(L, LIBNAME);
+    api_table = lua_gettop(L);
+
+    lua_pushstring(L, "__callbacks");
+    lua_gettable(L, api_table);
+    callbacks_array = lua_gettop(L);
+    len = lua_objlen(L, callbacks_array);
+
+    lua_newtable(L);
+    callback_table = lua_gettop(L);
+
+    lua_pushstring(L, "signal");
+    lua_pushvalue(L, 1);
+    lua_settable(L, callback_table);
+
+    lua_pushstring(L, "callback");
+    lua_pushvalue(L, 2);
+    lua_settable(L, callback_table);
+
+    lua_rawseti(L, callbacks_array, len + 1);
+
+    lua_pop(L, -1);
+    return 0;
 }
 
 
@@ -223,7 +403,7 @@ api_script_register(lua_State *L)
     int info_table;
 
     if (n != 4)
-        return luaL_error(L, "expected 4 parameters, got %d", n);
+        return luaL_error(L, "expected 4 arguments, got %d", n);
 
     lua_getglobal(L, LIBNAME);
     api_table = lua_gettop(L);
@@ -252,5 +432,6 @@ api_script_register(lua_State *L)
     /* Set new table to LIBNAME.__scriptinfo */
     lua_settable(L, api_table);
 
+    lua_pop(L, -1);
     return 0;
 }
