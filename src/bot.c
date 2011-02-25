@@ -64,10 +64,6 @@ luna_mainloop(luna_state *state)
         return 1;
     }
 
-    /* DEBUG */
-    return 0;
-
-
     while (!(state->killswitch))
     {
         /* Did we max out all connection attempts? */
@@ -130,6 +126,7 @@ luna_mainloop(luna_state *state)
             }
         }
 
+        signal_dispatch(state, "disconnect", NULL);
         net_disconnect(state);
     }
 

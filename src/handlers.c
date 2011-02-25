@@ -33,6 +33,7 @@
 #include "net.h"
 #include "util.h"
 #include "channel.h"
+#include "lua_api.h"
 
 
 int handle_ping(luna_state *,    irc_event *);
@@ -78,7 +79,10 @@ int
 handle_privmsg(luna_state *env, irc_event *ev)
 {
     char msgcopy[LINELEN + 1];
-    char *isitme = NULL, *command = NULL;
+    char *isitme = NULL;
+    char *command = NULL;
+    const char *sig = ev->param[0][0] == '#' ? "public_message"
+                                             : "private_message";
 
     /* Make a copy of the message that we can modify without screwing
      * later operations */
@@ -92,6 +96,8 @@ handle_privmsg(luna_state *env, irc_event *ev)
             handle_command(env, ev, command, strtok(NULL, ""));
     }
 
+    signal_dispatch(env, sig, "pss", ev->from, ev->param[0], ev->msg);
+
     return 0;
 }
 
@@ -100,6 +106,11 @@ int
 handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 {
     /* TODO: Handle script loading and unloading */
+
+    const char *sig = ev->param[0][0] == '#' ? "public_command"
+                                             : "private_command";
+
+    signal_dispatch(env, sig, "psss", ev->from, ev->param[0], cmd, rest);
 
     return 0;
 }
@@ -114,6 +125,8 @@ handle_ping(luna_state *env, irc_event *ev)
 
     net_sendfln(env, "PONG :%s", pingstr);
 
+    signal_dispatch(env, "ping", NULL);
+
     return 0;
 }
 
@@ -125,6 +138,7 @@ handle_numeric(luna_state *env, irc_event *ev)
     {
         case 376:
             /* Dispatch connect event */
+            signal_dispatch(env, "connect", NULL);
 
             break;
 
@@ -142,6 +156,9 @@ handle_numeric(luna_state *env, irc_event *ev)
 
             break;
     }
+
+    /* TODO: dispatch template flag for string arrays */
+
     return 0;
 }
 
@@ -166,6 +183,8 @@ handle_join(luna_state *env, irc_event *ev)
         channel_add_user(env, c, ev->from.nick, ev->from.user, ev->from.host);
     }
 
+    signal_dispatch(env, "channel_join", "ps", ev->from, c);
+
     return 0;
 }
 
@@ -185,6 +204,12 @@ handle_part(luna_state *env, irc_event *ev)
         channel_remove_user(env, ev->param[0], ev->from.nick);
     }
 
+    if (ev->msg)
+        signal_dispatch(env, "channel_part", "pss", ev->from,
+                        ev->param[0], ev->msg);
+    else
+        signal_dispatch(env, "channel_part", "ps", ev->from, ev->param[0]);
+
     return 0;
 }
 
@@ -201,6 +226,8 @@ handle_quit(luna_state *env, irc_event *ev)
         channel_remove_user(env, channel->name, ev->from.nick);
     }
 
+    signal_dispatch(env, "user_quit", "ps", ev->from, ev->msg);
+
     return 0;
 }
 
@@ -208,6 +235,8 @@ handle_quit(luna_state *env, irc_event *ev)
 int
 handle_notice(luna_state *env, irc_event *ev)
 {
+    signal_dispatch(env, "notice", "pss", ev->from, ev->param[0], ev->msg);
+
     return 0;
 }
 
@@ -227,6 +256,8 @@ handle_nick(luna_state *env, irc_event *ev)
 
     /* Rename user in all channels */
     user_rename(env, ev->from.nick, newnick);
+
+    signal_dispatch(env, "nick_change", "ps", ev->from, newnick);
 
     return 0;
 }
@@ -248,6 +279,8 @@ handle_mode(luna_state *env, irc_event *ev)
 int
 handle_invite(luna_state *env, irc_event *ev)
 {
+    signal_dispatch(env, "invite", "ps", ev->from, ev->param[1]);
+
     return 0;
 }
 
@@ -255,6 +288,9 @@ handle_invite(luna_state *env, irc_event *ev)
 int
 handle_topic(luna_state *env, irc_event *ev)
 {
+    signal_dispatch(env, "topic_change", "pss", ev->from,
+                    ev->param[0], ev->msg);
+
     return 0;
 }
 
@@ -274,6 +310,8 @@ handle_kick(luna_state *env, irc_event *ev)
         channel_remove_user(env, ev->param[0], ev->param[1]);
     }
 
+    signal_dispatch(env, "user_kicked", "psss", ev->from, ev->param[0],
+                    ev->param[1], ev->msg);
     return 0;
 }
 
