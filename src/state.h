@@ -63,6 +63,7 @@ typedef struct luna_state
     time_t connected;
 
     linked_list *channels;
+    linked_list *scripts;
 } luna_state;
 
 

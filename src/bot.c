@@ -36,6 +36,7 @@
 #include "net.h"
 #include "irc.h"
 #include "handlers.h"
+#include "lua_api.h"
 
 
 int *killswitch_ptr = NULL;
@@ -54,6 +55,17 @@ luna_mainloop(luna_state *state)
     state->started = time(NULL);
 
     signal(SIGINT, exit_gracefully);
+
+    /* Try to load base script */
+    if (script_load(state, "base.lua") != 0)
+    {
+        logger_log(state->logger, LOGLEV_ERROR, "Failed to load base script");
+
+        return 1;
+    }
+
+    /* DEBUG */
+    return 0;
 
 
     while (!(state->killswitch))

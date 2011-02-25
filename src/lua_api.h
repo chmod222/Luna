@@ -18,48 +18,45 @@
 
 /*******************************************************************************
  *
- *  Bot state (state.c)
+ *  Lua script management (lua_api.h)
  *  ---
- *  Define state to be passed around between the various functions
- *  
- *  Created: 25.02.2011 12:28:10
+ *  Load, unload and emit signals to Lua scripts
+ *
+ *  Created: 25.02.2011 20:24:58
  *
  ******************************************************************************/
-#include <stdlib.h>
-#include <string.h>
+#ifndef LUA_API_H
+#define LUA_API_H
+
+#include <lua.h>
 
 #include "state.h"
 #include "linked_list.h"
-#include "channel.h"
-#include "lua_api.h"
+
+#define LIBNAME "luna"
 
 
-int
-state_init(luna_state *state)
+typedef struct luna_script
 {
-    memset(state, 0, sizeof(*state));
+    char filename[256];
 
-    if (list_init(&(state->channels)) != 0)
-        return 1;
+    char name[32];
+    char description[128];
+    char version[16];
+    char author[64];
 
-    if (list_init(&(state->scripts)) != 0)
-    {
-        /* Free method doesn't matter here, actually. */
-        list_destroy(state->channels, &free);
-
-        return 1;
-    }
-
-    return 0;
-}
+    lua_State *state;
+} luna_script;
 
 
-int
-state_destroy(luna_state *state)
-{
-    logger_destroy(state->logger);
-    list_destroy(state->channels, &channel_free);
-    list_destroy(state->scripts, &script_free);
+/* For list_destroy() and list_delete() */
+int script_cmp(void *, void *);
+void script_free(void *);
 
-    return 0;
-}
+int script_load(luna_state *, const char *);
+int script_unload(luna_state *, const char *);
+
+int script_identify(lua_State *, luna_script *);
+
+#endif
+
