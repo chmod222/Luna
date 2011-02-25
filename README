@@ -1,0 +1,15 @@
+Luna is a small IRC Bot written in C with very few external dependencies (libc,
+lua) that interfaces with Lua scripts both as initial and runtime configuration
+
+Current core features done:
+  * Handling core events such as JOIN, PART, QUIT and updating the
+    global state accordingly to keep a snychronized list of users
+  * Keep-alive
+  * Lua driven initial configuration
+
+Features not done yet:
+  * User management
+  * The actual script support
+
+Luna is written to run on UNIX-like operating systems (and tested on Linux),
+but it should be easy to port to other systems.
