@@ -46,4 +46,7 @@
 /* Reconnection attempts. TODO: read it from config.lua */
 #define RECONN_MAX 5
 
+/* Seconds of inactivity after which the connection is assumed dead */
+#define TIMEOUT 300
+
 #endif
