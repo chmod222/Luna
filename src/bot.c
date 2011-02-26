@@ -83,6 +83,8 @@ luna_mainloop(luna_state *state)
 
         tries = RECONN_MAX;
         state->connected = time(NULL);
+        time_t last_sign_of_life = time(NULL);
+
         logger_log(state->logger, LOGLEV_INFO, "Connected! Sending login.");
 
         luna_send_login(state);
@@ -112,7 +114,7 @@ luna_mainloop(luna_state *state)
                     break;
 
                 logger_log(state->logger, LOGLEV_INFO,  ">> %s", current_line);
-
+                last_sign_of_life = time(NULL);
                 irc_init_irc_event(&ev);
                 irc_parse_line(&ev, current_line);
 
@@ -125,6 +127,14 @@ luna_mainloop(luna_state *state)
             else
             {
                 /* Handle idle event */
+
+                /* Check if we're alive if the last event was TIMEOUT seconds
+                 * ago, and reconnect if there was an error */
+                if ((time(NULL) - last_sign_of_life) > TIMEOUT)
+                    if (net_sendfln(state, "PING :%s",
+                                    state->serverinfo.host) <= 0)
+                        break;
+
                 signal_dispatch(state, "idle", NULL);
             }
         }
