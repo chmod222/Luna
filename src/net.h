@@ -36,6 +36,7 @@ int net_connect(luna_state *);
 int net_disconnect(luna_state *);
 
 int net_sendfln(luna_state *, const char *, ...);
+int net_vsendfln(luna_state *, const char *, va_list);
 int net_recvln(luna_state *, char *dest, size_t len);
 
 #endif

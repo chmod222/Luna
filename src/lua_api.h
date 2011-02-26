@@ -32,6 +32,7 @@
 
 #include "state.h"
 #include "irc.h"
+#include "channel.h"
 #include "linked_list.h"
 
 #define LIBNAME "luna"
@@ -62,6 +63,10 @@ int signal_dispatch(luna_state *, const char *, const char *, ...);
 int script_emit(luna_state *, luna_script *, const char *,
                 const char *, va_list);
 int script_identify(lua_State *, luna_script *);
+
+int api_push_script(lua_State *, luna_script *);
+int api_push_channel(lua_State *, irc_channel *);
+int api_push_user(lua_State *, irc_user *);
 
 #endif
 

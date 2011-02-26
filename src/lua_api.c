@@ -35,16 +35,39 @@
 #include "lua_api.h"
 #include "state.h"
 #include "logger.h"
+#include "channel.h"
 #include "irc.h"
 
 
 static int api_script_register(lua_State *);
 static int api_signal_add(lua_State *);
+static int api_sendline(lua_State *);
+static int api_privmsg(lua_State *);
+static int api_notice(lua_State *);
+static int api_join(lua_State *);
+static int api_part(lua_State *);
+static int api_quit(lua_State *);
+static int api_change_nick(lua_State *);
+static int api_channels(lua_State *);
+static int api_scripts(lua_State *);
+static int api_info(lua_State *);
 
 static char *env_key = "Env";
 static luaL_Reg api_library[] = {
     { "script_register", api_script_register },
     { "signal_add",      api_signal_add },
+  /*{ "signal_remove",   api_signal_remove },*/
+    { "sendline",        api_sendline },
+    { "privmsg",         api_privmsg },
+    { "notice",          api_notice },
+    { "join_channel",    api_join },
+    { "part_channel",    api_part },
+    { "quit",            api_quit },
+    { "change_nick",     api_change_nick },
+
+    { "channels",        api_channels },
+    { "scripts",         api_scripts },
+    { "info",            api_info },
 
     { NULL, NULL }
 };
@@ -116,6 +139,8 @@ script_load(luna_state *state, const char *file)
     if ((luaL_dofile(L, file) == 0) && (script_identify(L, script) == 0))
     {
         list_push_back(state->scripts, script);
+        strncpy(script->filename, file, sizeof(script->filename) - 1);
+
         script_emit(state, script, "load", NULL, NULL);
 
         return 0;
@@ -260,8 +285,8 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
 
             if (lua_pcall(L, j, 0, 0) != 0)
                 logger_log(state->logger, LOGLEV_ERROR,
-                           "Lua error (signal '%s'): %s",
-                           sig, lua_tostring(L, -1));
+                           "Lua error ('%s@%s'): %s",
+                           sig, script->filename, lua_tostring(L, -1));
 
             lua_pop(L, -1);
             return 0;
@@ -434,4 +459,358 @@ api_script_register(lua_State *L)
 
     lua_pop(L, -1);
     return 0;
+}
+
+
+luna_state *
+api_getstate(lua_State *L)
+{
+    luna_state *state = NULL;
+    int top = lua_gettop(L);
+
+    lua_pushlightuserdata(L, (void *)env_key);
+    lua_gettable(L, LUA_REGISTRYINDEX);
+
+    state = lua_touserdata(L, top + 1);
+    lua_pop(L, 1);
+
+    return state;
+}
+
+
+int
+api_command_helper(lua_State *L, const char *fmt, ...)
+{
+    va_list args;
+    int ret;
+    luna_state *state = api_getstate(L);
+
+    va_start(args, fmt);
+    ret = net_vsendfln(state, fmt, args);
+    va_end(args);
+
+    return ret;
+}
+
+
+static int
+api_sendline(lua_State *L)
+{
+    int n = lua_gettop(L);
+
+    if (n != 1)
+        return luaL_error(L, "expected 1 argument, got %d", n);
+
+    lua_pushnumber(L, api_command_helper(L, lua_tostring(L, 1)));
+    return 1;
+}
+
+
+/* TODO: Have a smarter way for all the following repeating */
+static int
+api_privmsg(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int ret;
+
+    if (n != 2)
+        return luaL_error(L, "expected 2 arguments, got %d", n);
+
+    ret = api_command_helper(L, "PRIVMSG %s :%s",
+                             lua_tostring(L, 1), lua_tostring(L, 2));
+
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
+
+static int
+api_notice(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int ret;
+
+    if (n != 2)
+        return luaL_error(L, "expected 2 arguments, got %d", n);
+
+    ret = api_command_helper(L, "NOTICE %s :%s",
+                      lua_tostring(L, 1), lua_tostring(L, 2));
+
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
+
+static int
+api_join(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int ret;
+
+    if ((n < 1) || (n > 2))
+        return luaL_error(L, "expected 1 or 2 arguments, got %d", n);
+
+    if (n == 2)
+        ret = api_command_helper(L, "JOIN %s :%s",
+                                 lua_tostring(L, 1), lua_tostring(L, 2));
+    else
+        ret = api_command_helper(L, "JOIN %s", lua_tostring(L, 1));
+
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
+
+static int
+api_part(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int ret;
+
+    if ((n < 1) || (n > 2))
+        return luaL_error(L, "expected 1 or 2 arguments, got %d", n);
+
+    if (n == 2)
+        ret = api_command_helper(L, "PART %s :%s",
+                                 lua_tostring(L, 1), lua_tostring(L, 2));
+    else
+        ret = api_command_helper(L, "PART %s", lua_tostring(L, 1));
+
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
+
+static int
+api_quit(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int ret;
+
+    if (n > 1)
+        return luaL_error(L, "expected 0 or 1 argument, got %d", n);
+
+    if (n == 1)
+        ret = api_command_helper(L, "QUIT :%s", lua_tostring(L, 1));
+    else
+        ret = api_command_helper(L, "QUIT");
+
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
+
+static int
+api_change_nick(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int ret;
+
+    if (n != 1)
+        return luaL_error(L, "expected 1 argument, got %d", n);
+
+    ret = api_command_helper(L, "NICK :%s", lua_tostring(L, 1));
+
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
+
+static int
+api_scripts(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int array;
+    int i = 1;
+    luna_state *state;
+    list_node *cur = NULL;
+
+    if (n != 0)
+        return luaL_error(L, "expected no arguments, got %d", n);
+
+    state = api_getstate(L);
+
+    lua_newtable(L);
+    array = lua_gettop(L);
+
+    for (cur = state->scripts->root; cur != NULL; cur = cur->next)
+    {
+        api_push_script(L, cur->data);
+
+        lua_rawseti(L, array, i++);
+    }
+
+    return 1;
+}
+
+
+int
+api_push_script(lua_State *L, luna_script *script)
+{
+    int table;
+
+    lua_newtable(L);
+    table = lua_gettop(L);
+
+    lua_pushstring(L, "name");
+    lua_pushstring(L, script->name);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "description");
+    lua_pushstring(L, script->description);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "version");
+    lua_pushstring(L, script->version);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "author");
+    lua_pushstring(L, script->author);
+    lua_settable(L, table);
+
+    return 0;
+}
+
+
+int
+api_push_channel(lua_State *L, irc_channel *channel)
+{
+    int table;
+    int array;
+    int i = 1;
+    list_node *cur = NULL;
+
+    lua_newtable(L);
+    table = lua_gettop(L);
+
+    lua_pushstring(L, "name");
+    lua_pushstring(L, channel->name);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "users");
+    lua_newtable(L);
+    array = lua_gettop(L);
+
+    for (cur = channel->users->root; cur != NULL; cur = cur->next)
+    {
+        api_push_user(L, cur->data);
+
+        lua_rawseti(L, array, i++);
+    }
+
+    lua_settable(L, table);
+
+    return 0;
+}
+
+
+int
+api_push_user(lua_State *L, irc_user *user)
+{
+    int table;
+
+    lua_newtable(L);
+    table = lua_gettop(L);
+
+    lua_pushstring(L, "nick");
+    lua_pushstring(L, user->nick);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "user");
+    lua_pushstring(L, user->user);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "host");
+    lua_pushstring(L, user->host);
+    lua_settable(L, table);
+
+    return 0;
+}
+
+
+static int
+api_channels(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int array;
+    int i = 1;
+    luna_state *state;
+    list_node *cur = NULL;
+
+    if (n != 0)
+        return luaL_error(L, "expected no arguments, got %d", n);
+
+    state = api_getstate(L);
+
+    lua_newtable(L);
+    array = lua_gettop(L);
+
+    for (cur = state->channels->root; cur != NULL; cur = cur->next)
+    {
+        api_push_channel(L, cur->data);
+
+        lua_rawseti(L, array, i++);
+    }
+
+    return 1;
+}
+
+
+static int
+api_info(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int table;
+    int user_table;
+    int server_table;
+
+    luna_state *state;
+
+    if (n != 0)
+        return luaL_error(L, "expected no arguments, got %d", n);
+
+    state = api_getstate(L);
+
+    lua_newtable(L);
+    table = lua_gettop(L);
+
+    lua_pushstring(L, "identity");
+    lua_newtable(L);
+    user_table = lua_gettop(L);
+
+    lua_pushstring(L, "nick");
+    lua_pushstring(L, state->userinfo.nick);
+    lua_settable(L, user_table);
+
+    lua_pushstring(L, "user");
+    lua_pushstring(L, state->userinfo.user);
+    lua_settable(L, user_table);
+
+    lua_pushstring(L, "real");
+    lua_pushstring(L, state->userinfo.real);
+    lua_settable(L, user_table);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "server");
+    lua_newtable(L);
+    server_table = lua_gettop(L);
+
+    lua_pushstring(L, "host");
+    lua_pushstring(L, state->serverinfo.host);
+    lua_settable(L, server_table);
+
+    lua_pushstring(L, "port");
+    lua_pushnumber(L, state->serverinfo.port);
+    lua_settable(L, server_table);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "started");
+    lua_pushnumber(L, state->started);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "connected");
+    lua_pushnumber(L, state->connected);
+    lua_settable(L, table);
+
+    return 1;
 }

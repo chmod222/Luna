@@ -106,14 +106,25 @@ int
 net_sendfln(luna_state *state, const char *format, ...)
 {
     va_list args;
+    int retval;
+
+    va_start(args, format);
+    retval = net_vsendfln(state, format, args);
+    va_end(args);
+
+    return retval;
+}
+
+
+int
+net_vsendfln(luna_state *state, const char *format, va_list args)
+{
     char buffer[LINELEN];
 
     memset(buffer, 0, sizeof(buffer));
 
     /* Write at most LINELEN - 3 bytes to leave space for "\r\n\0" */
-    va_start(args, format);
     vsnprintf(buffer, sizeof(buffer) - 3, format, args);
-    va_end(args);
 
 #ifdef DEBUG
     printf(">> %s\n", buffer);
