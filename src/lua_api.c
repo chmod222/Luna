@@ -48,6 +48,9 @@ static int api_join(lua_State *);
 static int api_part(lua_State *);
 static int api_quit(lua_State *);
 static int api_change_nick(lua_State *);
+static int api_kick(lua_State *);
+static int api_set_modes(lua_State *);
+static int api_set_topic(lua_State *);
 static int api_channels(lua_State *);
 static int api_scripts(lua_State *);
 static int api_info(lua_State *);
@@ -64,6 +67,9 @@ static luaL_Reg api_library[] = {
     { "part_channel",    api_part },
     { "quit",            api_quit },
     { "change_nick",     api_change_nick },
+    { "kick",            api_kick },
+    { "set_modes",       api_set_modes },
+    { "set_topic",       api_set_topic },
 
     { "channels",        api_channels },
     { "scripts",         api_scripts },
@@ -617,6 +623,57 @@ api_change_nick(lua_State *L)
 
 
 static int
+api_kick(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int ret;
+
+    if (n != 3)
+        return luaL_error(L, "expected 3 arguments, got %d", n);
+
+    ret = api_command_helper(L, "KICK %s %s :%s",
+            lua_tostring(L, 1), lua_tostring(L, 2), lua_tostring(L, 3));
+
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
+
+static int
+api_set_modes(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int ret;
+
+    if (n != 2)
+        return luaL_error(L, "expected 2 arguments, got %d", n);
+
+    ret = api_command_helper(L, "MODE %s %s",
+            lua_tostring(L, 1), lua_tostring(L, 2));
+
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
+
+static int
+api_set_topic(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int ret;
+
+    if (n != 2)
+        return luaL_error(L, "expected 2 arguments, got %d", n);
+
+    ret = api_command_helper(L, "TOPIC %s :%s",
+            lua_tostring(L, 1), lua_tostring(L, 2));
+
+    lua_pushnumber(L, ret);
+    return 1;
+}
+
+
+static int
 api_scripts(lua_State *L)
 {
     int n = lua_gettop(L);
@@ -666,6 +723,10 @@ api_push_script(lua_State *L, luna_script *script)
 
     lua_pushstring(L, "author");
     lua_pushstring(L, script->author);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "file");
+    lua_pushstring(L, script->filename);
     lua_settable(L, table);
 
     return 0;
