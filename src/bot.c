@@ -79,6 +79,8 @@ luna_mainloop(luna_state *state)
             continue;
         }
 
+        list_init(&(state->channels));
+
         tries = RECONN_MAX;
         state->connected = time(NULL);
         logger_log(state->logger, LOGLEV_INFO, "Connected! Sending login.");
@@ -123,10 +125,12 @@ luna_mainloop(luna_state *state)
             else
             {
                 /* Handle idle event */
+                signal_dispatch(state, "idle", NULL);
             }
         }
 
         signal_dispatch(state, "disconnect", NULL);
+        list_destroy(state->channels, &channel_free);
         net_disconnect(state);
     }
 
