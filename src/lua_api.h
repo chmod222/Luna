@@ -67,10 +67,14 @@ int script_identify(lua_State *, luna_script *);
 
 luna_state *api_getstate(lua_State *);
 
+int api_setfield_s(lua_State *, int, const char *, const char *);
+int api_setfield_n(lua_State *, int, const char *, double);
+
 int api_push_script(lua_State *, luna_script *);
 int api_push_channel(lua_State *, irc_channel *);
 int api_push_user(lua_State *, irc_user *);
 int api_push_luna_user(lua_State *, luna_user *);
+int api_push_loglevels(lua_State *);
 
 #endif
 
