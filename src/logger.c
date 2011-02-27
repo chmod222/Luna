@@ -77,12 +77,13 @@ logger_log(luna_log *log, luna_loglevel loglevel, const char *fmt, ...)
     char timestamp[128];
     char level[16];
 
+    memset(buffer, 0, sizeof(buffer));
+    memset(timestamp, 0, sizeof(timestamp));
+    memset(level, 0, sizeof(level));
+
     /* Format timestamp and level to human readable strings */
     logger_level_to_string(loglevel, level, sizeof(level));
     logger_format_timestamp(time(NULL), timestamp, sizeof(timestamp));
-
-    /* Initialize buffer */
-    memset(buffer, 0, sizeof(buffer));
 
     /* Print timestamp and level to buffer */
     first = snprintf(buffer, sizeof(buffer), LOG_FORMAT, timestamp, level);
@@ -97,7 +98,7 @@ logger_log(luna_log *log, luna_loglevel loglevel, const char *fmt, ...)
     printf("%s\n", buffer);
     fprintf(log->file, "%s\n", buffer);
 
-    return retval;
+    return retval + first;
 }
 
 

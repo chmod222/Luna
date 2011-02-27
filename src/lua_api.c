@@ -42,7 +42,13 @@
 
 static int api_script_register(lua_State *);
 static int api_signal_add(lua_State *);
-static int api_get_user_level(lua_State *);
+static int api_get_user(lua_State *);
+static int api_add_user(lua_State *);
+static int api_remove_user(lua_State *);
+static int api_reload_userlist(lua_State *);
+static int api_load_script(lua_State *);
+static int api_unload_script(lua_State *);
+static int api_log(lua_State *);
 
 static int api_sendline(lua_State *);
 static int api_privmsg(lua_State *);
@@ -64,8 +70,14 @@ static char *env_key = "Env";
 static luaL_Reg api_library[] = {
     { "script_register", api_script_register },
     { "signal_add",      api_signal_add },
-  /*{ "signal_remove",   api_signal_remove },*/ /* Meh */
-    { "get_user_level",  api_get_user_level },
+    { "get_user",        api_get_user },
+
+    { "add_user",        api_add_user },
+    { "remove_user",     api_remove_user },
+    { "reload_userlist", api_reload_userlist },
+    { "load_script",     api_load_script },
+    { "unload_script",   api_unload_script },
+    { "log",             api_log },
 
     { "sendline",        api_sendline },
     { "privmsg",         api_privmsg },
@@ -146,6 +158,8 @@ script_load(luna_state *state, const char *file)
     lua_newtable(L);
     lua_settable(L, -3);
 
+    api_push_loglevels(L);
+
     /* Clean the stack */
     lua_pop(L, -1);
 
@@ -193,6 +207,51 @@ script_unload(luna_state *state, const char *file)
 
 
 int
+api_setfield_s(lua_State *L, int table, const char *key, const char *value)
+{
+    lua_pushstring(L, key);
+    lua_pushstring(L, value);
+    lua_settable(L, table);
+
+    return 0;
+}
+
+
+int
+api_setfield_n(lua_State *L, int table, const char *key, double value)
+{
+    lua_pushstring(L, key);
+    lua_pushnumber(L, value);
+    lua_settable(L, table);
+
+    return 0;
+}
+
+
+int
+api_push_loglevels(lua_State *L)
+{
+    int api_table;
+    int level_table;
+
+    lua_getglobal(L, LIBNAME);
+    api_table = lua_gettop(L);
+
+    lua_pushstring(L, "log_level");
+    lua_newtable(L);
+    level_table = lua_gettop(L);
+
+    api_setfield_n(L, level_table, "info", LOGLEV_INFO);
+    api_setfield_n(L, level_table, "warning", LOGLEV_WARNING);
+    api_setfield_n(L, level_table, "error", LOGLEV_ERROR);
+
+    lua_settable(L, api_table);
+
+    return 0;
+}
+
+
+int
 api_push_sender(lua_State *L, irc_sender *s)
 {
     int table_index;
@@ -200,20 +259,9 @@ api_push_sender(lua_State *L, irc_sender *s)
     lua_newtable(L);
     table_index = lua_gettop(L);
 
-    /* Push nick */
-    lua_pushstring(L, "nick");
-    lua_pushstring(L, s->nick);
-    lua_settable(L, table_index);
-
-    /* Push user */
-    lua_pushstring(L, "user");
-    lua_pushstring(L, s->user);
-    lua_settable(L, table_index);
-
-    /* Push host */
-    lua_pushstring(L, "host");
-    lua_pushstring(L, s->host);
-    lua_settable(L, table_index);
+    api_setfield_s(L, table_index, "nick", s->nick);
+    api_setfield_s(L, table_index, "user", s->user);
+    api_setfield_s(L, table_index, "host", s->host);
 
     return 0;
 }
@@ -479,7 +527,7 @@ api_script_register(lua_State *L)
 
 
 static int
-api_get_user_level(lua_State *L)
+api_get_user(lua_State *L)
 {
     int n = lua_gettop(L);
     int u;
@@ -522,21 +570,151 @@ api_get_user_level(lua_State *L)
     {
         /* Copy values over */
         irc_sender tmp;
-        char *level = NULL;
+        void *data = NULL;
+        void *key = (void *)&tmp;
 
         strncpy(tmp.nick, nick, sizeof(tmp.nick) - 1);
         strncpy(tmp.user, user, sizeof(tmp.user) - 1);
         strncpy(tmp.host, host, sizeof(tmp.host) - 1);
 
-        if ((level = user_get_level(state->users, &tmp)) != NULL)
-            lua_pushstring(L, level);
+        if ((data = list_find(state->users, key, &luna_user_cmp)) != NULL)
+        {
+            luna_user *u = (luna_user *)data;
+            int table;
+
+            lua_newtable(L);
+            table = lua_gettop(L);
+
+            lua_pushstring(L, "hostmask");
+            lua_pushstring(L, u->hostmask);
+            lua_settable(L, table);
+
+            lua_pushstring(L, "level");
+            lua_pushstring(L, u->level);
+            lua_settable(L, table);
+        }
         else
+        {
             lua_pushnil(L);
+        }
 
         return 1;
     }
     else
         return luaL_error(L, "user table not valid");
+}
+
+
+static int
+api_add_user(lua_State *L)
+{
+    int n = lua_gettop(L);
+    const char *mask = NULL;
+    const char *level = NULL;
+
+    luna_state *state = api_getstate(L);
+
+    if (n != 2)
+        return luaL_error(L, "expected 2 arguments, got %d", n);
+
+    if ((lua_type(L, 1) != LUA_TSTRING) || (lua_type(L, 2) != LUA_TSTRING))
+        return luaL_error(L, "expected 2 strings");
+
+    mask = lua_tostring(L, 1);
+    level = lua_tostring(L, 2);
+
+    users_add(state->users, mask, level);
+    users_write(state->users, "users.txt");
+
+    return 0;
+}
+
+
+static int
+api_remove_user(lua_State *L)
+{
+    int n = lua_gettop(L);
+    const char *mask = NULL;
+
+    luna_state *state = api_getstate(L);
+
+    if (n != 1)
+        return luaL_error(L, "expected 1 argument, got %d", n);
+
+    if (lua_type(L, 1) != LUA_TSTRING)
+        return luaL_error(L, "expected 1 string");
+
+    mask = lua_tostring(L, 1);
+
+    users_remove(state->users, mask);
+    users_write(state->users, "users.txt");
+
+    return 0;
+}
+
+
+static int
+api_reload_userlist(lua_State *L)
+{
+    int n = lua_gettop(L);
+    luna_state *state = api_getstate(L);
+
+    if (n != 0)
+        return luaL_error(L, "expected no arguments, got %d", n);
+
+    users_reload(state->users, "users.txt");
+
+    return 0;
+}
+
+
+static int
+api_load_script(lua_State *L)
+{
+    int n = lua_gettop(L);
+    luna_state *state = api_getstate(L);
+    const char *file = NULL;
+
+    if (n != 1)
+        return luaL_error(L, "expected no arguments, got %d", n);
+
+    if ((lua_type(L, 1) != LUA_TSTRING) || (!strcmp(lua_tostring(L, 1), "")))
+        return luaL_error(L, "expected a string", n);
+
+    file = lua_tostring(L, 1);
+
+    if (!script_load(state, file))
+    {
+        void *script = list_find(state->scripts, (void *)file, &script_cmp);
+        luna_script *s = (luna_script *)script;
+
+        api_push_script(L, s);
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+
+static int
+api_unload_script(lua_State *L)
+{
+    int n = lua_gettop(L);
+    luna_state *state = api_getstate(L);
+    const char *file = NULL;
+
+    if (n != 1)
+        return luaL_error(L, "expected no arguments, got %d", n);
+
+    if ((lua_type(L, 1) != LUA_TSTRING) || (!strcmp(lua_tostring(L, 1), "")))
+        return luaL_error(L, "expected a string", n);
+
+    file = lua_tostring(L, 1);
+    script_unload(state, file);
+
+    return 0;
 }
 
 
@@ -553,6 +731,25 @@ api_getstate(lua_State *L)
     lua_pop(L, 1);
 
     return state;
+}
+
+
+static int
+api_log(lua_State *L)
+{
+    int n = lua_gettop(L);
+    luna_state *state = api_getstate(L);
+
+    if (n != 2)
+        return luaL_error(L, "expected 2 arguments, got %d", n);
+
+    if ((lua_type(L, 1) == LUA_TNUMBER) && (lua_type(L, 2) == LUA_TSTRING))
+        lua_pushnumber(L, logger_log(state->logger, lua_tonumber(L, 1), "%s",
+                                                    lua_tostring(L, 2)));
+    else
+        luaL_error(L, "arguments must be number and string");
+
+    return 1;
 }
 
 
@@ -574,12 +771,9 @@ api_command_helper(lua_State *L, const char *fmt, ...)
 static int
 api_sendline(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *line = luaL_checkstring(L, 1);
 
-    if (n != 1)
-        return luaL_error(L, "expected 1 argument, got %d", n);
-
-    lua_pushnumber(L, api_command_helper(L, lua_tostring(L, 1)));
+    lua_pushnumber(L, api_command_helper(L, line));
     return 1;
 }
 
@@ -588,14 +782,11 @@ api_sendline(lua_State *L)
 static int
 api_privmsg(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *target = luaL_checkstring(L, 1);
+    const char *msg    = luaL_checkstring(L, 2);
     int ret;
 
-    if (n != 2)
-        return luaL_error(L, "expected 2 arguments, got %d", n);
-
-    ret = api_command_helper(L, "PRIVMSG %s :%s",
-                             lua_tostring(L, 1), lua_tostring(L, 2));
+    ret = api_command_helper(L, "PRIVMSG %s :%s", target, msg);
 
     lua_pushnumber(L, ret);
     return 1;
@@ -605,14 +796,11 @@ api_privmsg(lua_State *L)
 static int
 api_notice(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *target = luaL_checkstring(L, 1);
+    const char *msg    = luaL_checkstring(L, 2);
     int ret;
 
-    if (n != 2)
-        return luaL_error(L, "expected 2 arguments, got %d", n);
-
-    ret = api_command_helper(L, "NOTICE %s :%s",
-                      lua_tostring(L, 1), lua_tostring(L, 2));
+    ret = api_command_helper(L, "NOTICE %s :%s", target, msg);
 
     lua_pushnumber(L, ret);
     return 1;
@@ -622,17 +810,19 @@ api_notice(lua_State *L)
 static int
 api_join(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *channel = luaL_checkstring(L, 1);
     int ret;
 
-    if ((n < 1) || (n > 2))
-        return luaL_error(L, "expected 1 or 2 arguments, got %d", n);
+    if (!lua_isnil(L, 2))
+    {
+        const char *key = luaL_checkstring(L, 2);
 
-    if (n == 2)
-        ret = api_command_helper(L, "JOIN %s :%s",
-                                 lua_tostring(L, 1), lua_tostring(L, 2));
+        ret = api_command_helper(L, "JOIN %s :%s", channel, key);
+    }
     else
-        ret = api_command_helper(L, "JOIN %s", lua_tostring(L, 1));
+    {
+        ret = api_command_helper(L, "JOIN %s", channel);
+    }
 
     lua_pushnumber(L, ret);
     return 1;
@@ -642,17 +832,19 @@ api_join(lua_State *L)
 static int
 api_part(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *channel = luaL_checkstring(L, 1);
     int ret;
 
-    if ((n < 1) || (n > 2))
-        return luaL_error(L, "expected 1 or 2 arguments, got %d", n);
+    if (!lua_isnil(L, 2))
+    {
+        const char *reason = luaL_checkstring(L, 2);
 
-    if (n == 2)
-        ret = api_command_helper(L, "PART %s :%s",
-                                 lua_tostring(L, 1), lua_tostring(L, 2));
+        ret = api_command_helper(L, "PART %s :%s", channel, reason);
+    }
     else
-        ret = api_command_helper(L, "PART %s", lua_tostring(L, 1));
+    {
+        ret = api_command_helper(L, "PART %s", channel);
+    }
 
     lua_pushnumber(L, ret);
     return 1;
@@ -662,16 +854,18 @@ api_part(lua_State *L)
 static int
 api_quit(lua_State *L)
 {
-    int n = lua_gettop(L);
     int ret;
 
-    if (n > 1)
-        return luaL_error(L, "expected 0 or 1 argument, got %d", n);
+    if (!lua_isnil(L, 1))
+    {
+        const char *reason = luaL_checkstring(L, 1);
 
-    if (n == 1)
-        ret = api_command_helper(L, "QUIT :%s", lua_tostring(L, 1));
+        ret = api_command_helper(L, "QUIT :%s", reason);
+    }
     else
+    {
         ret = api_command_helper(L, "QUIT");
+    }
 
     lua_pushnumber(L, ret);
     return 1;
@@ -681,13 +875,10 @@ api_quit(lua_State *L)
 static int
 api_change_nick(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *newnick = luaL_checkstring(L, 1);
     int ret;
 
-    if (n != 1)
-        return luaL_error(L, "expected 1 argument, got %d", n);
-
-    ret = api_command_helper(L, "NICK :%s", lua_tostring(L, 1));
+    ret = api_command_helper(L, "NICK :%s", newnick);
 
     lua_pushnumber(L, ret);
     return 1;
@@ -697,14 +888,12 @@ api_change_nick(lua_State *L)
 static int
 api_kick(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *channel = luaL_checkstring(L, 1);
+    const char *user    = luaL_checkstring(L, 2);
+    const char *reason  = luaL_checkstring(L, 3);
     int ret;
 
-    if (n != 3)
-        return luaL_error(L, "expected 3 arguments, got %d", n);
-
-    ret = api_command_helper(L, "KICK %s %s :%s",
-            lua_tostring(L, 1), lua_tostring(L, 2), lua_tostring(L, 3));
+    ret = api_command_helper(L, "KICK %s %s :%s", channel, user, reason);
 
     lua_pushnumber(L, ret);
     return 1;
@@ -714,14 +903,11 @@ api_kick(lua_State *L)
 static int
 api_set_modes(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *target = luaL_checkstring(L, 1);
+    const char *args   = luaL_checkstring(L, 2);
     int ret;
 
-    if (n != 2)
-        return luaL_error(L, "expected 2 arguments, got %d", n);
-
-    ret = api_command_helper(L, "MODE %s %s",
-            lua_tostring(L, 1), lua_tostring(L, 2));
+    ret = api_command_helper(L, "MODE %s %s", target, args);
 
     lua_pushnumber(L, ret);
     return 1;
@@ -731,14 +917,11 @@ api_set_modes(lua_State *L)
 static int
 api_set_topic(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *channel  = luaL_checkstring(L, 1);
+    const char *newtopic = luaL_checkstring(L, 2);
     int ret;
 
-    if (n != 2)
-        return luaL_error(L, "expected 2 arguments, got %d", n);
-
-    ret = api_command_helper(L, "TOPIC %s :%s",
-            lua_tostring(L, 1), lua_tostring(L, 2));
+    ret = api_command_helper(L, "TOPIC %s :%s", channel, newtopic);
 
     lua_pushnumber(L, ret);
     return 1;
@@ -748,14 +931,10 @@ api_set_topic(lua_State *L)
 static int
 api_scripts(lua_State *L)
 {
-    int n = lua_gettop(L);
     int array;
     int i = 1;
     luna_state *state;
     list_node *cur = NULL;
-
-    if (n != 0)
-        return luaL_error(L, "expected no arguments, got %d", n);
 
     state = api_getstate(L);
 
@@ -781,25 +960,11 @@ api_push_script(lua_State *L, luna_script *script)
     lua_newtable(L);
     table = lua_gettop(L);
 
-    lua_pushstring(L, "name");
-    lua_pushstring(L, script->name);
-    lua_settable(L, table);
-
-    lua_pushstring(L, "description");
-    lua_pushstring(L, script->description);
-    lua_settable(L, table);
-
-    lua_pushstring(L, "version");
-    lua_pushstring(L, script->version);
-    lua_settable(L, table);
-
-    lua_pushstring(L, "author");
-    lua_pushstring(L, script->author);
-    lua_settable(L, table);
-
-    lua_pushstring(L, "file");
-    lua_pushstring(L, script->filename);
-    lua_settable(L, table);
+    api_setfield_s(L, table, "name", script->name);
+    api_setfield_s(L, table, "description", script->description);
+    api_setfield_s(L, table, "version", script->version);
+    api_setfield_s(L, table, "author", script->author);
+    api_setfield_s(L, table, "file", script->filename);
 
     return 0;
 }
@@ -816,9 +981,7 @@ api_push_channel(lua_State *L, irc_channel *channel)
     lua_newtable(L);
     table = lua_gettop(L);
 
-    lua_pushstring(L, "name");
-    lua_pushstring(L, channel->name);
-    lua_settable(L, table);
+    api_setfield_s(L, table, "name", channel->name);
 
     lua_pushstring(L, "users");
     lua_newtable(L);
@@ -845,17 +1008,9 @@ api_push_user(lua_State *L, irc_user *user)
     lua_newtable(L);
     table = lua_gettop(L);
 
-    lua_pushstring(L, "nick");
-    lua_pushstring(L, user->nick);
-    lua_settable(L, table);
-
-    lua_pushstring(L, "user");
-    lua_pushstring(L, user->user);
-    lua_settable(L, table);
-
-    lua_pushstring(L, "host");
-    lua_pushstring(L, user->host);
-    lua_settable(L, table);
+    api_setfield_s(L, table, "nick", user->nick);
+    api_setfield_s(L, table, "user", user->user);
+    api_setfield_s(L, table, "host", user->host);
 
     return 0;
 }
@@ -869,13 +1024,8 @@ api_push_luna_user(lua_State *L, luna_user *user)
     lua_newtable(L);
     table = lua_gettop(L);
 
-    lua_pushstring(L, "hostmask");
-    lua_pushstring(L, user->hostmask);
-    lua_settable(L, table);
-
-    lua_pushstring(L, "level");
-    lua_pushstring(L, user->level);
-    lua_settable(L, table);
+    api_setfield_s(L, table, "hostmask", user->hostmask);
+    api_setfield_s(L, table, "level", user->level);
 
     return 0;
 }
@@ -884,14 +1034,10 @@ api_push_luna_user(lua_State *L, luna_user *user)
 static int
 api_channels(lua_State *L)
 {
-    int n = lua_gettop(L);
     int array;
     int i = 1;
     luna_state *state;
     list_node *cur = NULL;
-
-    if (n != 0)
-        return luaL_error(L, "expected no arguments, got %d", n);
 
     state = api_getstate(L);
 
@@ -912,15 +1058,11 @@ api_channels(lua_State *L)
 static int
 api_info(lua_State *L)
 {
-    int n = lua_gettop(L);
     int table;
     int user_table;
     int server_table;
 
     luna_state *state;
-
-    if (n != 0)
-        return luaL_error(L, "expected no arguments, got %d", n);
 
     state = api_getstate(L);
 
@@ -931,39 +1073,23 @@ api_info(lua_State *L)
     lua_newtable(L);
     user_table = lua_gettop(L);
 
-    lua_pushstring(L, "nick");
-    lua_pushstring(L, state->userinfo.nick);
-    lua_settable(L, user_table);
+    api_setfield_s(L, user_table, "nick", state->userinfo.nick);
+    api_setfield_s(L, user_table, "user", state->userinfo.user);
+    api_setfield_s(L, user_table, "real", state->userinfo.real);
 
-    lua_pushstring(L, "user");
-    lua_pushstring(L, state->userinfo.user);
-    lua_settable(L, user_table);
-
-    lua_pushstring(L, "real");
-    lua_pushstring(L, state->userinfo.real);
-    lua_settable(L, user_table);
     lua_settable(L, table);
 
     lua_pushstring(L, "server");
     lua_newtable(L);
     server_table = lua_gettop(L);
 
-    lua_pushstring(L, "host");
-    lua_pushstring(L, state->serverinfo.host);
-    lua_settable(L, server_table);
+    api_setfield_s(L, server_table, "host", state->serverinfo.host);
+    api_setfield_n(L, server_table, "port", state->serverinfo.port);
 
-    lua_pushstring(L, "port");
-    lua_pushnumber(L, state->serverinfo.port);
-    lua_settable(L, server_table);
     lua_settable(L, table);
 
-    lua_pushstring(L, "started");
-    lua_pushnumber(L, state->started);
-    lua_settable(L, table);
-
-    lua_pushstring(L, "connected");
-    lua_pushnumber(L, state->connected);
-    lua_settable(L, table);
+    api_setfield_n(L, table, "started", state->started);
+    api_setfield_n(L, table, "connected", state->connected);
 
     return 1;
 }
@@ -972,14 +1098,10 @@ api_info(lua_State *L)
 static int
 api_users(lua_State *L)
 {
-    int n = lua_gettop(L);
     int array;
     int i = 1;
     luna_state *state;
     list_node *cur = NULL;
-
-    if (n != 0)
-        return luaL_error(L, "expected no arguments, got %d", n);
 
     state = api_getstate(L);
 

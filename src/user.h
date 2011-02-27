@@ -41,8 +41,13 @@ typedef struct luna_user
 int users_load(linked_list *, const char *);
 int users_unload(linked_list *);
 int users_reload(linked_list *, const char *);
+int users_write(linked_list *, const char *);
+
+int users_add(linked_list *, const char *, const char *);
+int users_remove(linked_list *, const char *);
 
 int luna_user_cmp(void *, void *);
+int luna_user_host_cmp(void *, void *);
 
 int user_match_level(linked_list *, irc_sender *, const char *);
 char *user_get_level(linked_list *, irc_sender *);

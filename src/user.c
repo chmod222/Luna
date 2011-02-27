@@ -101,6 +101,65 @@ users_reload(linked_list *userlist, const char *file)
 
 
 int
+users_write(linked_list *userlist, const char *file)
+{
+    FILE *f = fopen(file, "w");
+
+    if (f)
+    {
+        list_node *cur = NULL;
+
+        for (cur = userlist->root; cur != NULL; cur = cur->next)
+        {
+            luna_user *u = (luna_user *)(cur->data);
+
+            fprintf(f, "%s:%s\n", u->hostmask, u->level);
+        }
+
+        fclose(f);
+
+        return 0;
+    }
+
+    return 1;
+}
+
+
+int
+users_add(linked_list *userlist, const char *hostmask, const char *level)
+{
+    luna_user *user = malloc(sizeof(*user));
+
+    if (user)
+    {
+        memset(user, 0, sizeof(*user));
+
+        strncpy(user->hostmask, hostmask, sizeof(user->hostmask));
+        strncpy(user->level, level, sizeof(user->level));
+
+        list_push_back(userlist, user);
+    }
+
+    return 1;
+}
+
+
+int
+users_remove(linked_list *userlist, const char *hostmask)
+{
+    void *user = list_find(userlist, (void *)hostmask, &luna_user_host_cmp);
+
+    if (user)
+    {
+        list_delete(userlist, user, &free);
+        return 0;
+    }
+
+    return 1;
+}
+
+
+int
 luna_user_cmp(void *data, void *list_data)
 {
     char host[256];
@@ -112,6 +171,16 @@ luna_user_cmp(void *data, void *list_data)
     snprintf(host, sizeof(host), "%s!%s@%s", key->nick, key->user, key->host);
 
     return !(strwcasecmp(host, user->hostmask));
+}
+
+
+int
+luna_user_host_cmp(void *data, void *list_data)
+{
+    char *key = (char *)data;
+    luna_user *user = (luna_user *)list_data;
+
+    return strcasecmp(key, user->hostmask);
 }
 
 
