@@ -73,6 +73,8 @@ channel_add(luna_state *state, const char *channel_name)
 
     if (tmp)
     {
+        memset(tmp, 0, sizeof(*tmp));
+
         strncpy(tmp->name, channel_name, sizeof(tmp->name) - 1);
 
         /* Try creating userlist, too */
@@ -185,4 +187,41 @@ user_rename(luna_state *state, const char *oldnick, const char *newnick)
     }
 
     return 0;
+}
+
+
+int
+channel_set_topic(luna_state *state, const char *channel, const char *topic)
+{
+    void *c = list_find(state->channels, (void *)channel, &channel_cmp);
+
+    if (c)
+    {
+        irc_channel *chan = (irc_channel *)c;
+
+        memset(chan->topic, 0, sizeof(chan->topic));
+        strncpy(chan->topic, topic, sizeof(chan->topic) - 1);
+    }
+
+    return 1;
+}
+
+
+int
+channel_set_topic_meta(luna_state *state, const char *channel,
+                       const char *setter, time_t time)
+{
+    void *c = list_find(state->channels, (void *)channel, &channel_cmp);
+
+    if (c)
+    {
+        irc_channel *chan = (irc_channel *)c;
+
+        memset(chan->topic_setter, 0, sizeof(chan->topic_setter));
+        strncpy(chan->topic_setter, setter, sizeof(chan->topic_setter) - 1);
+
+        chan->topic_set = time;
+    }
+
+    return 1;
 }

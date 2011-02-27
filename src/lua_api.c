@@ -921,6 +921,7 @@ api_push_channel(lua_State *L, irc_channel *channel)
 {
     int table;
     int array;
+    int topic_table;
     int i = 1;
     list_node *cur = NULL;
 
@@ -928,6 +929,17 @@ api_push_channel(lua_State *L, irc_channel *channel)
     table = lua_gettop(L);
 
     api_setfield_s(L, table, "name", channel->name);
+
+    lua_pushstring(L, "topic");
+    lua_newtable(L);
+    topic_table = lua_gettop(L);
+
+    api_setfield_s(L, topic_table, "text", channel->topic);
+    api_setfield_s(L, topic_table, "set_by", channel->topic_setter);
+    api_setfield_n(L, topic_table, "set_at", channel->topic_set);
+
+    lua_settable(L, table);
+
 
     lua_pushstring(L, "users");
     lua_newtable(L);
