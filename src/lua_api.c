@@ -184,6 +184,8 @@ script_unload(luna_state *state, const char *file)
         /* Call unload signal */
         script_emit(state, (luna_script *)result, "unload", NULL, NULL);
         list_delete(state->scripts, result, &script_free);
+
+        return 0;
     }
 
     return 1;
