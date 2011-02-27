@@ -55,6 +55,13 @@ int handle_command_load(luna_state *, irc_event *, const char *);
 int handle_command_reload(luna_state *, irc_event *, const char *);
 int handle_command_unload(luna_state *, irc_event *, const char *);
 
+int handle_server_supports(luna_state *, irc_event *);
+
+int handle_mode_change(luna_state *, const char *, const char *, char **, int);
+int mode_set(luna_state *, const char *, char, const char *);
+int mode_unset(luna_state *, const char *, char, const char *);
+
+
 int handle_event(luna_state *env, irc_event *ev)
 {
     /* Core event handlers */
@@ -179,8 +186,15 @@ handle_ping(luna_state *env, irc_event *ev)
 int
 handle_numeric(luna_state *env, irc_event *ev)
 {
+    char *mode = NULL;
+
     switch (ev->numeric)
     {
+        case 5: /* ISUPPORT */
+            handle_server_supports(env, ev);
+
+            break;
+
         case 376:
             /* Dispatch connect event */
             signal_dispatch(env, "connect", NULL);
@@ -199,6 +213,13 @@ handle_numeric(luna_state *env, irc_event *ev)
             channel_add_user(env, ev->param[1], ev->param[5], ev->param[2],
                              ev->param[3]);
 
+            mode = ev->param[6];
+
+            if (mode[1] == '@')
+                channel_op_user(env, ev->param[1], ev->param[5]);
+            else if (mode[1] == '+')
+                channel_voice_user(env, ev->param[1], ev->param[5]);
+
             break;
 
         case 332: /* TOPIC */
@@ -209,6 +230,18 @@ handle_numeric(luna_state *env, irc_event *ev)
         case 333: /* TOPIC META */
             channel_set_topic_meta(env, ev->param[1],
                                    ev->param[2], atoi(ev->param[3]));
+
+            break;
+
+        case 324: /* REPL_MODE */
+            /* <server> 324 <me> <channel> <flags> [param[,param[,...]]] */
+            handle_mode_change(env, ev->param[1], ev->param[2], ev->param, 3);
+
+            break;
+
+        case 329: /* REPL_MODE2 */
+            /* :aperture.esper.net 329 Luna^ #lulz2 1298798377 */
+            channel_set_creation_time(env, ev->param[1], atoi(ev->param[2]));
 
             break;
     }
@@ -232,6 +265,7 @@ handle_join(luna_state *env, irc_event *ev)
 
         /* Query userlist */
         net_sendfln(env, "WHO %s", c);
+        net_sendfln(env, "MODE %s", c);
     }
     else
     {
@@ -322,6 +356,13 @@ handle_nick(luna_state *env, irc_event *ev)
 int
 handle_mode(luna_state *env, irc_event *ev)
 {
+    /* <sender> MODE <channel> <flags> [param[,param[,...]]] */
+
+    /* If not me... */
+    if (strcasecmp(ev->param[0], env->userinfo.nick))
+        if (handle_mode_change(env, ev->param[0], ev->param[1], ev->param, 2))
+            net_sendfln(env, "WHO %s", ev->param[0]);
+
     /* TODO: Later....
      * Format: 
      *    target = param[0]
@@ -467,6 +508,120 @@ handle_command_unload(luna_state *env, irc_event *ev, const char *name)
         else
             net_sendfln(env, "PRIVMSG %s :%s: Failed to unload script!",
                         ev->param[0], ev->from.nick);
+
+    return 0;
+}
+
+
+int
+handle_server_supports(luna_state *env, irc_event *ev)
+{
+    int i;
+
+    for (i = 0; i < ev->param_count; ++i)
+    {
+        if (strstr(ev->param[i], "CHANMODES="))
+        {
+            char *tok = NULL;
+            char *part = NULL;
+            int j;
+
+            strtok(ev->param[i], "=");
+            tok = strtok(NULL, "");
+
+            part = strtok(tok, ",");
+
+            for (j = 0; j < 4; ++j)
+            {
+                memset(env->chanmodes[j], 0, sizeof(env->chanmodes[j]));
+
+                strncpy(env->chanmodes[j], part, sizeof(env->chanmodes[j]) - 1);
+                part = strtok(NULL, ",");
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+int
+handle_mode_change(luna_state *state, const char *channel,
+                   const char *flags, char **args, int argind)
+{
+    int action = 0; /* 0 = set, 1 = unset */
+    int i = argind;
+
+    while (*flags)
+    {
+        switch (*flags)
+        {
+            case '+': action = 0; flags++; break;
+            case '-': action = 1; flags++; break;
+        }
+
+        /* If...
+         *   - Flag in chanmodes[0] (Address parameter, always) OR
+         *   - Flag in chanmodes[1] (Setting, always) OR
+         *   - Flag in chanmodes[2] and action is setting (Param when set) OR
+         *   - Flag is either 'o' or 'v' which are not sent for chanmodes but
+         *     behave like flags in chanmodes[1] */
+        if  (strchr(state->chanmodes[0], *flags) ||
+             strchr(state->chanmodes[1], *flags) ||
+            (strchr(state->chanmodes[2], *flags) && !action) ||
+            (*flags == 'o') ||
+            (*flags == 'v'))
+        {
+            /* Set/Unset flag "*flags" with argument "args[i]" */
+            if (!action)
+                mode_set(state, channel, *flags, args[i++]);
+            else
+                mode_unset(state, channel, *flags, args[i++]);
+        }
+        else if ((strchr(state->chanmodes[3], *flags)) ||
+                 (strchr(state->chanmodes[2], *flags) && action))
+        {
+            /* Set/Unset flag "*flags" for channel */
+            if (!action)
+                mode_set(state, channel, *flags, NULL);
+            else
+                mode_unset(state, channel, *flags, NULL);
+        }
+
+        flags++;
+    }
+
+    return 0;
+}
+
+
+int
+mode_set(luna_state *state, const char *channel, char flag, const char *arg)
+{
+    if (arg)
+    {
+        switch (flag)
+        {
+            case 'o': return channel_op_user(state, channel, arg);
+            case 'v': return channel_voice_user(state, channel, arg);
+        }
+    }
+
+    return 0;
+}
+
+
+int
+mode_unset(luna_state *state, const char *channel, char flag, const char *arg)
+{
+    if (arg)
+    {
+        switch (flag)
+        {
+            case 'o': return channel_deop_user(state, channel, arg);
+            case 'v': return channel_devoice_user(state, channel, arg);
+        }
+    }
 
     return 0;
 }

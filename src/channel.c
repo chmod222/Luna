@@ -126,6 +126,8 @@ channel_add_user(luna_state *state, const char *chan_name, const char *nick,
         
         if (tmp)
         {
+            memset(tmp, 0, sizeof(*tmp));
+
             strncpy(tmp->nick, nick, sizeof(tmp->nick) - 1);
             strncpy(tmp->user, user, sizeof(tmp->user) - 1);
             strncpy(tmp->host, host, sizeof(tmp->host) - 1);
@@ -201,6 +203,25 @@ channel_set_topic(luna_state *state, const char *channel, const char *topic)
 
         memset(chan->topic, 0, sizeof(chan->topic));
         strncpy(chan->topic, topic, sizeof(chan->topic) - 1);
+
+        return 0;
+    }
+
+    return 1;
+}
+
+
+int
+channel_set_creation_time(luna_state *state, const char *channel, time_t stamp)
+{
+    void *c = list_find(state->channels, (void *)channel, &channel_cmp);
+
+    if (c)
+    {
+        irc_channel *chan = (irc_channel *)c;
+        chan->created = stamp;
+
+        return 0;
     }
 
     return 1;
@@ -221,6 +242,90 @@ channel_set_topic_meta(luna_state *state, const char *channel,
         strncpy(chan->topic_setter, setter, sizeof(chan->topic_setter) - 1);
 
         chan->topic_set = time;
+
+        return 0;
+    }
+
+    return 1;
+}
+
+
+irc_user *
+channel_get_user(luna_state *state, const char *channel, const char *user)
+{
+    void *chan_data = list_find(state->channels, (void *)channel, &channel_cmp);
+
+    if (chan_data)
+    {
+        irc_channel *chan = (irc_channel *)chan_data;
+
+        void *user_data = list_find(chan->users, (void *)user, &user_cmp);
+
+        if (user_data)
+            return (irc_user *)user_data;
+    }
+
+    return NULL;
+}
+
+
+int
+channel_op_user(luna_state *state, const char *channel, const char *user)
+{
+    irc_user *u = channel_get_user(state, channel, user);
+
+    if (u)
+    {
+        u->op = 1;
+
+        return 0;
+    }
+
+    return 1;
+}
+
+
+int
+channel_deop_user(luna_state *state, const char *channel, const char *user)
+{
+    irc_user *u = channel_get_user(state, channel, user);
+
+    if (u)
+    {
+        u->op = 0;
+
+        return 0;
+    }
+
+    return 1;
+}
+
+
+int
+channel_voice_user(luna_state *state, const char *channel, const char *user)
+{
+    irc_user *u = channel_get_user(state, channel, user);
+
+    if (u)
+    {
+        u->voice = 1;
+
+        return 0;
+    }
+
+    return 1;
+}
+
+int
+channel_devoice_user(luna_state *state, const char *channel, const char *user)
+{
+    irc_user *u = channel_get_user(state, channel, user);
+
+    if (u)
+    {
+        u->voice = 0;
+
+        return 0;
     }
 
     return 1;
