@@ -35,10 +35,12 @@
 
 typedef struct irc_channel
 {
-    char name[64];
+    char name[64]; /* Some networks allow for more than 200 characters - adapt
+                      if necessary! */
     char topic[256];
-    char topic_setter[128];
+    char topic_setter[512];
     time_t topic_set;
+    time_t created;
 
     linked_list *users;
 } irc_channel;
@@ -49,6 +51,9 @@ typedef struct irc_user
     char nick[32];
     char user[16];
     char host[128];
+
+    int op;
+    int voice;
 } irc_user;
 
 int channel_cmp(void *, void *);
@@ -67,5 +72,15 @@ void channel_free(void *);
 
 int channel_set_topic(luna_state *, const char *, const char *);
 int channel_set_topic_meta(luna_state *, const char *, const char *, time_t);
+
+int channel_set_creation_time(luna_state *, const char *, time_t);
+
+irc_user *channel_get_user(luna_state *, const char *, const char *);
+
+int channel_op_user(luna_state *, const char *, const char *);
+int channel_deop_user(luna_state *, const char *, const char *);
+
+int channel_voice_user(luna_state *, const char *, const char *);
+int channel_devoice_user(luna_state *, const char *, const char *);
 
 #endif

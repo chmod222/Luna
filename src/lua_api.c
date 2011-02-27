@@ -114,7 +114,6 @@ script_free(void *list_data)
 {
     luna_script *script = (luna_script *)list_data;
 
-    /* TODO: Emit "unload" signal */
     lua_close(script->state);
     free(list_data);
 
@@ -940,6 +939,7 @@ api_push_channel(lua_State *L, irc_channel *channel)
 
     lua_settable(L, table);
 
+    api_setfield_n(L, table, "created", channel->created);
 
     lua_pushstring(L, "users");
     lua_newtable(L);
@@ -969,6 +969,14 @@ api_push_user(lua_State *L, irc_user *user)
     api_setfield_s(L, table, "nick", user->nick);
     api_setfield_s(L, table, "user", user->user);
     api_setfield_s(L, table, "host", user->host);
+
+    lua_pushstring(L, "op");
+    lua_pushboolean(L, user->op);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "voice");
+    lua_pushboolean(L, user->voice);
+    lua_settable(L, table);
 
     return 0;
 }
