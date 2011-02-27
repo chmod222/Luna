@@ -421,9 +421,9 @@ script_identify(lua_State *L, luna_script *script)
     version = lua_tostring(L, v);
 
     /* Values must be strings and nonempty */
-    if (((lua_type(L, n) == LUA_TSTRING) && (strcmp(name, "")))        &&
-        ((lua_type(L, d) == LUA_TSTRING) && (strcmp(descr, ""))) &&
-        ((lua_type(L, a) == LUA_TSTRING) && (strcmp(author, "")))      &&
+    if (((lua_type(L, n) == LUA_TSTRING) && (strcmp(name, "")))    &&
+        ((lua_type(L, d) == LUA_TSTRING) && (strcmp(descr, "")))   &&
+        ((lua_type(L, a) == LUA_TSTRING) && (strcmp(author, "")))  &&
         ((lua_type(L, v) == LUA_TSTRING) && (strcmp(version, ""))))
     {
         /* Copy values over */
@@ -446,17 +446,13 @@ script_identify(lua_State *L, luna_script *script)
 static int
 api_signal_add(lua_State *L)
 {
-    int n = lua_gettop(L);
     int api_table;
     int callbacks_array;
     int callback_table;
     int len;
 
-    if (n != 2)
-        return luaL_error(L, "expected 2 arguments, got %d", n);
-
-    if ((lua_type(L, 1) != LUA_TSTRING) || (lua_type(L, 2) != LUA_TFUNCTION))
-        return luaL_error(L, "expected string and function");
+    luaL_checkstring(L, 1);
+    luaL_checktype(L, 2, LUA_TFUNCTION);
 
     lua_getglobal(L, LIBNAME);
     api_table = lua_gettop(L);
@@ -487,12 +483,13 @@ api_signal_add(lua_State *L)
 static int
 api_script_register(lua_State *L)
 {
-    int n = lua_gettop(L);
     int api_table;
     int info_table;
 
-    if (n != 4)
-        return luaL_error(L, "expected 4 arguments, got %d", n);
+    luaL_checkstring(L, 1);
+    luaL_checkstring(L, 2);
+    luaL_checkstring(L, 3);
+    luaL_checkstring(L, 4);
 
     lua_getglobal(L, LIBNAME);
     api_table = lua_gettop(L);
@@ -539,12 +536,7 @@ api_get_user(lua_State *L)
     const char *user = NULL;
     const char *host = NULL;
 
-    if (n != 1)
-        return luaL_error(L, "expected 1 argument, got %d", n);
-
-    if (lua_type(L, 1) != LUA_TTABLE)
-        return luaL_error(L, "expected table, got %s",
-                          lua_typename(L, lua_type(L, 1)));
+    luaL_checktype(L, 1, LUA_TTABLE);
 
     state = api_getstate(L);
 
@@ -608,20 +600,10 @@ api_get_user(lua_State *L)
 static int
 api_add_user(lua_State *L)
 {
-    int n = lua_gettop(L);
-    const char *mask = NULL;
-    const char *level = NULL;
+    const char *mask  = luaL_checkstring(L, 1);
+    const char *level = luaL_checkstring(L, 2);
 
     luna_state *state = api_getstate(L);
-
-    if (n != 2)
-        return luaL_error(L, "expected 2 arguments, got %d", n);
-
-    if ((lua_type(L, 1) != LUA_TSTRING) || (lua_type(L, 2) != LUA_TSTRING))
-        return luaL_error(L, "expected 2 strings");
-
-    mask = lua_tostring(L, 1);
-    level = lua_tostring(L, 2);
 
     users_add(state->users, mask, level);
     users_write(state->users, "users.txt");
@@ -633,18 +615,9 @@ api_add_user(lua_State *L)
 static int
 api_remove_user(lua_State *L)
 {
-    int n = lua_gettop(L);
-    const char *mask = NULL;
+    const char *mask = luaL_checkstring(L, 1);
 
     luna_state *state = api_getstate(L);
-
-    if (n != 1)
-        return luaL_error(L, "expected 1 argument, got %d", n);
-
-    if (lua_type(L, 1) != LUA_TSTRING)
-        return luaL_error(L, "expected 1 string");
-
-    mask = lua_tostring(L, 1);
 
     users_remove(state->users, mask);
     users_write(state->users, "users.txt");
@@ -656,11 +629,7 @@ api_remove_user(lua_State *L)
 static int
 api_reload_userlist(lua_State *L)
 {
-    int n = lua_gettop(L);
     luna_state *state = api_getstate(L);
-
-    if (n != 0)
-        return luaL_error(L, "expected no arguments, got %d", n);
 
     users_reload(state->users, "users.txt");
 
@@ -671,17 +640,8 @@ api_reload_userlist(lua_State *L)
 static int
 api_load_script(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *file = luaL_checkstring(L, 1);
     luna_state *state = api_getstate(L);
-    const char *file = NULL;
-
-    if (n != 1)
-        return luaL_error(L, "expected no arguments, got %d", n);
-
-    if ((lua_type(L, 1) != LUA_TSTRING) || (!strcmp(lua_tostring(L, 1), "")))
-        return luaL_error(L, "expected a string", n);
-
-    file = lua_tostring(L, 1);
 
     if (!script_load(state, file))
     {
@@ -701,17 +661,9 @@ api_load_script(lua_State *L)
 static int
 api_unload_script(lua_State *L)
 {
-    int n = lua_gettop(L);
+    const char *file = luaL_checkstring(L, 1);
     luna_state *state = api_getstate(L);
-    const char *file = NULL;
 
-    if (n != 1)
-        return luaL_error(L, "expected no arguments, got %d", n);
-
-    if ((lua_type(L, 1) != LUA_TSTRING) || (!strcmp(lua_tostring(L, 1), "")))
-        return luaL_error(L, "expected a string", n);
-
-    file = lua_tostring(L, 1);
     script_unload(state, file);
 
     return 0;
@@ -737,17 +689,11 @@ api_getstate(lua_State *L)
 static int
 api_log(lua_State *L)
 {
-    int n = lua_gettop(L);
+    int level = luaL_checknumber(L, 1);
+    const char *message = luaL_checkstring(L, 2);
     luna_state *state = api_getstate(L);
 
-    if (n != 2)
-        return luaL_error(L, "expected 2 arguments, got %d", n);
-
-    if ((lua_type(L, 1) == LUA_TNUMBER) && (lua_type(L, 2) == LUA_TSTRING))
-        lua_pushnumber(L, logger_log(state->logger, lua_tonumber(L, 1), "%s",
-                                                    lua_tostring(L, 2)));
-    else
-        luaL_error(L, "arguments must be number and string");
+    lua_pushnumber(L, logger_log(state->logger, level, "%s", message));
 
     return 1;
 }
@@ -813,7 +759,7 @@ api_join(lua_State *L)
     const char *channel = luaL_checkstring(L, 1);
     int ret;
 
-    if (!lua_isnil(L, 2))
+    if (lua_gettop(L) > 1)
     {
         const char *key = luaL_checkstring(L, 2);
 
@@ -835,7 +781,7 @@ api_part(lua_State *L)
     const char *channel = luaL_checkstring(L, 1);
     int ret;
 
-    if (!lua_isnil(L, 2))
+    if (lua_gettop(L) > 1)
     {
         const char *reason = luaL_checkstring(L, 2);
 
@@ -856,7 +802,7 @@ api_quit(lua_State *L)
 {
     int ret;
 
-    if (!lua_isnil(L, 1))
+    if (lua_gettop(L) > 0)
     {
         const char *reason = luaL_checkstring(L, 1);
 
