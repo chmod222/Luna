@@ -89,7 +89,7 @@ int handle_event(luna_state *env, irc_event *ev)
 int
 handle_privmsg(luna_state *env, irc_event *ev)
 {
-    char msgcopy[LINELEN + 1];
+    char msgcopy[LINELEN];
     char *isitme = NULL;
     char *command = NULL;
     const char *sig = ev->param[0][0] == '#' ? "public_message"
@@ -97,6 +97,8 @@ handle_privmsg(luna_state *env, irc_event *ev)
 
     /* Make a copy of the message that we can modify without screwing
      * later operations */
+    memset(msgcopy, 0, sizeof(msgcopy));
+
     strcpy(msgcopy, ev->msg);
 
     /* Check for a "<botnick>: <command> <...>" command */
@@ -116,8 +118,6 @@ handle_privmsg(luna_state *env, irc_event *ev)
 int
 handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 {
-    /* TODO: Handle script loading and unloading */
-
     const char *sig = ev->param[0][0] == '#' ? "public_command"
                                              : "private_command";
 
@@ -551,6 +551,7 @@ handle_mode_change(luna_state *state, const char *channel,
 {
     int action = 0; /* 0 = set, 1 = unset */
     int i = argind;
+    int force_reload = 0;
 
     while (*flags)
     {
@@ -577,6 +578,9 @@ handle_mode_change(luna_state *state, const char *channel,
                 mode_set(state, channel, *flags, args[i++]);
             else
                 mode_unset(state, channel, *flags, args[i++]);
+
+            if (*flags == 'o')
+                force_reload = 1;
         }
         else if ((strchr(state->chanmodes[3], *flags)) ||
                  (strchr(state->chanmodes[2], *flags) && action))
@@ -591,7 +595,7 @@ handle_mode_change(luna_state *state, const char *channel,
         flags++;
     }
 
-    return 0;
+    return force_reload;
 }
 
 
