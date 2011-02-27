@@ -18,57 +18,36 @@
 
 /*******************************************************************************
  *
- *  Bot state (state.h)
+ *  User management (user.h)
  *  ---
- *  Define state to be passed around between the various functions
+ *  Manage the userlist
  *
- *  Created: 25.02.2011 12:29:33
+ *  Created: 26.02.2011 17:37:26
  *
  ******************************************************************************/
-#ifndef STATE_H
-#define STATE_H
+#ifndef USER_H
+#define USER_H
 
-#include <time.h>
-
-#include "logger.h"
 #include "linked_list.h"
+#include "irc.h"
 
-
-typedef struct luna_userinfo
+typedef struct luna_user
 {
-    char nick[32];
-    char user[16];
-    char real[128];
-} luna_userinfo;
+    char hostmask[128];
+    char level[64];
+} luna_user;
 
 
-typedef struct luna_serverinfo
-{
-    char host[128];
-    unsigned short port;
-} luna_serverinfo;
+int users_load(linked_list *, const char *);
+int users_unload(linked_list *);
+int users_reload(linked_list *, const char *);
 
+int luna_user_cmp(void *, void *);
 
-typedef struct luna_state
-{
-    luna_userinfo userinfo;
-    luna_serverinfo serverinfo;
+int user_match_level(linked_list *, irc_sender *, const char *);
+char *user_get_level(linked_list *, irc_sender *);
 
-    luna_log *logger;
-
-    int fd;
-    int killswitch;
-        
-    time_t started;
-    time_t connected;
-
-    linked_list *channels;
-    linked_list *scripts;
-    linked_list *users;
-} luna_state;
-
-
-int state_init(luna_state *);
-int state_destroy(luna_state *);
+int strwcmp(const char *, const char *);
+int strwcasecmp(const char *, const char *);
 
 #endif
