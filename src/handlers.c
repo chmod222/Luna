@@ -51,6 +51,10 @@ int handle_kick(luna_state *,    irc_event *);
 int handle_unknown(luna_state *, irc_event *);
 int handle_command(luna_state *, irc_event *, const char *, char *);
 
+int handle_command_load(luna_state *, irc_event *, const char *);
+int handle_command_reload(luna_state *, irc_event *, const char *);
+int handle_command_unload(luna_state *, irc_event *, const char *);
+
 int handle_event(luna_state *env, irc_event *ev)
 {
     /* Core event handlers */
@@ -109,6 +113,47 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 
     const char *sig = ev->param[0][0] == '#' ? "public_command"
                                              : "private_command";
+
+    if (!strcasecmp(cmd, "load"))
+    {
+        if (!user_match_level(env->users, &(ev->from), "admin"))
+        {
+            char *script = strtok(rest, " ");
+
+            handle_command_load(env, ev, script);
+        }
+
+    }
+    else if (!strcasecmp(cmd, "reload"))
+    {
+        if (!user_match_level(env->users, &(ev->from), "admin"))
+        {
+            char *script = strtok(rest, " ");
+
+            handle_command_reload(env, ev, script);
+        }
+    }
+    else if (!strcasecmp(cmd, "unload"))
+    {
+        if (!user_match_level(env->users, &(ev->from), "admin"))
+        {
+            char *script = strtok(rest, " ");
+
+            handle_command_unload(env, ev, script);
+        }
+    }
+    else if (!strcasecmp(cmd, "reloadusers"))
+    {
+        if (!user_match_level(env->users, &(ev->from), "admin"))
+        {
+            if (!users_reload(env->users, "users.txt"))
+                net_sendfln(env, "PRIVMSG %s :%s: Reloaded %d users!",
+                            ev->param[0], ev->from.nick, env->users->length);
+            else
+                net_sendfln(env, "PRIVMSG %s :%s: Failed to load users :(",
+                            ev->param[0], ev->from.nick);
+        }
+    }
 
     signal_dispatch(env, sig, "psss", &(ev->from), ev->param[0], cmd, rest);
 
@@ -319,5 +364,89 @@ handle_kick(luna_state *env, irc_event *ev)
 int
 handle_unknown(luna_state *env, irc_event *ev)
 {
+    return 0;
+}
+
+
+int
+handle_command_load(luna_state *env, irc_event *ev, const char *name)
+{
+    void *already_loaded = list_find(env->scripts, (void *)name, &script_cmp);
+
+    if (already_loaded)
+    {
+        net_sendfln(env, "PRIVMSG %s :%s: Script already loaded!",
+                    ev->param[0], ev->from.nick);
+    }
+    else
+    {
+        if (!script_load(env, name))
+        {
+            void *loaded = list_find(env->scripts, (void *)name, &script_cmp);
+            luna_script *script = (luna_script *)loaded;
+
+            net_sendfln(env, "PRIVMSG %s :%s: Loaded script '%s v%s'",
+                        ev->param[0], ev->from.nick,
+                        script->name, script->version);
+        }
+        else
+        {
+            net_sendfln(env, "PRIVMSG %s :%s: Failed to load script!",
+                        ev->param[0], ev->from.nick);
+        }
+    }
+
+    return 0;
+}
+
+
+int
+handle_command_reload(luna_state *env, irc_event *ev, const char *name)
+{
+    void *loaded = list_find(env->scripts, (void *)name, &script_cmp);
+
+    if (!loaded)
+    {
+        net_sendfln(env, "PRIVMSG %s :%s: Script not loaded!",
+                    ev->param[0], ev->from.nick);
+    }
+    else
+    {
+        if ((!script_unload(env, name)) && (!script_load(env, name)))
+        {
+            void *n = list_find(env->scripts, (void *)name, &script_cmp);
+            luna_script *script = (luna_script *)n;
+
+            net_sendfln(env, "PRIVMSG %s :%s: Reloaded script '%s v%s'",
+                        ev->param[0], ev->from.nick,
+                        script->name, script->version);
+        }
+        else
+        {
+            net_sendfln(env, "PRIVMSG %s :%s: Failed to unload script!",
+                        ev->param[0], ev->from.nick);
+        }
+    }
+
+    return 0;
+}
+
+
+int
+handle_command_unload(luna_state *env, irc_event *ev, const char *name)
+{
+    void *loaded = list_find(env->scripts, (void *)name, &script_cmp);
+
+    if (!loaded)
+        net_sendfln(env, "PRIVMSG %s :%s: Script not loaded!",
+                    ev->param[0], ev->from.nick);
+    else
+        if (!script_unload(env, name))
+            net_sendfln(env, "PRIVMSG %s :%s: Unloaded script!",
+                        ev->param[0], ev->from.nick);
+        else
+            net_sendfln(env, "PRIVMSG %s :%s: Failed to unload script!",
+                        ev->param[0], ev->from.nick);
+
     return 0;
 }
