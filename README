@@ -6,10 +6,24 @@ Current core features done:
     global state accordingly to keep a snychronized list of users
   * Keep-alive
   * Lua driven initial configuration
-
-Features not done yet:
   * User management
-  * The actual script support
+  * Lua script support, loadable on runtime
 
 Luna is written to run on UNIX-like operating systems (and tested on Linux),
 but it should be easy to port to other systems.
+
+---
+
+Luna loads users from the "users.txt" file. Each line in the file as a user
+and his/her level of permissions, separated by a ':' like:
+
+foo!bar@baz:admin
+
+Wildcards are suported, so the following is possible:
+
+foo!*@baz:admin
+f?o!b*@baz:admin
+
+Because the level is a string, scripts are free to interpret them as they want,
+allowing more fine-grained control of who is allowed to do what, or using the
+userlist to categorize users (Friendlists, Blacklists, ...)
