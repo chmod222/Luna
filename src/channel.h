@@ -37,8 +37,8 @@ typedef struct irc_channel
 {
     char name[64]; /* Some networks allow for more than 200 characters - adapt
                       if necessary! */
-    char topic[256];
-    char topic_setter[512];
+    char topic[512];
+    char topic_setter[128];
     time_t topic_set;
     time_t created;
 
