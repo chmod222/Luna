@@ -36,11 +36,14 @@
 #include "state.h"
 #include "logger.h"
 #include "channel.h"
+#include "user.h"
 #include "irc.h"
 
 
 static int api_script_register(lua_State *);
 static int api_signal_add(lua_State *);
+static int api_get_user_level(lua_State *);
+
 static int api_sendline(lua_State *);
 static int api_privmsg(lua_State *);
 static int api_notice(lua_State *);
@@ -51,15 +54,19 @@ static int api_change_nick(lua_State *);
 static int api_kick(lua_State *);
 static int api_set_modes(lua_State *);
 static int api_set_topic(lua_State *);
+
 static int api_channels(lua_State *);
 static int api_scripts(lua_State *);
 static int api_info(lua_State *);
+static int api_users(lua_State *);
 
 static char *env_key = "Env";
 static luaL_Reg api_library[] = {
     { "script_register", api_script_register },
     { "signal_add",      api_signal_add },
-  /*{ "signal_remove",   api_signal_remove },*/
+  /*{ "signal_remove",   api_signal_remove },*/ /* Meh */
+    { "get_user_level",  api_get_user_level },
+
     { "sendline",        api_sendline },
     { "privmsg",         api_privmsg },
     { "notice",          api_notice },
@@ -74,6 +81,7 @@ static luaL_Reg api_library[] = {
     { "channels",        api_channels },
     { "scripts",         api_scripts },
     { "info",            api_info },
+    { "users",           api_users },
 
     { NULL, NULL }
 };
@@ -468,6 +476,68 @@ api_script_register(lua_State *L)
 }
 
 
+static int
+api_get_user_level(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int u;
+    int h;
+
+    luna_state *state = NULL;
+
+    const char *nick = NULL;
+    const char *user = NULL;
+    const char *host = NULL;
+
+    if (n != 1)
+        return luaL_error(L, "expected 1 argument, got %d", n);
+
+    if (lua_type(L, 1) != LUA_TTABLE)
+        return luaL_error(L, "expected table, got %s",
+                          lua_typename(L, lua_type(L, 1)));
+
+    state = api_getstate(L);
+
+    lua_pushstring(L, "nick");
+    lua_gettable(L, 1);
+    n = lua_gettop(L); /* Variable reuse for great good */
+
+    lua_pushstring(L, "user");
+    lua_gettable(L, 1);
+    u = lua_gettop(L);
+
+    lua_pushstring(L, "host");
+    lua_gettable(L, 1);
+    h = lua_gettop(L);
+
+    nick = lua_tostring(L, n);
+    user = lua_tostring(L, u);
+    host = lua_tostring(L, h);
+
+    if (((lua_type(L, n) == LUA_TSTRING) && (strcmp(nick, ""))) &&
+        ((lua_type(L, u) == LUA_TSTRING) && (strcmp(user, ""))) &&
+        ((lua_type(L, h) == LUA_TSTRING) && (strcmp(host, ""))))
+    {
+        /* Copy values over */
+        irc_sender tmp;
+        char *level = NULL;
+
+        strncpy(tmp.nick, nick, sizeof(tmp.nick) - 1);
+        strncpy(tmp.user, user, sizeof(tmp.user) - 1);
+        strncpy(tmp.host, host, sizeof(tmp.host) - 1);
+
+        if ((level = user_get_level(state->users, &tmp)) != NULL)
+            lua_pushstring(L, level);
+        else
+            lua_pushnil(L);
+
+        return 1;
+    }
+    else
+        return luaL_error(L, "user table not valid");
+}
+
+
 luna_state *
 api_getstate(lua_State *L)
 {
@@ -789,6 +859,26 @@ api_push_user(lua_State *L, irc_user *user)
 }
 
 
+int
+api_push_luna_user(lua_State *L, luna_user *user)
+{
+    int table;
+
+    lua_newtable(L);
+    table = lua_gettop(L);
+
+    lua_pushstring(L, "hostmask");
+    lua_pushstring(L, user->hostmask);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "level");
+    lua_pushstring(L, user->level);
+    lua_settable(L, table);
+
+    return 0;
+}
+
+
 static int
 api_channels(lua_State *L)
 {
@@ -872,6 +962,34 @@ api_info(lua_State *L)
     lua_pushstring(L, "connected");
     lua_pushnumber(L, state->connected);
     lua_settable(L, table);
+
+    return 1;
+}
+
+
+static int
+api_users(lua_State *L)
+{
+    int n = lua_gettop(L);
+    int array;
+    int i = 1;
+    luna_state *state;
+    list_node *cur = NULL;
+
+    if (n != 0)
+        return luaL_error(L, "expected no arguments, got %d", n);
+
+    state = api_getstate(L);
+
+    lua_newtable(L);
+    array = lua_gettop(L);
+
+    for (cur = state->users->root; cur != NULL; cur = cur->next)
+    {
+        api_push_luna_user(L, cur->data);
+
+        lua_rawseti(L, array, i++);
+    }
 
     return 1;
 }

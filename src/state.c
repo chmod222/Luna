@@ -39,10 +39,13 @@ state_init(luna_state *state)
 {
     memset(state, 0, sizeof(*state));
 
+    if (list_init(&(state->users)) != 0)
+        return 1;
+
     if (list_init(&(state->scripts)) != 0)
     {
         /* Free method doesn't matter here, actually. */
-        list_destroy(state->channels, &free);
+        list_destroy(state->users, &free);
 
         return 1;
     }
@@ -55,6 +58,7 @@ int
 state_destroy(luna_state *state)
 {
     logger_destroy(state->logger);
+    list_destroy(state->users,   &free);
     list_destroy(state->scripts, &script_free);
 
     return 0;

@@ -32,6 +32,7 @@
 
 #include "state.h"
 #include "irc.h"
+#include "user.h"
 #include "channel.h"
 #include "linked_list.h"
 
@@ -64,9 +65,12 @@ int script_emit(luna_state *, luna_script *, const char *,
                 const char *, va_list);
 int script_identify(lua_State *, luna_script *);
 
+luna_state *api_getstate(lua_State *);
+
 int api_push_script(lua_State *, luna_script *);
 int api_push_channel(lua_State *, irc_channel *);
 int api_push_user(lua_State *, irc_user *);
+int api_push_luna_user(lua_State *, luna_user *);
 
 #endif
 

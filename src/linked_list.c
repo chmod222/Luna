@@ -82,6 +82,8 @@ list_push_front(linked_list *list, void *data)
         {
             list->root = tmp;
         }
+
+        list->length++;
     }
 
     return tmp;
@@ -117,6 +119,8 @@ list_insert_before(linked_list *list, list_node *pos, void *data)
         tmp->data = data;
         tmp->next = pos;
         pre->next = tmp;
+
+        list->length++;
     }
 
     return tmp;
@@ -165,6 +169,8 @@ list_push_back(linked_list *list, void *data)
         {
             list->root = tmp;
         }
+
+        list->length++;
     }
 
     return tmp;
