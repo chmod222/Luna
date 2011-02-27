@@ -200,6 +200,17 @@ handle_numeric(luna_state *env, irc_event *ev)
                              ev->param[3]);
 
             break;
+
+        case 332: /* TOPIC */
+            channel_set_topic(env, ev->param[1], ev->msg);
+
+            break;
+
+        case 333: /* TOPIC META */
+            channel_set_topic_meta(env, ev->param[1],
+                                   ev->param[2], atoi(ev->param[3]));
+
+            break;
     }
 
     /* TODO: dispatch template flag for string arrays */
@@ -333,6 +344,15 @@ handle_invite(luna_state *env, irc_event *ev)
 int
 handle_topic(luna_state *env, irc_event *ev)
 {
+    char hoststring[128];
+
+    memset(hoststring, 0, sizeof(hoststring));
+    snprintf(hoststring, sizeof(hoststring), "%s!%s@%s",
+             ev->from.nick, ev->from.user, ev->from.host);
+
+    channel_set_topic(env, ev->param[0], ev->msg);
+    channel_set_topic_meta(env, ev->param[0], hoststring, time(NULL));
+
     signal_dispatch(env, "topic_change", "pss", &(ev->from),
                     ev->param[0], ev->msg);
 

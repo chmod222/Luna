@@ -28,12 +28,17 @@
 #ifndef CHANNEL_H
 #define CHANNEL_H
 
+#include <time.h>
+
 #include "state.h"
 
 
 typedef struct irc_channel
 {
     char name[64];
+    char topic[256];
+    char topic_setter[128];
+    time_t topic_set;
 
     linked_list *users;
 } irc_channel;
@@ -59,5 +64,8 @@ int channel_remove_user(luna_state *, const char *, const char *);
 int user_rename(luna_state *, const char *, const char *);
 
 void channel_free(void *);
+
+int channel_set_topic(luna_state *, const char *, const char *);
+int channel_set_topic_meta(luna_state *, const char *, const char *, time_t);
 
 #endif
