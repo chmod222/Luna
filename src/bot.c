@@ -104,8 +104,8 @@ luna_mainloop(luna_state *state)
             struct timeval timeout;
             int ready;
 
-            timeout.tv_sec  = 1;
-            timeout.tv_usec = 0;
+            timeout.tv_sec  = 0;
+            timeout.tv_usec = 250000;
 
             FD_ZERO(&reads);
             FD_SET(state->fd, &reads);
