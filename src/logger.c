@@ -1,13 +1,13 @@
-/* 
+/*
  * This file is part of Luna
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * for more details.
- * 
- * You should have received a copy of the GNU General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
@@ -39,7 +39,7 @@ int
 logger_init(luna_log **log, const char *file)
 {
     FILE *temp_file = NULL;
-    
+
     if (!(temp_file = fopen(file, "a")))
         return errno;
 
@@ -49,7 +49,7 @@ logger_init(luna_log **log, const char *file)
         strncpy((*log)->filename, file, sizeof((*log)->filename) - 1);
         (*log)->file = temp_file;
 
-        return 0;        
+        return 0;
     }
 
     return -1;
@@ -142,6 +142,6 @@ logger_format_timestamp(time_t stamp, char *dest, size_t len)
 #else
     struct tm *tm = gmtime(&stamp);
 #endif
-    
+
     return strftime(dest, len, format, tm);
 }

@@ -1,18 +1,18 @@
-/* 
+/*
  * This file is part of Luna
  *
- * This program is free software; you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation; either version 2 of the License, or 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * for more details.
- * 
- * You should have received a copy of the GNU General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
@@ -188,7 +188,7 @@ int
 user_match_level(linked_list *userlist, irc_sender *s, const char *level)
 {
     void *user = list_find(userlist, (void *)s, &luna_user_cmp);
-    
+
     if (user)
     {
         luna_user *user_real = (luna_user *)user;
@@ -204,7 +204,7 @@ char *
 user_get_level(linked_list *userlist, irc_sender *s)
 {
     void *user = list_find(userlist, (void *)s, &luna_user_cmp);
-    
+
     if (user)
     {
         luna_user *user_real = (luna_user *)user;
@@ -226,7 +226,7 @@ strwcmp(const char *str, const char *pat)
 
         case '*':
             return (strwcmp(str, pat + 1) || (*str && strwcmp(str + 1, pat)));
-                
+
         case '?':
             return (*str && strwcmp(str + 1, pat + 1));
 
@@ -247,14 +247,14 @@ strwcasecmp(const char *str, const char *pat)
             return !(*str);
 
         case '*':
-            return ((strwcasecmp(str, pat + 1) || 
+            return ((strwcasecmp(str, pat + 1) ||
                     (*str && strwcasecmp(str + 1, pat))));
-                
+
         case '?':
             return (*str && strwcasecmp(str + 1, pat + 1));
 
         default:
-            return ((tolower(*str) == tolower(*pat)) && 
+            return ((tolower(*str) == tolower(*pat)) &&
                     (strwcasecmp(str + 1, pat + 1)));
     }
 

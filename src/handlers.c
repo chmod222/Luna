@@ -1,18 +1,18 @@
-/* 
+/*
  * This file is part of Luna
  *
- * This program is free software; you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation; either version 2 of the License, or 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * for more details.
- * 
- * You should have received a copy of the GNU General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
@@ -102,7 +102,7 @@ handle_privmsg(luna_state *env, irc_event *ev)
     strcpy(msgcopy, ev->msg);
 
     /* Check for a "<botnick>: <command> <...>" command */
-    if  (((isitme = strtok(msgcopy, ":")) != NULL) && 
+    if  (((isitme = strtok(msgcopy, ":")) != NULL) &&
           (strcasecmp(isitme, env->userinfo.nick) == 0))
     {
         if ((command = strtok(NULL, " ")) != NULL)
@@ -364,7 +364,7 @@ handle_mode(luna_state *env, irc_event *ev)
             net_sendfln(env, "WHO %s", ev->param[0]);
 
     /* TODO: Later....
-     * Format: 
+     * Format:
      *    target = param[0]
      *    modestr = param[1]
      *    args = msg */
