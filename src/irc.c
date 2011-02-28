@@ -1,18 +1,18 @@
-/* 
+/*
  * This file is part of Luna
  *
- * This program is free software; you can redistribute it and/or modify 
- * it under the terms of the GNU General Public License as published by 
- * the Free Software Foundation; either version 2 of the License, or 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License 
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
  * for more details.
- * 
- * You should have received a copy of the GNU General Public License along 
- * with this program; if not, write to the Free Software Foundation, Inc., 
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
@@ -38,9 +38,9 @@
 void free_stringtable(char **dest, size_t size);
 static char *irc_type_strings[] =
 {
-    "???", "ERROR", "NUMERIC", "JOIN", 
-    "PART", "QUIT", "PRIVMSG", "NOTICE", 
-    "NICK", "MODE", "PING", "INVITE", 
+    "???", "ERROR", "NUMERIC", "JOIN",
+    "PART", "QUIT", "PRIVMSG", "NOTICE",
+    "NICK", "MODE", "PING", "INVITE",
     "TOPIC", "KICK", NULL
 };
 
@@ -109,7 +109,7 @@ irc_parse_line(struct irc_event *dest, char *line)
         if ((strstr(arg_sender, "!") != NULL) &&
             (strstr(arg_sender, "@") != NULL))
         {
-            nick = strtok(arg_sender, "!");         
+            nick = strtok(arg_sender, "!");
             user = strtok(NULL, "@");
             host = strtok(NULL, "");
 
@@ -190,7 +190,7 @@ irc_parse_line(struct irc_event *dest, char *line)
         if ((dest->param[i] == NULL) ||
                 (dest->param == NULL))
         {
-            fprintf(stderr, "parse(): Couldn't allocate memory for arg #%d\n", 
+            fprintf(stderr, "parse(): Couldn't allocate memory for arg #%d\n",
                     i+1);
 
             free_stringtable(dest->param, dest->param_count);
@@ -198,7 +198,7 @@ irc_parse_line(struct irc_event *dest, char *line)
             return 1;
         }
         else
-        {      
+        {
             strncpy(dest->param[i], tmp, strlen(tmp));
             dest->param[i][strlen(tmp)] = 0;
         }
@@ -257,8 +257,8 @@ irc_print_irc_event(struct irc_event *i)
     if (strcmp(i->from.host, "") != 0)
     {
         if (strcmp(i->from.user, "") != 0)
-            printf(":%s!%s@%s ", 
-                    i->from.nick, 
+            printf(":%s!%s@%s ",
+                    i->from.nick,
                     i->from.user,
                     i->from.host);
         else
@@ -353,9 +353,9 @@ int irc_respond(int fd, struct irc_event *ev, const char *fmt, ...)
         else
             target = ev->param[0];
 
-        return irc_privmsg(fd, target, "%s: %s", 
+        return irc_privmsg(fd, target, "%s: %s",
                 ev->from.nick,
-                line);                                                    
+                line);
     }
     else if (ev->type == IRCEV_NOTICE)
     {
