@@ -484,7 +484,7 @@ handle_command_reload(luna_state *env, irc_event *ev, const char *name)
         }
         else
         {
-            net_sendfln(env, "PRIVMSG %s :%s: Failed to unload script!",
+            net_sendfln(env, "PRIVMSG %s :%s: Failed to reload script!",
                         ev->param[0], ev->from.nick);
         }
     }
