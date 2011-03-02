@@ -38,8 +38,8 @@
 #include "bot.h"
 
 void print_usage(const char *);
-void log_session_start(luna_log *log);
-void log_session_end(luna_log *log);
+void log_session_start(luna_log *);
+void log_session_end(luna_log *);
 
 
 int
