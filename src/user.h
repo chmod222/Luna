@@ -33,7 +33,9 @@
 
 typedef struct luna_user
 {
+    char id[64];
     char hostmask[128];
+    char flags[64];
     char level[64];
 } luna_user;
 
@@ -43,14 +45,14 @@ int users_unload(luna_state *);
 int users_reload(luna_state *, const char *);
 int users_write(luna_state *, const char *);
 
-int users_add(luna_state *, const char *, const char *);
+int users_add(luna_state *, const char *, const char *,
+              const char *, const char *);
 int users_remove(luna_state *, const char *);
 
 int luna_user_cmp(void *, void *);
 int luna_user_host_cmp(void *, void *);
 
-int user_match_level(luna_state *, irc_sender *, const char *);
-char *user_get_level(luna_state *, irc_sender *);
+luna_user *user_match(luna_state *, irc_sender *);
 
 int strwcmp(const char *, const char *);
 int strwcasecmp(const char *, const char *);
