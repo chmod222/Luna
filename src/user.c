@@ -44,7 +44,10 @@ users_load(luna_state *state, const char *file)
 
         while (!feof(userfile))
         {
+            char *strip = NULL;
+            char *id    = NULL;
             char *mask  = NULL;
+            char *flags = NULL;
             char *level = NULL;
 
             memset(buffer, 0, sizeof(buffer));
@@ -52,10 +55,14 @@ users_load(luna_state *state, const char *file)
             if (!fgets(buffer, sizeof(buffer), userfile))
                 break;
 
-            mask  = strtok(buffer, ":");
-            level = strtok(strtok(NULL, ""), "\n");
+            strip = strtok(buffer, "\n");
 
-            if (mask && level)
+            id    = strtok(strip, ":");
+            mask  = strtok(NULL, ":");
+            flags = strtok(NULL, ":");
+            level = strtok(NULL, "");
+
+            if (id && mask && flags)
             {
                 luna_user *user = malloc(sizeof(*user));
 
@@ -63,7 +70,9 @@ users_load(luna_state *state, const char *file)
                 {
                     memset(user, 0, sizeof(*user));
 
+                    strncpy(user->id, id, sizeof(user->id) - 1);
                     strncpy(user->hostmask, mask, sizeof(user->hostmask) - 1);
+                    strncpy(user->flags, flags, sizeof(user->flags) - 1);
                     strncpy(user->level, level, sizeof(user->level) - 1);
 
                     list_push_back(state->users, user);
@@ -113,7 +122,7 @@ users_write(luna_state *state, const char *file)
         {
             luna_user *u = (luna_user *)(cur->data);
 
-            fprintf(f, "%s:%s\n", u->hostmask, u->level);
+            fprintf(f, "%s:%s:%s:%s\n", u->id, u->hostmask, u->flags, u->level);
         }
 
         fclose(f);
@@ -126,7 +135,8 @@ users_write(luna_state *state, const char *file)
 
 
 int
-users_add(luna_state *state, const char *hostmask, const char *level)
+users_add(luna_state *state, const char *id, const char *hostmask,
+          const char *flags, const char *level)
 {
     luna_user *user = malloc(sizeof(*user));
 
@@ -134,8 +144,10 @@ users_add(luna_state *state, const char *hostmask, const char *level)
     {
         memset(user, 0, sizeof(*user));
 
-        strncpy(user->hostmask, hostmask, sizeof(user->hostmask));
-        strncpy(user->level, level, sizeof(user->level));
+        strncpy(user->id, id, sizeof(user->id) - 1);
+        strncpy(user->hostmask, hostmask, sizeof(user->hostmask) - 1);
+        strncpy(user->flags, flags, sizeof(user->flags) - 1);
+        strncpy(user->level, level, sizeof(user->level) - 1);
 
         list_push_back(state->users, user);
     }
@@ -181,6 +193,15 @@ luna_user_host_cmp(void *data, void *list_data)
     luna_user *user = (luna_user *)list_data;
 
     return strcasecmp(key, user->hostmask);
+}
+
+
+luna_user *
+user_match(luna_state *state, irc_sender *who)
+{
+    void *user = list_find(state->users, (void *)who, &luna_user_cmp);
+
+    return (luna_user *)user;
 }
 
 
