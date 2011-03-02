@@ -46,6 +46,13 @@ static int api_get_user(lua_State *);
 static int api_add_user(lua_State *);
 static int api_remove_user(lua_State *);
 static int api_reload_userlist(lua_State *);
+
+static int api_set_user_flags(lua_State *);
+static int api_set_user_level(lua_State *);
+static int api_set_user_id(lua_State *);
+
+static int api_user_flag_set(lua_State *);
+
 static int api_load_script(lua_State *);
 static int api_unload_script(lua_State *);
 static int api_log(lua_State *);
@@ -70,11 +77,18 @@ static char *env_key = "Env";
 static luaL_Reg api_library[] = {
     { "script_register", api_script_register },
     { "signal_add",      api_signal_add },
-    { "get_user",        api_get_user },
 
     { "add_user",        api_add_user },
     { "remove_user",     api_remove_user },
     { "reload_userlist", api_reload_userlist },
+
+    { "get_user",        api_get_user },
+    { "set_user_flags",  api_set_user_flags },
+    { "set_user_level",  api_set_user_level },
+    { "set_user_id",     api_set_user_id },
+
+    { "user_flag_set",   api_user_flag_set },
+
     { "load_script",     api_load_script },
     { "unload_script",   api_unload_script },
     { "log",             api_log },
@@ -576,13 +590,10 @@ api_get_user(lua_State *L)
             lua_newtable(L);
             table = lua_gettop(L);
 
-            lua_pushstring(L, "hostmask");
-            lua_pushstring(L, u->hostmask);
-            lua_settable(L, table);
-
-            lua_pushstring(L, "level");
-            lua_pushstring(L, u->level);
-            lua_settable(L, table);
+            api_setfield_s(L, table, "id", u->id);
+            api_setfield_s(L, table, "hostmask", u->hostmask);
+            api_setfield_s(L, table, "flags", u->flags);
+            api_setfield_s(L, table, "level", u->level);
         }
         else
         {
@@ -592,19 +603,169 @@ api_get_user(lua_State *L)
         return 1;
     }
     else
+    {
         return luaL_error(L, "user table not valid");
+    }
+}
+
+
+luna_user *
+api_checkuser(lua_State *L, int index)
+{
+    int i;
+    int h;
+    int f;
+    int l;
+
+    luna_state *state = api_getstate(L);
+    const char *m = NULL;
+
+    if (lua_type(L, 1) != LUA_TTABLE)
+        return NULL;
+
+    lua_pushstring(L, "id");
+    lua_gettable(L, index);
+    i = lua_gettop(L);
+
+    lua_pushstring(L, "hostmask");
+    lua_gettable(L, index);
+    h = lua_gettop(L);
+
+    lua_pushstring(L, "flags");
+    lua_gettable(L, index);
+    f = lua_gettop(L);
+
+    lua_pushstring(L, "level");
+    lua_gettable(L, index);
+    l = lua_gettop(L);
+
+    /* checking hostmask should do */
+    m = lua_tostring(L, h);
+
+    return (luna_user *)list_find(state->users, (void *)m, &luna_user_host_cmp);
+}
+
+
+static int
+api_set_user_flags(lua_State *L)
+{
+    luna_user *user = api_checkuser(L, 1);
+    const char *flags = luaL_checkstring(L, 2);
+
+    if (user)
+    {
+        memset(user->flags, 0, sizeof(user->flags));
+        strncpy(user->flags, flags, sizeof(user->flags) - 1);
+
+        api_setfield_s(L, 1, "flags", flags);
+
+        users_write(api_getstate(L), "users.txt");
+        lua_pushboolean(L, 1);
+    }
+    else
+    {
+        lua_pushboolean(L, 0);
+    }
+
+    return 1;
+}
+
+
+static int
+api_set_user_id(lua_State *L)
+{
+    luna_user *user = api_checkuser(L, 1);
+    const char *id = luaL_checkstring(L, 2);
+
+    if (user)
+    {
+        memset(user->id, 0, sizeof(user->id));
+        strncpy(user->id, id, sizeof(user->id) - 1);
+
+        api_setfield_s(L, 1, "id", id);
+
+        users_write(api_getstate(L), "users.txt");
+        lua_pushboolean(L, 1);
+    }
+    else
+    {
+        lua_pushboolean(L, 0);
+    }
+
+    return 1;
+}
+
+
+static int
+api_set_user_level(lua_State *L)
+{
+    luna_user *user = api_checkuser(L, 1);
+    const char *level = luaL_checkstring(L, 2);
+
+    if (user)
+    {
+        memset(user->level, 0, sizeof(user->level));
+        strncpy(user->level, level, sizeof(user->level) - 1);
+
+        api_setfield_s(L, 1, "level", level);
+
+        users_write(api_getstate(L), "users.txt");
+        lua_pushboolean(L, 1);
+    }
+    else
+    {
+        lua_pushboolean(L, 0);
+    }
+
+    return 1;
+}
+
+
+static int
+api_user_flag_set(lua_State *L)
+{
+    luna_user *user = api_checkuser(L, 1);
+    const char *flags = luaL_checkstring(L, 2);
+
+    if (user)
+    {
+        int i;
+        int match = 0;
+
+        for (i = 0; i < strlen(flags); ++i)
+        {
+            if (strchr(user->flags, flags[i]) != NULL)
+            {
+                match = 1;
+                break;
+            }
+        }
+
+        if (match)
+            lua_pushboolean(L, 1);
+        else
+            lua_pushboolean(L, 0);
+    }
+    else
+    {
+        lua_pushboolean(L, 0);
+    }
+
+    return 1;
 }
 
 
 static int
 api_add_user(lua_State *L)
 {
-    const char *mask  = luaL_checkstring(L, 1);
-    const char *level = luaL_checkstring(L, 2);
+    const char *id    = luaL_checkstring(L, 1);
+    const char *mask  = luaL_checkstring(L, 2);
+    const char *flags = luaL_checkstring(L, 3);
+    const char *level = luaL_checkstring(L, 4);
 
     luna_state *state = api_getstate(L);
 
-    users_add(state, mask, level);
+    users_add(state, id, mask, flags, level);
     users_write(state, "users.txt");
 
     return 0;
@@ -990,7 +1151,9 @@ api_push_luna_user(lua_State *L, luna_user *user)
     lua_newtable(L);
     table = lua_gettop(L);
 
+    api_setfield_s(L, table, "id", user->id);
     api_setfield_s(L, table, "hostmask", user->hostmask);
+    api_setfield_s(L, table, "flags", user->flags);
     api_setfield_s(L, table, "level", user->level);
 
     return 0;
