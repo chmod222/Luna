@@ -123,7 +123,7 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 
     if (!strcasecmp(cmd, "load"))
     {
-        if (!user_match_level(env->users, &(ev->from), "admin"))
+        if (!user_match_level(env, &(ev->from), "admin"))
         {
             char *script = strtok(rest, " ");
 
@@ -133,7 +133,7 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
     }
     else if (!strcasecmp(cmd, "reload"))
     {
-        if (!user_match_level(env->users, &(ev->from), "admin"))
+        if (!user_match_level(env, &(ev->from), "admin"))
         {
             char *script = strtok(rest, " ");
 
@@ -142,7 +142,7 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
     }
     else if (!strcasecmp(cmd, "unload"))
     {
-        if (!user_match_level(env->users, &(ev->from), "admin"))
+        if (!user_match_level(env, &(ev->from), "admin"))
         {
             char *script = strtok(rest, " ");
 
@@ -151,9 +151,9 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
     }
     else if (!strcasecmp(cmd, "reloadusers"))
     {
-        if (!user_match_level(env->users, &(ev->from), "admin"))
+        if (!user_match_level(env, &(ev->from), "admin"))
         {
-            if (!users_reload(env->users, "users.txt"))
+            if (!users_reload(env, "users.txt"))
                 net_sendfln(env, "PRIVMSG %s :%s: Reloaded %d users!",
                             ev->param[0], ev->from.nick, env->users->length);
             else
