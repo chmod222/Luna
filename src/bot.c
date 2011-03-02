@@ -65,7 +65,7 @@ luna_mainloop(luna_state *state)
         return 1;
     }
 
-    if ((users_load(state->users, "users.txt") != 0) || !(state->users->length))
+    if ((users_load(state, "users.txt") != 0) || !(state->users->length))
         logger_log(state->logger, LOGLEV_WARNING, "Failed to load userlist! "
                    "You will be unable to load and unload scripts without "
                    "administration privileges!");

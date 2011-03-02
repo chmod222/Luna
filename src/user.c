@@ -20,7 +20,7 @@
  *
  *  User management (user.c)
  *  ---
- *  Manage the userlist
+ *  Manage the state->users
  *
  *  Created: 26.02.2011 17:36:49
  *
@@ -35,7 +35,7 @@
 
 
 int
-users_load(linked_list *userlist, const char *file)
+users_load(luna_state *state, const char *file)
 {
     FILE *userfile = fopen(file, "r");
     if (userfile)
@@ -66,7 +66,7 @@ users_load(linked_list *userlist, const char *file)
                     strncpy(user->hostmask, mask, sizeof(user->hostmask) - 1);
                     strncpy(user->level, level, sizeof(user->level) - 1);
 
-                    list_push_back(userlist, user);
+                    list_push_back(state->users, user);
                 }
             }
         }
@@ -80,28 +80,28 @@ users_load(linked_list *userlist, const char *file)
 
 
 int
-users_unload(linked_list *userlist)
+users_unload(luna_state *state)
 {
     list_node *cur = NULL;
 
-    for (cur = userlist->root; cur != NULL; cur = userlist->root)
-        list_delete(userlist, cur->data, &free);
+    for (cur = state->users->root; cur != NULL; cur = state->users->root)
+        list_delete(state->users, cur->data, &free);
 
     return 0;
 }
 
 
 int
-users_reload(linked_list *userlist, const char *file)
+users_reload(luna_state *state, const char *file)
 {
-    users_unload(userlist);
+    users_unload(state);
 
-    return users_load(userlist, file);
+    return users_load(state, file);
 }
 
 
 int
-users_write(linked_list *userlist, const char *file)
+users_write(luna_state *state, const char *file)
 {
     FILE *f = fopen(file, "w");
 
@@ -109,7 +109,7 @@ users_write(linked_list *userlist, const char *file)
     {
         list_node *cur = NULL;
 
-        for (cur = userlist->root; cur != NULL; cur = cur->next)
+        for (cur = state->users->root; cur != NULL; cur = cur->next)
         {
             luna_user *u = (luna_user *)(cur->data);
 
@@ -126,7 +126,7 @@ users_write(linked_list *userlist, const char *file)
 
 
 int
-users_add(linked_list *userlist, const char *hostmask, const char *level)
+users_add(luna_state *state, const char *hostmask, const char *level)
 {
     luna_user *user = malloc(sizeof(*user));
 
@@ -137,7 +137,7 @@ users_add(linked_list *userlist, const char *hostmask, const char *level)
         strncpy(user->hostmask, hostmask, sizeof(user->hostmask));
         strncpy(user->level, level, sizeof(user->level));
 
-        list_push_back(userlist, user);
+        list_push_back(state->users, user);
     }
 
     return 1;
@@ -145,13 +145,13 @@ users_add(linked_list *userlist, const char *hostmask, const char *level)
 
 
 int
-users_remove(linked_list *userlist, const char *hostmask)
+users_remove(luna_state *state, const char *hostmask)
 {
-    void *user = list_find(userlist, (void *)hostmask, &luna_user_host_cmp);
+    void *user = list_find(state->users, (void *)hostmask, &luna_user_host_cmp);
 
     if (user)
     {
-        list_delete(userlist, user, &free);
+        list_delete(state->users, user, &free);
         return 0;
     }
 
@@ -185,9 +185,9 @@ luna_user_host_cmp(void *data, void *list_data)
 
 
 int
-user_match_level(linked_list *userlist, irc_sender *s, const char *level)
+user_match_level(luna_state *state, irc_sender *s, const char *level)
 {
-    void *user = list_find(userlist, (void *)s, &luna_user_cmp);
+    void *user = list_find(state->users, (void *)s, &luna_user_cmp);
 
     if (user)
     {
@@ -201,9 +201,9 @@ user_match_level(linked_list *userlist, irc_sender *s, const char *level)
 
 
 char *
-user_get_level(linked_list *userlist, irc_sender *s)
+user_get_level(luna_state *state, irc_sender *s)
 {
-    void *user = list_find(userlist, (void *)s, &luna_user_cmp);
+    void *user = list_find(state->users, (void *)s, &luna_user_cmp);
 
     if (user)
     {

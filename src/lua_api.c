@@ -604,8 +604,8 @@ api_add_user(lua_State *L)
 
     luna_state *state = api_getstate(L);
 
-    users_add(state->users, mask, level);
-    users_write(state->users, "users.txt");
+    users_add(state, mask, level);
+    users_write(state, "users.txt");
 
     return 0;
 }
@@ -618,8 +618,8 @@ api_remove_user(lua_State *L)
 
     luna_state *state = api_getstate(L);
 
-    users_remove(state->users, mask);
-    users_write(state->users, "users.txt");
+    users_remove(state, mask);
+    users_write(state, "users.txt");
 
     return 0;
 }
@@ -630,7 +630,7 @@ api_reload_userlist(lua_State *L)
 {
     luna_state *state = api_getstate(L);
 
-    users_reload(state->users, "users.txt");
+    users_reload(state, "users.txt");
 
     return 0;
 }
