@@ -58,17 +58,6 @@ net_connect(luna_state *state)
 
     for (p = resolv; p != NULL; p = p->ai_next)
     {
-        /*
-        char ipstring[INET6_ADDRSTRLEN] = { 0 };
-        struct sockaddr *sa = (struct sockaddr *)p->ai_addr;
-
-        inet_ntop(p->ai_family,
-                (sa->sa_family == AF_INET)
-                    ? (void *)&(((struct sockaddr_in *)sa)->sin_addr)
-                    : (void *)&(((struct sockaddr_in6 *)sa)->sin6_addr),
-                ipstring,
-                sizeof(ipstring)); */
-
         if ((fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
             continue; /* Couldn't create socket */
 
