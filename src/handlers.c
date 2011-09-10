@@ -122,48 +122,34 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
                                              : "private_command";
     luna_user *user = user_match(env, &(ev->from));
 
-    if (user)
+    if ((user) && (strchr(user->flags, 'o')))
     {
         if (!strcasecmp(cmd, "load"))
         {
-            if (strchr(user->flags, 'o'))
-            {
-                char *script = strtok(rest, " ");
-
-                handle_command_load(env, ev, script);
-            }
+            char *script = strtok(rest, " ");
+            handle_command_load(env, ev, script);
         }
         else if (!strcasecmp(cmd, "reload"))
         {
-            if (strchr(user->flags, 'o'))
-            {
-                char *script = strtok(rest, " ");
-
-                handle_command_reload(env, ev, script);
-            }
+            char *script = strtok(rest, " ");
+            handle_command_reload(env, ev, script);
         }
         else if (!strcasecmp(cmd, "unload"))
         {
-            if (strchr(user->flags, 'o'))
-            {
-                char *script = strtok(rest, " ");
-
-                handle_command_unload(env, ev, script);
-            }
+            char *script = strtok(rest, " ");
+            handle_command_unload(env, ev, script);
         }
         else if (!strcasecmp(cmd, "reloadusers"))
         {
-            if (strchr(user->flags, 'o'))
-            {
-                if (!users_reload(env, "users.txt"))
-                    net_sendfln(env, "PRIVMSG %s :%s: Reloaded %d users!",
-                                ev->param[0], ev->from.nick, env->users->length);
-                else
-                    net_sendfln(env, "PRIVMSG %s :%s: Failed to load users :(",
-                                ev->param[0], ev->from.nick);
-            }
+            if (!users_reload(env, "users.txt"))
+                net_sendfln(env, "PRIVMSG %s :%s: Reloaded %d users!",
+                            ev->param[0], ev->from.nick, env->users->length);
+            else
+                net_sendfln(env, "PRIVMSG %s :%s: Failed to load users :(",
+                            ev->param[0], ev->from.nick);
         }
     }
+
     signal_dispatch(env, sig, "psss", &(ev->from), ev->param[0], cmd, rest);
 
     return 0;
