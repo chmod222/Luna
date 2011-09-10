@@ -470,8 +470,10 @@ handle_command_reload(luna_state *env, irc_event *ev, const char *name)
 
     if (!loaded)
     {
-        net_sendfln(env, "PRIVMSG %s :%s: Script not loaded!",
+        net_sendfln(env, "PRIVMSG %s :%s: Script not loaded! Loading...",
                     ev->param[0], ev->from.nick);
+
+        handle_command_load(env, ev, name);
     }
     else
     {
