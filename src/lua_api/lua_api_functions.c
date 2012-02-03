@@ -412,7 +412,7 @@ api_unload_script(lua_State *L)
 int
 api_log(lua_State *L)
 {
-    int level = luaL_checknumber(L, 1);
+    int level = api_loglevel_from_string(luaL_checkstring(L, 1));
     const char *message = luaL_checkstring(L, 2);
     luna_state *state = api_getstate(L);
 
