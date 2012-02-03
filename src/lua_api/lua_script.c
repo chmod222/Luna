@@ -189,5 +189,15 @@ luaX_register_script(lua_State *L, int regtable)
     luaL_register(L, NULL, luaX_script_functions);
     lua_settable(L, regtable);
 
+    /* Finally, register the meta table for extending */
+    lua_pushstring(L, "types");
+    lua_gettable(L, regtable);
+
+    lua_pushstring(L, "script");
+    lua_pushvalue(L, meta);
+
+    lua_settable(L, -3);
+
+
     return 1;
 }

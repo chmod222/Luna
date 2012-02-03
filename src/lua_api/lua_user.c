@@ -36,9 +36,9 @@
 #include "../linked_list.h"
 
 #include "lua_util.h"
+#include "lua_user.h"
 
 
-int luaX_free_user(lua_State*);
 int luaX_user_getflags(lua_State*);
 int luaX_user_setflags(lua_State*);
 int luaX_user_getlevel(lua_State*);
@@ -53,7 +53,8 @@ int luaX_users_save(lua_State*);
 int luaX_users_getall(lua_State*);
 int luaX_users_reload(lua_State*);
 
-luna_user *find_user_by_userdata(lua_State*, luna_user*);
+luna_user *find_user_by_userdata(lua_State*, luaX_user*);
+luna_user *luaX_check_user_ud(lua_State*, int);
 
 static const struct luaL_reg luaX_user_functions[] = {
     { "find", luaX_users_find },
@@ -82,7 +83,7 @@ static const struct luaL_reg luaX_user_methods[] = {
 
 
 luna_user *
-find_user_by_userdata(lua_State *L, luna_user *u)
+find_user_by_userdata(lua_State *L, luaX_user *u)
 {
     luna_state *state = api_getstate(L);
 
@@ -91,13 +92,25 @@ find_user_by_userdata(lua_State *L, luna_user *u)
 }
 
 
+luna_user *
+luaX_check_user_ud(lua_State *L, int ind)
+{
+    luaX_user *u = (luaX_user *)luaL_checkudata(L, ind, "luna.user");
+    luna_user *res = NULL;
+
+    if ((res = find_user_by_userdata(L, u)) == NULL)
+        luaL_error(L, "no such user '%s'", u->hostmask);
+
+    return res;
+}
+
+
 int
 luaX_user_getflags(lua_State *L)
 {
-    void *ud = luaL_checkudata(L, 1, "luna.user");
-    luaL_argcheck(L, ud != NULL, 1, "'luna.user' expected");
+    luna_user *ud = luaX_check_user_ud(L, 1);
 
-    lua_pushstring(L, ((luna_user *)ud)->flags);
+    lua_pushstring(L, ud->flags);
     return 1;
 }
 
@@ -105,21 +118,10 @@ luaX_user_getflags(lua_State *L)
 int
 luaX_user_setflags(lua_State *L)
 {
-    void *ud = luaL_checkudata(L, 1, "luna.user");
+    luna_user *ud = luaX_check_user_ud(L, 1);
     const char *flags = luaL_checkstring(L, 2);
-    luna_user *target = NULL;
 
-    luaL_argcheck(L, ud != NULL, 1, "'luna.user' expected");
-
-    if ((target = find_user_by_userdata(L, ud)) != NULL)
-    {
-        strncpy(target->flags, flags, sizeof(target->flags));
-        memcpy(ud, target, sizeof(luna_user));
-    }
-    else
-    {
-        return luaL_error(L, "no such user '%s'", ((luna_user *)ud)->hostmask);
-    }
+    strncpy(ud->flags, flags, sizeof(ud->flags) - 1);
 
     return 0;
 }
@@ -128,10 +130,9 @@ luaX_user_setflags(lua_State *L)
 int
 luaX_user_getlevel(lua_State *L)
 {
-    void *ud = luaL_checkudata(L, 1, "luna.user");
-    luaL_argcheck(L, ud != NULL, 1, "'luna.user' expected");
+    luna_user *ud = luaX_check_user_ud(L, 1);
 
-    lua_pushstring(L, ((luna_user *)ud)->level);
+    lua_pushstring(L, ud->level);
     return 1;
 }
 
@@ -139,21 +140,10 @@ luaX_user_getlevel(lua_State *L)
 int
 luaX_user_setlevel(lua_State *L)
 {
-    void *ud = luaL_checkudata(L, 1, "luna.user");
+    luna_user *ud = luaX_check_user_ud(L, 1);
     const char *level = luaL_checkstring(L, 2);
-    luna_user *target = NULL;
 
-    luaL_argcheck(L, ud != NULL, 1, "'luna.user' expected");
-
-    if ((target = find_user_by_userdata(L, ud)) != NULL)
-    {
-        strncpy(target->level, level, sizeof(target->level));
-        memcpy(ud, target, sizeof(luna_user));
-    }
-    else
-    {
-        return luaL_error(L, "no such user '%s'", ((luna_user *)ud)->hostmask);
-    }
+    strncpy(ud->level, level, sizeof(ud->level) - 1);
     
     return 0;
 }
@@ -162,10 +152,9 @@ luaX_user_setlevel(lua_State *L)
 int
 luaX_user_getid(lua_State *L)
 {
-    void *ud = luaL_checkudata(L, 1, "luna.user");
-    luaL_argcheck(L, ud != NULL, 1, "'luna.user' expected");
+    luna_user *ud = luaX_check_user_ud(L, 1);
 
-    lua_pushstring(L, ((luna_user *)ud)->id);
+    lua_pushstring(L, ud->id);
     return 1;
 }
 
@@ -173,30 +162,11 @@ luaX_user_getid(lua_State *L)
 int
 luaX_user_setid(lua_State *L)
 {
-    void *ud = luaL_checkudata(L, 1, "luna.user");
+    luna_user *ud = luaX_check_user_ud(L, 1);
     const char *id = luaL_checkstring(L, 2);
-    luna_user *target = NULL;
 
-    luaL_argcheck(L, ud != NULL, 1, "'luna.user' expected");
-
-    if ((target = find_user_by_userdata(L, ud)) != NULL)
-    {
-        strncpy(target->id, id, sizeof(target->id));
-        memcpy(ud, target, sizeof(luna_user));
-    }
-    else
-    {
-        return luaL_error(L, "no such user '%s'", ((luna_user *)ud)->hostmask);
-    }
+    strncpy(ud->id, id, sizeof(ud->id) - 1);
     
-    return 0;
-}
-
-
-int
-luaX_free_user(lua_State *L)
-{
-    /* Nothing to do yet */
     return 0;
 }
 
@@ -242,12 +212,12 @@ luaX_users_find(lua_State *L)
         if ((data = list_find(state->users, key, &luna_user_cmp)) != NULL)
         {
             luna_user *u = (luna_user *)data;
-            luna_user *ud = (luna_user *)lua_newuserdata(L, sizeof(luna_user));
+            luaX_user *ud = (luaX_user *)lua_newuserdata(L, sizeof(luaX_user));
 
             luaL_getmetatable(L, "luna.user");
             lua_setmetatable(L, -2);
 
-            memcpy(ud, u, sizeof(luna_user));
+            memcpy(ud->hostmask, u->hostmask, sizeof(ud->hostmask));
         }
         else
         {
@@ -284,7 +254,8 @@ luaX_users_getall(lua_State *L)
         luaL_getmetatable(L, "luna.user");
         lua_setmetatable(L, -2);
 
-        memcpy(ud, cur->data, sizeof(luna_user));
+        memcpy(ud->hostmask, ((luna_user *)cur->data)->hostmask,
+               sizeof(ud->hostmask));
 
         lua_rawseti(L, array, i++);
     }
@@ -351,11 +322,6 @@ luaX_register_user(lua_State *L, int regtable)
 {
     int meta = (luaL_newmetatable(L, "luna.user"), lua_gettop(L));
 
-    /* Register garbage collector function */
-    lua_pushstring(L, "__gc");
-    lua_pushcfunction(L, luaX_free_user);
-    lua_settable(L, meta);
-
     /* Register indexing field */
     lua_pushstring(L, "__index");
     lua_pushvalue(L, meta);
@@ -370,6 +336,15 @@ luaX_register_user(lua_State *L, int regtable)
     lua_newtable(L);
     luaL_register(L, NULL, luaX_user_functions);
     lua_settable(L, regtable);
+
+    /* Finally, register the meta table for extending */
+    lua_pushstring(L, "types");
+    lua_gettable(L, regtable);
+
+    lua_pushstring(L, "user");
+    lua_pushvalue(L, meta);
+
+    lua_settable(L, -3);
 
     return 1;
 }

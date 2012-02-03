@@ -30,6 +30,13 @@
 
 #include <lua.h>
 
+
+typedef struct luaX_user
+{
+    char hostmask[128];
+} luaX_user;
+
+
 int luaX_register_user(lua_State*, int);
 
 #endif
