@@ -18,30 +18,18 @@
 
 /*******************************************************************************
  *
- *  Lua api functions (lua_api_functions.h)
+ *  Lua user object management (lua_user.h)
  *  ---
- *  Functions to register in each script environment
+ *  Provide access to Luna users within scripts
  *
- *  Created: 03.02.2012 02:25:34
+ *  Created: 03.02.2012 16:39:01
  *
  ******************************************************************************/
-#ifndef LUA_API_FUNCTIONS_H
-#define LUA_API_FUNCTIONS_H
+#ifndef LUA_USER_H
+#define LUA_USER_H
 
 #include <lua.h>
 
-extern luaL_Reg api_library[];
-
-//int api_script_register(lua_State *);
-
-int api_load_script(lua_State *);
-int api_unload_script(lua_State *);
-int api_log(lua_State *);
-
-int api_sendline(lua_State *);
-
-int api_channels(lua_State *);
-int api_scripts(lua_State *);
-int api_info(lua_State *);
+int luaX_register_user(lua_State*, int);
 
 #endif

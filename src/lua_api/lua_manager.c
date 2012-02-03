@@ -32,6 +32,7 @@
 #include "lua_util.h"
 
 #include "lua_api_functions.h"
+#include "lua_user.h"
 
 
 int script_emit(luna_state *, luna_script *, const char *,
@@ -66,6 +67,7 @@ script_load(luna_state *state, const char *file)
 {
     lua_State *L;
     luna_script *script;
+    int api_table = 0;
 
     /* Script can be openened and allocated? */
     if ((script = malloc(sizeof(*script))) == NULL)
@@ -91,6 +93,11 @@ script_load(luna_state *state, const char *file)
 
     /* Register library methods */
     luaL_register(L, LIBNAME, api_library);
+    api_table = lua_gettop(L);
+
+    /* Register custom types */
+    luaX_register_user(L, api_table);
+
 
     /* Register empty callbacks table
      * luna.__callbacks = {} */
