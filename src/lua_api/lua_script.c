@@ -40,13 +40,8 @@
 
 
 int luaX_free_script(lua_State*);
-int luaX_script_getfilename(lua_State*);
-int luaX_script_getname(lua_State*);
-int luaX_script_getdescription(lua_State*);
-int luaX_script_getversion(lua_State*);
-int luaX_script_getauthor(lua_State*);
+int luaX_script_getscriptinfo(lua_State*);
 int luaX_script_isself(lua_State*);
-
 
 int luaX_scripts_load(lua_State*);
 int luaX_scripts_unload(lua_State*);
@@ -62,11 +57,7 @@ static const struct luaL_reg luaX_script_functions[] = {
 
 
 static const struct luaL_reg luaX_script_methods[] = {
-    { "get_filename", luaX_script_getfilename },
-    { "get_name", luaX_script_getname },
-    { "get_description", luaX_script_getdescription },
-    { "get_version", luaX_script_getversion },
-    { "get_author", luaX_script_getauthor },
+    { "get_scriptinfo", luaX_script_getscriptinfo },
     { "is_self", luaX_script_isself },
 
     { NULL, NULL }
@@ -74,57 +65,18 @@ static const struct luaL_reg luaX_script_methods[] = {
 
 
 int
-luaX_script_getfilename(lua_State *L)
+luaX_script_getscriptinfo(lua_State *L)
 {
     void *ud = luaL_checkudata(L, 1, "luna.script");
     luaL_argcheck(L, ud != NULL, 1, "'luna.script' expected");
 
     lua_pushstring(L, ((luna_script *)ud)->filename);
-    return 1;
-}
-
-
-int
-luaX_script_getname(lua_State *L)
-{
-    void *ud = luaL_checkudata(L, 1, "luna.script");
-    luaL_argcheck(L, ud != NULL, 1, "'luna.script' expected");
-
     lua_pushstring(L, ((luna_script *)ud)->name);
-    return 1;
-}
-
-
-int
-luaX_script_getdescription(lua_State *L)
-{
-    void *ud = luaL_checkudata(L, 1, "luna.script");
-    luaL_argcheck(L, ud != NULL, 1, "'luna.script' expected");
-
     lua_pushstring(L, ((luna_script *)ud)->description);
-    return 1;
-}
-
-
-int
-luaX_script_getversion(lua_State *L)
-{
-    void *ud = luaL_checkudata(L, 1, "luna.script");
-    luaL_argcheck(L, ud != NULL, 1, "'luna.script' expected");
-
-    lua_pushstring(L, ((luna_script *)ud)->version);
-    return 1;
-}
-
-
-int
-luaX_script_getauthor(lua_State *L)
-{
-    void *ud = luaL_checkudata(L, 1, "luna.script");
-    luaL_argcheck(L, ud != NULL, 1, "'luna.script' expected");
-
     lua_pushstring(L, ((luna_script *)ud)->author);
-    return 1;
+    lua_pushstring(L, ((luna_script *)ud)->version);
+
+    return 5;
 }
 
 
