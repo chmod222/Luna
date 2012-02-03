@@ -38,7 +38,6 @@
 int api_push_script(lua_State *, luna_script *);
 int api_push_channel(lua_State *, irc_channel *);
 int api_push_user(lua_State *, irc_user *);
-int api_push_luna_user(lua_State *, luna_user *);
 
 int api_loglevel_from_string(const char *);
 

@@ -120,22 +120,6 @@ api_push_user(lua_State *L, irc_user *user)
 
 
 int
-api_push_luna_user(lua_State *L, luna_user *user)
-{
-    int table;
-
-    lua_newtable(L);
-    table = lua_gettop(L);
-
-    api_setfield_s(L, table, "id", user->id);
-    api_setfield_s(L, table, "hostmask", user->hostmask);
-    api_setfield_s(L, table, "flags", user->flags);
-    api_setfield_s(L, table, "level", user->level);
-
-    return 0;
-}
-
-int
 api_loglevel_from_string(const char *lev)
 {
     if (!lev)
