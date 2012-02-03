@@ -99,6 +99,12 @@ script_load(luna_state *state, const char *file)
     lua_newtable(L);
     lua_settable(L, -3);
 
+    if (luaL_dofile(L, "corelib.lua") != 0)
+    {
+        logger_log(state->logger, LOGLEV_WARNING,
+                   "Unable to load Luna core library '%s'", "corelib.lua");
+    }
+
     /* Clean the stack */
     lua_pop(L, -1);
 
