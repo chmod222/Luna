@@ -33,7 +33,8 @@
 #include "net.h"
 #include "util.h"
 #include "channel.h"
-#include "lua_api.h"
+#include "lua_api/lua_manager.h"
+#include "lua_api/lua_util.h"
 
 
 int handle_ping(luna_state *,    irc_event *);
