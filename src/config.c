@@ -51,15 +51,10 @@ config_load(luna_state *state, const char *filename)
 
         if (luaL_dofile(L, filename) == 0)
         {
-            int check_user = 1;
-            int check_server = 1;
-
-            check_user   = config_get_userinfo(state, L);
-            check_server = config_get_serverinfo(state, L);
-
-            /* Both user and server must be set */
-            if ((check_user != 0) || (check_server != 0))
-                status = 1;
+            /* Both user and server must be set (== 0) */
+            if (config_get_userinfo(state, L) ||
+                config_get_serverinfo(state, L))
+                    status = 1;
         }
         else
         {
@@ -82,37 +77,27 @@ config_load(luna_state *state, const char *filename)
 int
 config_get_userinfo(luna_state *state, lua_State *L)
 {
-    int n; /* Nick */
-    int u; /* User */
-    int r; /* Realname */
-
     const char *nick = NULL;
     const char *user = NULL;
     const char *real = NULL;
 
     lua_getglobal(L, "nick");
-    n = lua_gettop(L);
+    nick = lua_tostring(L, lua_gettop(L));
 
     lua_getglobal(L, "user");
-    u = lua_gettop(L);
+    user = lua_tostring(L, lua_gettop(L));
 
     lua_getglobal(L, "realname");
-    r = lua_gettop(L);
+    real = lua_tostring(L, lua_gettop(L));
 
-    nick = lua_tostring(L, n);
-    user = lua_tostring(L, u);
-    real = lua_tostring(L, r);
-
-    /* Nick and user can not be empty, real name can - all must be strings */
-    if (((lua_type(L, n) == LUA_TSTRING) && (strcmp("", nick))) &&
-        ((lua_type(L, u) == LUA_TSTRING) && (strcmp("", user))) //&&
-      /*   ((lua_type(L, r) == LUA_TSTRING))*/)
+    /* Nick and user can not be empty */
+    if ((nick && (strcmp("", nick))) && (user && (strcmp("", user))))
     {
         /* Userinfo okay */
         strncpy(state->userinfo.nick, nick, sizeof(state->userinfo.nick) - 1);
         strncpy(state->userinfo.user, user, sizeof(state->userinfo.user) - 1);
 
-        if (lua_type(L, r) == LUA_TSTRING)
+        if (real)
             strncpy(state->userinfo.real, real,
                     sizeof(state->userinfo.real) - 1);
 
@@ -126,27 +111,21 @@ config_get_userinfo(luna_state *state, lua_State *L)
 int
 config_get_serverinfo(luna_state *state, lua_State *L)
 {
-    int h; /* Host */
-    int p; /* Port */
-
     const char *host = NULL;
 
     lua_getglobal(L, "server");
-    h = lua_gettop(L);
-
-    lua_getglobal(L, "port");
-    p = lua_gettop(L);
-
-    host = lua_tostring(L, h);
+    host = lua_tostring(L, lua_gettop(L));
 
     /* Server nonempty string, port may be ommited (=6667) */
-    if ((lua_type(L, h) == LUA_TSTRING) && (strcmp("", host)))
+    if (host && (strcmp("", host)))
     {
         strncpy(state->serverinfo.host, host,
                 sizeof(state->serverinfo.host) - 1);
 
-        if (lua_type(L, p) == LUA_TNUMBER)
-            state->serverinfo.port = lua_tonumber(L, p);
+        lua_getglobal(L, "port");
+
+        if (lua_type(L, lua_gettop(L)) == LUA_TNUMBER)
+            state->serverinfo.port = lua_tonumber(L, lua_gettop(L));
         else
             state->serverinfo.port = 6667;
 

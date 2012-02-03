@@ -18,48 +18,42 @@
 
 /*******************************************************************************
  *
- *  Bot state (state.c)
+ *  Lua script management (lua_manager.h)
  *  ---
- *  Define state to be passed around between the various functions
+ *  Manage script loading, unloading and bookkeeping
  *
- *  Created: 25.02.2011 12:28:10
+ *  Created: 03.02.2012 02:25:34
  *
  ******************************************************************************/
-#include <stdlib.h>
-#include <string.h>
+#ifndef LUA_MANAGER_H
+#define LUA_MANAGER_H
 
-#include "state.h"
-#include "linked_list.h"
-#include "channel.h"
-#include "lua_api/lua_util.h"
+#include "../state.h"
+
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
+#define LIBNAME "luna"
 
 
-int
-state_init(luna_state *state)
+typedef struct luna_script
 {
-    memset(state, 0, sizeof(*state));
+    char filename[256];
 
-    if (list_init(&(state->users)) != 0)
-        return 1;
+    char name[32];
+    char description[128];
+    char version[16];
+    char author[64];
 
-    if (list_init(&(state->scripts)) != 0)
-    {
-        /* Free method doesn't matter here, actually. */
-        list_destroy(state->users, &free);
+    lua_State *state;
+} luna_script;
 
-        return 1;
-    }
+extern const char *env_key;
 
-    return 0;
-}
+int script_load(luna_state *, const char *);
+int script_unload(luna_state *, const char *);
 
+int signal_dispatch(luna_state *, const char *, const char *, ...);
 
-int
-state_destroy(luna_state *state)
-{
-    logger_destroy(state->logger);
-    list_destroy(state->users,   &free);
-    list_destroy(state->scripts, &script_free);
-
-    return 0;
-}
+#endif

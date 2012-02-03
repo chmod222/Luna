@@ -37,7 +37,8 @@
 #include "user.h"
 #include "irc.h"
 #include "handlers.h"
-#include "lua_api.h"
+#include "lua_api/lua_manager.h"
+#include "lua_api/lua_util.h"
 
 
 int *killswitch_ptr = NULL;

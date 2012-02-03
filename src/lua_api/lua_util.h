@@ -18,63 +18,39 @@
 
 /*******************************************************************************
  *
- *  Lua script management (lua_api.h)
+ *  Lua API utility functions (lua_util.h)
  *  ---
- *  Load, unload and emit signals to Lua scripts
+ *  Provide pushing and checking functions for internal structures
  *
- *  Created: 25.02.2011 20:24:58
+ *  Created: 03.02.2012 02:25:34
  *
  ******************************************************************************/
-#ifndef LUA_API_H
-#define LUA_API_H
+#ifndef LUA_UTIL
+#define LUA_UTIL
 
 #include <lua.h>
 
-#include "state.h"
-#include "irc.h"
-#include "user.h"
-#include "channel.h"
-#include "linked_list.h"
+#include "lua_manager.h"
+#include "../user.h"
+#include "../channel.h"
 
-#define LIBNAME "luna"
-
-
-typedef struct luna_script
-{
-    char filename[256];
-
-    char name[32];
-    char description[128];
-    char version[16];
-    char author[64];
-
-    lua_State *state;
-} luna_script;
-
-
-/* For list_destroy() and list_delete() */
-int script_cmp(void *, void *);
-void script_free(void *);
-
-int script_load(luna_state *, const char *);
-int script_unload(luna_state *, const char *);
-
-int api_push_sender(lua_State *, irc_sender *);
-int signal_dispatch(luna_state *, const char *, const char *, ...);
-int script_emit(luna_state *, luna_script *, const char *,
-                const char *, va_list);
-int script_identify(lua_State *, luna_script *);
-
-luna_state *api_getstate(lua_State *);
-
-int api_setfield_s(lua_State *, int, const char *, const char *);
-int api_setfield_n(lua_State *, int, const char *, double);
 
 int api_push_script(lua_State *, luna_script *);
 int api_push_channel(lua_State *, irc_channel *);
 int api_push_user(lua_State *, irc_user *);
 int api_push_luna_user(lua_State *, luna_user *);
 int api_push_loglevels(lua_State *);
+int api_push_sender(lua_State *, irc_sender *);
+
+luna_state *api_getstate(lua_State *);
+luna_user *api_checkuser(lua_State *, int index);
+
+int api_setfield_s(lua_State *, int, const char *, const char *);
+int api_setfield_n(lua_State *, int, const char *, double);
+
+int script_cmp(void *, void *);
+void script_free(void *);
+
+int api_command_helper(lua_State *, const char *, ...);
 
 #endif
-
