@@ -33,7 +33,7 @@
 extern luaL_Reg api_library[];
 
 int api_script_register(lua_State *);
-int api_signal_add(lua_State *);
+
 int api_get_user(lua_State *);
 int api_add_user(lua_State *);
 int api_remove_user(lua_State *);
@@ -50,15 +50,6 @@ int api_unload_script(lua_State *);
 int api_log(lua_State *);
 
 int api_sendline(lua_State *);
-int api_privmsg(lua_State *);
-int api_notice(lua_State *);
-int api_join(lua_State *);
-int api_part(lua_State *);
-int api_quit(lua_State *);
-int api_change_nick(lua_State *);
-int api_kick(lua_State *);
-int api_set_modes(lua_State *);
-int api_set_topic(lua_State *);
 
 int api_channels(lua_State *);
 int api_scripts(lua_State *);

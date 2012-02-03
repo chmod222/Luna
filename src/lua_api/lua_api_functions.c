@@ -37,9 +37,6 @@
 #include "lua_util.h"
 
 luaL_Reg api_library[] = {
-    { "script_register", api_script_register },
-    { "signal_add",      api_signal_add },
-
     { "add_user",        api_add_user },
     { "remove_user",     api_remove_user },
     { "reload_userlist", api_reload_userlist },
@@ -56,15 +53,6 @@ luaL_Reg api_library[] = {
     { "log",             api_log },
 
     { "sendline",        api_sendline },
-    { "privmsg",         api_privmsg },
-    { "notice",          api_notice },
-    { "join_channel",    api_join },
-    { "part_channel",    api_part },
-    { "quit",            api_quit },
-    { "change_nick",     api_change_nick },
-    { "kick",            api_kick },
-    { "set_modes",       api_set_modes },
-    { "set_topic",       api_set_topic },
 
     { "channels",        api_channels },
     { "scripts",         api_scripts },
@@ -73,86 +61,6 @@ luaL_Reg api_library[] = {
 
     { NULL, NULL }
 };
-
-
-int
-api_script_register(lua_State *L)
-{
-    int arg = 1;
-    const char *name = NULL;
-    const char *author = NULL;
-    const char *descr = NULL;
-    const char *version = NULL;
-
-    luaL_checktype(L, arg, LUA_TTABLE);
-
-    lua_pushstring(L, "name");
-    name = lua_tostring(L, (lua_gettable(L, arg), lua_gettop(L)));
-
-    lua_pushstring(L, "author");
-    author = lua_tostring(L, (lua_gettable(L, arg), lua_gettop(L)));
-
-    lua_pushstring(L, "description");
-    descr = lua_tostring(L, (lua_gettable(L, arg), lua_gettop(L)));
-
-    lua_pushstring(L, "version");
-    version = lua_tostring(L, (lua_gettable(L, arg), lua_gettop(L)));
-
-    if ((name && strcmp(name, "")) && (author && strcmp(author, "")) &&
-        (descr && strcmp(descr, "")) && (version && strcmp(version, "")))
-    {
-        lua_getglobal(L, LIBNAME);
-        lua_pushstring(L, "__scriptinfo");
-        lua_pushvalue(L, 1);
-        lua_settable(L, -3);
-    }
-    else
-    {
-        return luaL_error(L, "fields 'name', 'author', 'description' and "
-                             "'version' must not be empty");
-    }
-
-    lua_pop(L, -1);
-    return 0;
-}
-
-
-int
-api_signal_add(lua_State *L)
-{
-    int api_table;
-    int callbacks_array;
-    int callback_table;
-    int len;
-
-    luaL_checkstring(L, 1);
-    luaL_checktype(L, 2, LUA_TFUNCTION);
-
-    /* luna,__callbacks[#luna.__callbacks + 1] = {signal = 1, callback = 2} */
-    lua_getglobal(L, LIBNAME);
-    api_table = lua_gettop(L);
-
-    lua_pushstring(L, "__callbacks");
-    lua_gettable(L, api_table);
-    callbacks_array = lua_gettop(L);
-    len = lua_objlen(L, callbacks_array);
-
-    lua_newtable(L);
-    callback_table = lua_gettop(L);
-
-    lua_pushstring(L, "signal");
-    lua_pushvalue(L, 1);
-    lua_settable(L, callback_table);
-
-    lua_pushstring(L, "callback");
-    lua_pushvalue(L, 2);
-    lua_settable(L, callback_table);
-
-    lua_rawseti(L, callbacks_array, len + 1);
-
-    lua_pop(L, -1);
-    return 0;
-}
 
 
 int
@@ -422,156 +330,6 @@ api_sendline(lua_State *L)
 
     lua_pushnumber(L, api_command_helper(L, line));
 
-    return 1;
-}
-
-
-/* TODO: Have a smarter way for all the following repeating */
-int
-api_privmsg(lua_State *L)
-{
-    const char *target = luaL_checkstring(L, 1);
-    const char *msg    = luaL_checkstring(L, 2);
-    int ret;
-
-    ret = api_command_helper(L, "PRIVMSG %s :%s", target, msg);
-
-    lua_pushnumber(L, ret);
-    return 1;
-}
-
-
-int
-api_notice(lua_State *L)
-{
-    const char *target = luaL_checkstring(L, 1);
-    const char *msg    = luaL_checkstring(L, 2);
-    int ret;
-
-    ret = api_command_helper(L, "NOTICE %s :%s", target, msg);
-
-    lua_pushnumber(L, ret);
-    return 1;
-}
-
-
-int
-api_join(lua_State *L)
-{
-    const char *channel = luaL_checkstring(L, 1);
-    int ret;
-
-    if (lua_gettop(L) > 1)
-    {
-        const char *key = luaL_checkstring(L, 2);
-
-        ret = api_command_helper(L, "JOIN %s :%s", channel, key);
-    }
-    else
-    {
-        ret = api_command_helper(L, "JOIN %s", channel);
-    }
-
-    lua_pushnumber(L, ret);
-    return 1;
-}
-
-
-int
-api_part(lua_State *L)
-{
-    const char *channel = luaL_checkstring(L, 1);
-    int ret;
-
-    if (lua_gettop(L) > 1)
-    {
-        const char *reason = luaL_checkstring(L, 2);
-
-        ret = api_command_helper(L, "PART %s :%s", channel, reason);
-    }
-    else
-    {
-        ret = api_command_helper(L, "PART %s", channel);
-    }
-
-    lua_pushnumber(L, ret);
-    return 1;
-}
-
-
-int
-api_quit(lua_State *L)
-{
-    int ret;
-
-    if (lua_gettop(L) > 0)
-    {
-        const char *reason = luaL_checkstring(L, 1);
-
-        ret = api_command_helper(L, "QUIT :%s", reason);
-    }
-    else
-    {
-        ret = api_command_helper(L, "QUIT");
-    }
-
-    lua_pushnumber(L, ret);
-    return 1;
-}
-
-
-int
-api_change_nick(lua_State *L)
-{
-    const char *newnick = luaL_checkstring(L, 1);
-    int ret;
-
-    ret = api_command_helper(L, "NICK :%s", newnick);
-
-    lua_pushnumber(L, ret);
-    return 1;
-}
-
-
-int
-api_kick(lua_State *L)
-{
-    const char *channel = luaL_checkstring(L, 1);
-    const char *user    = luaL_checkstring(L, 2);
-    const char *reason  = luaL_checkstring(L, 3);
-    int ret;
-
-    ret = api_command_helper(L, "KICK %s %s :%s", channel, user, reason);
-
-    lua_pushnumber(L, ret);
-    return 1;
-}
-
-
-int
-api_set_modes(lua_State *L)
-{
-    const char *target = luaL_checkstring(L, 1);
-    const char *args   = luaL_checkstring(L, 2);
-    int ret;
-
-    ret = api_command_helper(L, "MODE %s %s", target, args);
-
-    lua_pushnumber(L, ret);
-    return 1;
-}
-
-
-int
-api_set_topic(lua_State *L)
-{
-    const char *channel  = luaL_checkstring(L, 1);
-    const char *newtopic = luaL_checkstring(L, 2);
-    int ret;
-
-    ret = api_command_helper(L, "TOPIC %s :%s", channel, newtopic);
-
-    lua_pushnumber(L, ret);
     return 1;
 }
 
