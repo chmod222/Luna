@@ -41,7 +41,6 @@ luaL_Reg api_library[] = {
     { "sendline",        api_sendline },
 
     { "channels",        api_channels },
-    { "info",            api_info },
 
     { NULL, NULL }
 };
@@ -91,46 +90,4 @@ api_channels(lua_State *L)
 
     return 1;
 }
-
-
-int
-api_info(lua_State *L)
-{
-    int table;
-    int user_table;
-    int server_table;
-
-    luna_state *state;
-
-    state = api_getstate(L);
-
-    lua_newtable(L);
-    table = lua_gettop(L);
-
-    lua_pushstring(L, "identity");
-    lua_newtable(L);
-    user_table = lua_gettop(L);
-
-    api_setfield_s(L, user_table, "nick", state->userinfo.nick);
-    api_setfield_s(L, user_table, "user", state->userinfo.user);
-    api_setfield_s(L, user_table, "real", state->userinfo.real);
-
-    lua_settable(L, table);
-
-    lua_pushstring(L, "server");
-    lua_newtable(L);
-    server_table = lua_gettop(L);
-
-    api_setfield_s(L, server_table, "host", state->serverinfo.host);
-    api_setfield_n(L, server_table, "port", state->serverinfo.port);
-
-    lua_settable(L, table);
-
-    api_setfield_n(L, table, "started", state->started);
-    api_setfield_n(L, table, "connected", state->connected);
-
-    return 1;
-}
-
-
 
