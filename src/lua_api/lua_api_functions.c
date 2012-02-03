@@ -37,53 +37,14 @@
 #include "lua_util.h"
 
 luaL_Reg api_library[] = {
-
-    { "load_script",     api_load_script },
-    { "unload_script",   api_unload_script },
-
     { "log",             api_log },
-
     { "sendline",        api_sendline },
 
     { "channels",        api_channels },
-    { "scripts",         api_scripts },
     { "info",            api_info },
 
     { NULL, NULL }
 };
-
-
-int
-api_load_script(lua_State *L)
-{
-    const char *file = luaL_checkstring(L, 1);
-    luna_state *state = api_getstate(L);
-
-    if (!script_load(state, file))
-    {
-        void *script = list_find(state->scripts, (void *)file, &script_cmp);
-        luna_script *s = (luna_script *)script;
-
-        api_push_script(L, s);
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-
-int
-api_unload_script(lua_State *L)
-{
-    const char *file = luaL_checkstring(L, 1);
-    luna_state *state = api_getstate(L);
-
-    script_unload(state, file);
-
-    return 0;
-}
 
 int
 api_log(lua_State *L)
@@ -107,29 +68,6 @@ api_sendline(lua_State *L)
     return 1;
 }
 
-
-int
-api_scripts(lua_State *L)
-{
-    int array;
-    int i = 1;
-    luna_state *state;
-    list_node *cur = NULL;
-
-    state = api_getstate(L);
-
-    lua_newtable(L);
-    array = lua_gettop(L);
-
-    for (cur = state->scripts->root; cur != NULL; cur = cur->next)
-    {
-        api_push_script(L, cur->data);
-
-        lua_rawseti(L, array, i++);
-    }
-
-    return 1;
-}
 
 int
 api_channels(lua_State *L)

@@ -33,6 +33,7 @@
 
 #include "lua_api_functions.h"
 #include "lua_user.h"
+#include "lua_script.h"
 
 
 int script_emit(luna_state *, luna_script *, const char *,
@@ -97,6 +98,7 @@ script_load(luna_state *state, const char *file)
 
     /* Register custom types */
     luaX_register_user(L, api_table);
+    luaX_register_script(L, api_table);
 
 
     /* Register empty callbacks table
