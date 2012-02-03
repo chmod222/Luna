@@ -78,7 +78,7 @@ function luna.signal_add(sig, handler)
     for i, v in ipairs(luna.__callbacks) do
         for k, v2 in pairs(luna.__callbacks[i]) do
             if v2 == sig then
-                error('signal \'' .. v2 .. '\' already in use')
+                error("signal '" .. v2 .. "' already in use")
             end
         end
     end
@@ -102,7 +102,7 @@ end
 --
 function luna.script_register(inf)
     if luna.__scriptinfo ~= nil then
-        error('script has already been registered')
+        error 'script has already been registered'
     end
 
     if (type(inf.name) == 'string' and #inf.name ~= 0) and
@@ -112,6 +112,17 @@ function luna.script_register(inf)
 
        luna.__scriptinfo = inf
    else
-       error("fields 'name', 'author', 'description' and 'version' are required")
+       error "fields 'name', 'author', 'description' and 'version' are required"
    end
+end
+
+--
+-- Some type goodness
+--
+function luna.types.channel:get_name()
+    return self:get_channelinfo()
+end
+
+function luna.types.channel:get_creation_date()
+    return ({self:get_channelinfo()})[2]
 end
