@@ -8,6 +8,7 @@ function cmd(who, channel, command, args)
     end
 end
 
-luna.script_register('Base', 'Handle basic events', '0.1', 'FliPPeh')
+luna.script_register{name = 'Base', description = 'Handle basic events',
+                     version = '0.1', author = 'FliPPeh'}
 luna.signal_add('connect', connect)
 luna.signal_add('public_command', cmd)
