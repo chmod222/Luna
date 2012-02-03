@@ -136,27 +136,18 @@ api_push_luna_user(lua_State *L, luna_user *user)
 }
 
 int
-api_push_loglevels(lua_State *L)
+api_loglevel_from_string(const char *lev)
 {
-    int api_table;
-    int level_table;
+    if (!lev)
+        return LOGLEV_ERROR;
 
-    lua_getglobal(L, LIBNAME);
-    api_table = lua_gettop(L);
-
-    lua_pushstring(L, "log_level");
-    lua_newtable(L);
-    level_table = lua_gettop(L);
-
-    api_setfield_n(L, level_table, "info", LOGLEV_INFO);
-    api_setfield_n(L, level_table, "warning", LOGLEV_WARNING);
-    api_setfield_n(L, level_table, "error", LOGLEV_ERROR);
-
-    lua_settable(L, api_table);
-
-    return 0;
+    if (!strcasecmp(lev, "info"))
+        return LOGLEV_INFO;
+    else if (!strcasecmp(lev, "warning"))
+        return LOGLEV_WARNING;
+    else
+        return LOGLEV_ERROR;
 }
-
 
 
 int

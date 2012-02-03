@@ -99,8 +99,6 @@ script_load(luna_state *state, const char *file)
     lua_newtable(L);
     lua_settable(L, -3);
 
-    api_push_loglevels(L);
-
     /* Clean the stack */
     lua_pop(L, -1);
 
