@@ -35,6 +35,4 @@ extern luaL_Reg api_library[];
 int api_log(lua_State *);
 int api_sendline(lua_State *);
 
-int api_channels(lua_State *);
-
 #endif

@@ -18,49 +18,33 @@
 
 /*******************************************************************************
  *
- *  Lua api functions (lua_api_functions.c)
+ *  Lua channel object management (lua_self.h)
  *  ---
- *  Functions to register in each script environment
+ *  Provide access to the global channel list within scripts
  *
- *  Created: 03.02.2012 02:25:34
+ *  Created: 03.02.2012 20:41:01
  *
  ******************************************************************************/
-#include <stdlib.h>
-#include <string.h>
+#ifndef LUA_CHANNEL_H
+#define LUA_CHANNEL_H
 
 #include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
 
-#include "lua_manager.h"
-#include "lua_api_functions.h"
-#include "lua_util.h"
 
-luaL_Reg api_library[] = {
-    { "log",             api_log },
-    { "sendline",        api_sendline },
-
-    { NULL, NULL }
-};
-
-int
-api_log(lua_State *L)
+/* Only store enough information to retrieve the actual information
+ * via the global state */
+typedef struct luaX_channel
 {
-    int level = api_loglevel_from_string(luaL_checkstring(L, 1));
-    const char *message = luaL_checkstring(L, 2);
-    luna_state *state = api_getstate(L);
+    char name[64];
+} luaX_channel;
 
-    logger_log(state->logger, level, "%s", message);
-
-    return 0;
-}
-
-int
-api_sendline(lua_State *L)
+typedef struct luaX_chanuser
 {
-    const char *line = luaL_checkstring(L, 1);
+    luaX_channel channel;
+    char nick[32];
+} luaX_chanuser;
 
-    lua_pushnumber(L, api_command_helper(L, line));
 
-    return 1;
-}
+int luaX_register_channel(lua_State*, int);
+
+#endif

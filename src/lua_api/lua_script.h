@@ -30,6 +30,9 @@
 
 #include <lua.h>
 
+/* No need to create middle-man structures for script objects, since they
+ * are immutable and need no constant access to the global state */
+
 int luaX_register_script(lua_State*, int);
 
 #endif
