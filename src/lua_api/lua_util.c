@@ -225,7 +225,6 @@ api_setfield_n(lua_State *L, int table, const char *key, double value)
 }
 
 
-
 int
 script_cmp(void *data, void *list_data)
 {

@@ -110,7 +110,7 @@ api_script_register(lua_State *L)
     lua_pushvalue(L, 4); /* Argument 4 of luna.script_register() */
     lua_settable(L, info_table);
 
-    /* Set new table to LIBNAME.__scriptinfo */
+    /* Set new table to luna.__scriptinfo */
     lua_settable(L, api_table);
 
     lua_pop(L, -1);
@@ -129,6 +129,7 @@ api_signal_add(lua_State *L)
     luaL_checkstring(L, 1);
     luaL_checktype(L, 2, LUA_TFUNCTION);
 
+    /* luna,__callbacks[#luna.__callbacks + 1] = {signal = 1, callback = 2} */
     lua_getglobal(L, LIBNAME);
     api_table = lua_gettop(L);
 
@@ -158,10 +159,6 @@ api_signal_add(lua_State *L)
 int
 api_get_user(lua_State *L)
 {
-    int n = lua_gettop(L);
-    int u;
-    int h;
-
     luna_state *state = NULL;
 
     const char *nick = NULL;
@@ -174,23 +171,19 @@ api_get_user(lua_State *L)
 
     lua_pushstring(L, "nick");
     lua_gettable(L, 1);
-    n = lua_gettop(L); /* Variable reuse for great good */
+    nick = lua_tostring(L, lua_gettop(L));
 
     lua_pushstring(L, "user");
     lua_gettable(L, 1);
-    u = lua_gettop(L);
+    user = lua_tostring(L, lua_gettop(L));
 
     lua_pushstring(L, "host");
     lua_gettable(L, 1);
-    h = lua_gettop(L);
+    host = lua_tostring(L, lua_gettop(L));
 
-    nick = lua_tostring(L, n);
-    user = lua_tostring(L, u);
-    host = lua_tostring(L, h);
-
-    if (((lua_type(L, n) == LUA_TSTRING) && (strcmp(nick, ""))) &&
-        ((lua_type(L, u) == LUA_TSTRING) && (strcmp(user, ""))) &&
-        ((lua_type(L, h) == LUA_TSTRING) && (strcmp(host, ""))))
+    if ((nick && strcmp(nick, "")) &&
+        (user && strcmp(user, "")) &&
+        (host && strcmp(host, "")))
     {
         /* Copy values over */
         irc_sender tmp;
@@ -226,6 +219,8 @@ api_get_user(lua_State *L)
         return luaL_error(L, "user table not valid");
     }
 }
+
+
 int
 api_set_user_flags(lua_State *L)
 {
