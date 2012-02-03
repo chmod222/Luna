@@ -78,40 +78,39 @@ luaL_Reg api_library[] = {
 int
 api_script_register(lua_State *L)
 {
-    int api_table;
-    int info_table;
+    int arg = 1;
+    const char *name = NULL;
+    const char *author = NULL;
+    const char *descr = NULL;
+    const char *version = NULL;
 
-    luaL_checkstring(L, 1);
-    luaL_checkstring(L, 2);
-    luaL_checkstring(L, 3);
-    luaL_checkstring(L, 4);
+    luaL_checktype(L, arg, LUA_TTABLE);
 
-    lua_getglobal(L, LIBNAME);
-    api_table = lua_gettop(L);
-
-    lua_pushstring(L, "__scriptinfo");
-    lua_newtable(L);
-    info_table = lua_gettop(L);
-
-    /* Fill new table */
     lua_pushstring(L, "name");
-    lua_pushvalue(L, 1); /* Argument 1 of luna.script_register() */
-    lua_settable(L, info_table);
-
-    lua_pushstring(L, "description");
-    lua_pushvalue(L, 2); /* Argument 2 of luna.script_register() */
-    lua_settable(L, info_table);
-
-    lua_pushstring(L, "version");
-    lua_pushvalue(L, 3); /* Argument 3 of luna.script_register() */
-    lua_settable(L, info_table);
+    name = lua_tostring(L, (lua_gettable(L, arg), lua_gettop(L)));
 
     lua_pushstring(L, "author");
-    lua_pushvalue(L, 4); /* Argument 4 of luna.script_register() */
-    lua_settable(L, info_table);
+    author = lua_tostring(L, (lua_gettable(L, arg), lua_gettop(L)));
 
-    /* Set new table to luna.__scriptinfo */
-    lua_settable(L, api_table);
+    lua_pushstring(L, "description");
+    descr = lua_tostring(L, (lua_gettable(L, arg), lua_gettop(L)));
+
+    lua_pushstring(L, "version");
+    version = lua_tostring(L, (lua_gettable(L, arg), lua_gettop(L)));
+
+    if ((name && strcmp(name, "")) && (author && strcmp(author, "")) &&
+        (descr && strcmp(descr, "")) && (version && strcmp(version, "")))
+    {
+        lua_getglobal(L, LIBNAME);
+        lua_pushstring(L, "__scriptinfo");
+        lua_pushvalue(L, 1);
+        lua_settable(L, -3);
+    }
+    else
+    {
+        return luaL_error(L, "fields 'name', 'author', 'description' and "
+                             "'version' must not be empty");
+    }
 
     lua_pop(L, -1);
     return 0;
@@ -411,9 +410,9 @@ api_log(lua_State *L)
     const char *message = luaL_checkstring(L, 2);
     luna_state *state = api_getstate(L);
 
-    lua_pushnumber(L, logger_log(state->logger, level, "%s", message));
+    logger_log(state->logger, level, "%s", message);
 
-    return 1;
+    return 0;
 }
 
 int
@@ -422,6 +421,7 @@ api_sendline(lua_State *L)
     const char *line = luaL_checkstring(L, 1);
 
     lua_pushnumber(L, api_command_helper(L, line));
+
     return 1;
 }
 
