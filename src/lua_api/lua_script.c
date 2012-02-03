@@ -231,7 +231,7 @@ luaX_register_script(lua_State *L, int regtable)
     luaL_openlib(L, NULL, luaX_script_methods, 0);
 
     /* And register other functions inside regtable
-     * luna.users = { ... } */
+     * luna.script = { ... } */
     lua_pushstring(L, "scripts");
     lua_newtable(L);
     luaL_register(L, NULL, luaX_script_functions);
