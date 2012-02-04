@@ -49,15 +49,15 @@ int luaX_scripts_getall(lua_State*);
 static const struct luaL_reg luaX_script_functions[] = {
     { "load", luaX_scripts_load },
     { "unload", luaX_scripts_unload },
-    { "get_all", luaX_scripts_getall },
+    { "getScriptList", luaX_scripts_getall },
 
     { NULL, NULL }
 };
 
 
 static const struct luaL_reg luaX_script_methods[] = {
-    { "get_scriptinfo", luaX_script_getscriptinfo },
-    { "is_self", luaX_script_isself },
+    { "getScriptInfo", luaX_script_getscriptinfo },
+    { "isSelf", luaX_script_isself },
 
     { NULL, NULL }
 };

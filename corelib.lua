@@ -5,28 +5,8 @@
 --
 -- Command helpers
 --
-function luna.set_topic(channel, newtopic)
-    luna.sendline(string.format("TOPIC %s :%s", channel, newtopic))
-end
-
-function luna.set_modes(target, modestr, args)
-    if args == nil then
-        luna.sendline(string.format("MODE %s %s", target, modestr))
-    else
-        luna.sendline(string.format("MODE %s %s :%s", target, modestr, args))
-    end
-end
-
-function luna.kick(channel, user, reason)
-    if reason == nil then
-        reason = user
-    end
-
-    luna.sendline(string.format("KICK %s %s :%s", channel, user, reason))
-end
-
-function luna.change_nick(new_nick)
-    luna.sendline(string.format("NICK :%s", new_nick))
+function luna.changeNick(new_nick)
+    luna.sendLine(string.format("NICK :%s", new_nick))
 end
 
 function luna.quit(reason)
@@ -34,37 +14,29 @@ function luna.quit(reason)
         reason = "BAI"
     end
 
-    luna.sendline(string.format("QUIT :%s", reason))
+    luna.sendLine(string.format("QUIT :%s", reason))
 end
 
-function luna.part(reason)
-    if reason == nil then
-        reason = "BAI"
-    end
-
-    luna.sendline(string.format("PART :%s", reason))
-end
-
-function luna.join_channel(channel, key)
+function luna.joinChannel(channel, key)
     if key == nil then
-        luna.sendline(string.format("JOIN %s", channel))
+        luna.sendLine(string.format("JOIN %s", channel))
     else
-        luna.sendline(string.format("JOIN %s :%s", channel, key))
+        luna.sendLine(string.format("JOIN %s :%s", channel, key))
     end
 end
 
 function luna.notice(target, message)
-    luna.sendline(string.format("NOTICE %s :%s", target, message))
+    luna.sendLine(string.format("NOTICE %s :%s", target, message))
 end
 
 function luna.privmsg(target, message)
-    luna.sendline(string.format("PRIVMSG %s :%s", target, message))
+    luna.sendLine(string.format("PRIVMSG %s :%s", target, message))
 end
 
 --
 -- Add and delete signal handlers
 --
-function luna.signal_add(sig, handler)
+function luna.addSignal(sig, handler)
     for i, v in ipairs(luna.__callbacks) do
         for k, v2 in pairs(luna.__callbacks[i]) do
             if v2 == sig then
@@ -79,7 +51,7 @@ function luna.signal_add(sig, handler)
     return new_handler
 end
 
-function luna.signal_del(handler)
+function luna.delSignal(handler)
     for i, v in ipairs(luna.__callbacks) do
         if v == handler then
             return table.remove(luna.__callbacks, i)
@@ -90,7 +62,7 @@ end
 --
 -- Register script to Luna
 --
-function luna.script_register(inf)
+function luna.registerScript(inf)
     if luna.__scriptinfo ~= nil then
         error 'script has already been registered'
     end
@@ -109,32 +81,31 @@ end
 --
 -- Some type goodness
 --
-function luna.types.channel:get_name()
-    return ({self:get_channelinfo()})[1]
+function luna.types.channel:getName()
+    return ({self:getChannelInfo()})[1]
 end
 
-function luna.types.channel:get_creation_date()
-    return ({self:get_channelinfo()})[2]
+function luna.types.channel:getCreationDate()
+    return ({self:getChannelInfo()})[2]
 end
 
 function luna.types.channel:privmsg(msg)
-    luna.privmsg(self:get_name(), msg)
+    luna.privmsg(self:getName(), msg)
 end
 
 
 
-function luna.types.channel_user:get_reguser()
-    n, u, h = self:get_userinfo()
+function luna.types.channel_user:getRegUser()
+    n, u, h = self:getUserInfo()
     return luna.users.find{nick = n, user = u, host = h}
 end
 
 function luna.types.channel_user:respond(msg)
-    nick = self:get_userinfo()
+    nick = self:getUserInfo()
 
-    self:get_channel():privmsg(string.format("%s: %s", nick, msg))
+    self:getChannel():privmsg(string.format("%s: %s", nick, msg))
 end
 
-
-function luna.types.user:is_operator()
-    return self:get_flags():find('o') ~= nil
+function luna.types.user:isOperator()
+    return self:getFlags():find('o') ~= nil
 end

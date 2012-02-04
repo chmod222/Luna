@@ -60,7 +60,7 @@ static const struct luaL_reg luaX_user_functions[] = {
     { "add", luaX_users_add },
     { "remove", luaX_users_remove },
     { "save", luaX_users_save },
-    { "get_all", luaX_users_getall },
+    { "getUserList", luaX_users_getall },
     { "reload", luaX_users_reload },
 
     { NULL, NULL }
@@ -68,14 +68,14 @@ static const struct luaL_reg luaX_user_functions[] = {
 
 
 static const struct luaL_reg luaX_user_methods[] = {
-    { "get_flags", luaX_user_getflags },
-    { "set_flags", luaX_user_setflags },
+    { "getFlags", luaX_user_getflags },
+    { "setFlags", luaX_user_setflags },
 
-    { "get_level", luaX_user_getlevel },
-    { "set_level", luaX_user_setlevel },
+    { "getLevel", luaX_user_getlevel },
+    { "setLevel", luaX_user_setlevel },
 
-    { "get_id", luaX_user_getid },
-    { "set_id", luaX_user_setid },
+    { "getId", luaX_user_getid },
+    { "setId", luaX_user_setid },
 
     { NULL, NULL }
 };

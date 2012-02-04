@@ -38,7 +38,7 @@
 
 luaL_Reg api_library[] = {
     { "log",             api_log },
-    { "sendline",        api_sendline },
+    { "sendLine",        api_sendline },
 
     { NULL, NULL }
 };

@@ -54,24 +54,24 @@ irc_channel *find_channel_by_name(lua_State*, const char*);
 irc_channel *luaX_check_irc_channel_ud(lua_State*, int);
 
 static const struct luaL_reg luaX_channel_functions[] = {
-    { "get_all", luaX_channels_getall },
+    { "getChannelList", luaX_channels_getall },
     { "find", luaX_channels_find },
 
     { NULL, NULL }
 };
 
 static const struct luaL_reg luaX_channel_methods[] = {
-    { "get_channelinfo", luaX_channel_getchannelinfo },
-    { "get_topic", luaX_channel_gettopic },
-    { "get_users", luaX_channel_getusers },
-    { "find_user", luaX_channel_finduser },
+    { "getChannelInfo", luaX_channel_getchannelinfo },
+    { "getTopic", luaX_channel_gettopic },
+    { "getUserList", luaX_channel_getusers },
+    { "findUser", luaX_channel_finduser },
     { NULL, NULL }
 };
 
 static const struct luaL_reg luaX_chuser_methods[] = {
-    { "get_userinfo", luaX_chuser_getuserinfo },
-    { "get_status", luaX_chuser_getstatus },
-    { "get_channel", luaX_chuser_getchannel },
+    { "getUserInfo", luaX_chuser_getuserinfo },
+    { "getStatus", luaX_chuser_getstatus },
+    { "getChannel", luaX_chuser_getchannel },
     { NULL, NULL }
 };
 

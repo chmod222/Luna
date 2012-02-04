@@ -43,9 +43,9 @@ int luaX_self_getruntimes(lua_State*);
 
 
 static const struct luaL_reg luaX_self_functions[] = {
-    { "get_userinfo", luaX_self_getuserinfo },
-    { "get_server", luaX_self_getserver },
-    { "get_runtimes", luaX_self_getruntimes },
+    { "getUserInfo", luaX_self_getuserinfo },
+    { "getServerInfo", luaX_self_getserver },
+    { "getRuntimeInfo", luaX_self_getruntimes },
 
     { NULL, NULL }
 };
