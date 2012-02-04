@@ -82,14 +82,4 @@ void irc_print_irc_event(irc_event *);
 char *irc_event_type_to_string(irc_event_type);
 enum irc_event_type irc_event_type_from_string(const char *);
 
-/* Utility functions */
-/*
-int irc_join(int fd, const char *channel);
-int irc_part(int fd, const char *channel, const char *reason);
-int irc_quit(int fd, const char *reason);
-int irc_privmsg(int fd, const char *receiver, const char *fmt, ...);
-int irc_notice(int fd, const char *receiver, const char *fmt, ...);
-int irc_respond(int fd, struct irc_event *ev, const char *fmt, ...);
-*/
-
 #endif
