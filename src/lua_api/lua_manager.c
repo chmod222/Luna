@@ -291,6 +291,14 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
                             lua_pushnumber(L, va_arg(args, double));
                             break;
 
+                        case 'u': /* irc user */
+                            luaX_push_chanuser(L, va_arg(args, luaX_chanuser *));
+                            break;
+
+                        case 'c':
+                            luaX_push_channel(L, va_arg(args, luaX_channel *));
+                            break;
+
                         default:
                             j--;
                             break;

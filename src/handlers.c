@@ -35,7 +35,9 @@
 #include "channel.h"
 #include "lua_api/lua_manager.h"
 #include "lua_api/lua_util.h"
+#include "lua_api/lua_channel.h"
 
+void make_pair(luaX_channel*, luaX_chanuser*, const char *, const char *);
 
 int handle_ping(luna_state *,    irc_event *);
 int handle_numeric(luna_state *, irc_event *);
@@ -63,7 +65,22 @@ int mode_set(luna_state *, const char *, char, const char *);
 int mode_unset(luna_state *, const char *, char, const char *);
 
 
-int handle_event(luna_state *env, irc_event *ev)
+void
+make_pair(luaX_channel *c, luaX_chanuser *u, const char *n, const char *ch)
+{
+    memset(c, 0, sizeof(*c));
+    memset(u, 0, sizeof(*u));
+
+    strncpy(c->name, ch, sizeof(c->name) - 1);
+    strncpy(u->nick, n,  sizeof(u->nick) - 1);
+    memcpy(&(u->channel), c, sizeof(u->channel));
+
+    return;
+}
+
+
+int
+handle_event(luna_state *env, irc_event *ev)
 {
     /* Core event handlers */
     switch (ev->type)
@@ -93,6 +110,7 @@ handle_privmsg(luna_state *env, irc_event *ev)
     char msgcopy[LINELEN];
     char *isitme = NULL;
     char *command = NULL;
+    const int priv  = ev->param[0][0] != '#';
     const char *sig = ev->param[0][0] == '#' ? "public_message"
                                              : "private_message";
 
@@ -110,7 +128,19 @@ handle_privmsg(luna_state *env, irc_event *ev)
             handle_command(env, ev, command, strtok(NULL, ""));
     }
 
-    signal_dispatch(env, sig, "pss", &(ev->from), ev->param[0], ev->msg);
+    if (priv)
+    {
+        signal_dispatch(env, sig, "pss", &(ev->from), ev->param[0], ev->msg);
+    }
+    else
+    {
+        luaX_channel ch;
+        luaX_chanuser cu;
+
+        make_pair(&ch, &cu, ev->from.nick, ev->param[0]);
+
+        signal_dispatch(env, sig, "ucs", &cu, &cu, ev->msg);
+    }
 
     return 0;
 }
@@ -119,6 +149,7 @@ handle_privmsg(luna_state *env, irc_event *ev)
 int
 handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 {
+    const int priv  = ev->param[0][0] != '#';
     const char *sig = ev->param[0][0] == '#' ? "public_command"
                                              : "private_command";
     luna_user *user = user_match(env, &(ev->from));
@@ -151,7 +182,19 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
         }
     }
 
-    signal_dispatch(env, sig, "psss", &(ev->from), ev->param[0], cmd, rest);
+    if (priv)
+    {
+        signal_dispatch(env, sig, "psss", &(ev->from), ev->param[0], cmd, rest);
+    }
+    else
+    {
+        luaX_channel ch;
+        luaX_chanuser cu;
+
+        make_pair(&ch, &cu, ev->from.nick, ev->param[0]);
+
+        signal_dispatch(env, sig, "ucss", &cu, &cu, cmd, rest);
+    }
 
     return 0;
 }
@@ -246,6 +289,11 @@ handle_join(luna_state *env, irc_event *ev)
 {
     const char *c = ev->msg ? ev->msg : ev->param[0];
 
+    luaX_channel ch;
+    luaX_chanuser cu;
+
+    make_pair(&ch, &cu, ev->from.nick, c);
+
     /* Is it me? */
     if (!strcasecmp(ev->from.nick, env->userinfo.nick))
     {
@@ -262,7 +310,7 @@ handle_join(luna_state *env, irc_event *ev)
         channel_add_user(env, c, ev->from.nick, ev->from.user, ev->from.host);
     }
 
-    signal_dispatch(env, "channel_join", "ps", &(ev->from), c);
+    signal_dispatch(env, "channel_join", "uc", &cu, &ch);
 
     return 0;
 }
@@ -271,6 +319,16 @@ handle_join(luna_state *env, irc_event *ev)
 int
 handle_part(luna_state *env, irc_event *ev)
 {
+    luaX_channel ch;
+    luaX_chanuser cu;
+
+    make_pair(&ch, &cu, ev->from.nick, ev->param[0]);
+
+    if (ev->msg)
+        signal_dispatch(env, "channel_part", "ucs", &cu, &ch, ev->msg);
+    else
+        signal_dispatch(env, "channel_part", "uc", &cu, &ch);
+
     /* Is it me? */
     if (!strcasecmp(ev->from.nick, env->userinfo.nick))
     {
@@ -282,12 +340,6 @@ handle_part(luna_state *env, irc_event *ev)
         /* Nah, remove user from channel */
         channel_remove_user(env, ev->param[0], ev->from.nick);
     }
-
-    if (ev->msg)
-        signal_dispatch(env, "channel_part", "pss", &(ev->from),
-                        ev->param[0], ev->msg);
-    else
-        signal_dispatch(env, "channel_part", "ps", &(ev->from), ev->param[0]);
 
     return 0;
 }
@@ -376,6 +428,11 @@ handle_topic(luna_state *env, irc_event *ev)
 {
     char hoststring[128];
 
+    luaX_channel ch;
+    luaX_chanuser cu;
+
+    make_pair(&ch, &cu, ev->from.nick, ev->param[0]);
+
     memset(hoststring, 0, sizeof(hoststring));
     snprintf(hoststring, sizeof(hoststring), "%s!%s@%s",
              ev->from.nick, ev->from.user, ev->from.host);
@@ -383,8 +440,7 @@ handle_topic(luna_state *env, irc_event *ev)
     channel_set_topic(env, ev->param[0], ev->msg);
     channel_set_topic_meta(env, ev->param[0], hoststring, time(NULL));
 
-    signal_dispatch(env, "topic_change", "pss", &(ev->from),
-                    ev->param[0], ev->msg);
+    signal_dispatch(env, "topic_change", "ucs", &cu, &ch, ev->msg);
 
     return 0;
 }
@@ -393,6 +449,15 @@ handle_topic(luna_state *env, irc_event *ev)
 int
 handle_kick(luna_state *env, irc_event *ev)
 {
+    luaX_channel ch;
+    luaX_chanuser kicker;
+    luaX_chanuser kicked;
+
+    make_pair(&ch, &kicker, ev->from.nick, ev->param[0]);
+    make_pair(&ch, &kicked, ev->param[1],  ev->param[0]);
+
+    signal_dispatch(env, "user_kicked", "ucus", &kicker, &ch, &kicked, ev->msg);
+
     /* Remove user from all channels (ev->param[1]) */
     if (!strcasecmp(ev->param[1], env->userinfo.nick))
     {
@@ -405,8 +470,6 @@ handle_kick(luna_state *env, irc_event *ev)
         channel_remove_user(env, ev->param[0], ev->param[1]);
     }
 
-    signal_dispatch(env, "user_kicked", "psss", &(ev->from), ev->param[0],
-                    ev->param[1], ev->msg);
     return 0;
 }
 
