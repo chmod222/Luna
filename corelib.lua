@@ -61,16 +61,6 @@ function luna.privmsg(target, message)
     luna.sendline(string.format("PRIVMSG %s :%s", target, message))
 end
 
-function luna.respond(channel, user, response)
-    if type(user) == 'table' then
-        nickname = user.nick
-    else
-        nickname = user
-    end
-
-    luna.privmsg(channel, string.format("%s: %s", nickname, response))
-end
-
 --
 -- Add and delete signal handlers
 --
@@ -120,9 +110,31 @@ end
 -- Some type goodness
 --
 function luna.types.channel:get_name()
-    return self:get_channelinfo()
+    return ({self:get_channelinfo()})[1]
 end
 
 function luna.types.channel:get_creation_date()
     return ({self:get_channelinfo()})[2]
+end
+
+function luna.types.channel:privmsg(msg)
+    luna.privmsg(self:get_name(), msg)
+end
+
+
+
+function luna.types.channel_user:get_reguser()
+    n, u, h = self:get_userinfo()
+    return luna.users.find{nick = n, user = u, host = h}
+end
+
+function luna.types.channel_user:respond(msg)
+    nick = self:get_userinfo()
+
+    self:get_channel():privmsg(string.format("%s: %s", nick, msg))
+end
+
+
+function luna.types.user:is_operator()
+    return self:get_flags():find('o') ~= nil
 end

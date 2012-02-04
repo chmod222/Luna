@@ -55,7 +55,6 @@ irc_channel *find_channel_by_userdata(lua_State*, luaX_channel*);
 
 irc_channel *luaX_check_irc_channel_ud(lua_State*, int);
 
-
 static const struct luaL_reg luaX_channel_functions[] = {
     { "get_all", luaX_channels_getall },
     { "find", luaX_channels_find },
@@ -120,6 +119,36 @@ luaX_check_irc_channel_ud(lua_State *L, int ind)
         luaL_error(L, "no such channel '%s'", c->name);
 
     return res;
+}
+
+
+void
+luaX_push_chanuser(lua_State *L, luaX_chanuser *cu)
+{
+    luaX_chanuser *u =
+        (luaX_chanuser *)lua_newuserdata(L, sizeof(luaX_chanuser));
+
+    luaL_getmetatable(L, "luna.channel.user");
+    lua_setmetatable(L, -2);
+
+    memcpy(u, cu, sizeof(luaX_chanuser));
+
+    return;
+}
+
+
+void
+luaX_push_channel(lua_State *L, luaX_channel *c)
+{
+    luaX_channel *u =
+        (luaX_channel *)lua_newuserdata(L, sizeof(luaX_channel));
+
+    luaL_getmetatable(L, "luna.channel");
+    lua_setmetatable(L, -2);
+
+    memcpy(u, c, sizeof(luaX_channel));
+
+    return;
 }
 
 
@@ -261,7 +290,12 @@ luaX_chuser_getchannel(lua_State *L)
     luaX_chanuser *ud =
         (luaX_chanuser *)luaL_checkudata(L, 1, "luna.channel.user");
 
-    lua_pushstring(L, ud->channel.name);
+    luaX_channel *c = (luaX_channel *)lua_newuserdata(L, sizeof(luaX_channel));
+    luaL_getmetatable(L, "luna.channel");
+    lua_setmetatable(L, -2);
+
+    strncpy(c->name, ud->channel.name, sizeof(c->name) - 1);
+
     return 1;
 }
 

@@ -250,7 +250,7 @@ luaX_users_getall(lua_State *L)
 
     for (cur = state->users->root; cur != NULL; cur = cur->next)
     {
-        luna_user *ud = (luna_user *)lua_newuserdata(L, sizeof(luna_user));
+        luaX_user *ud = (luaX_user *)lua_newuserdata(L, sizeof(luaX_user));
         luaL_getmetatable(L, "luna.user");
         lua_setmetatable(L, -2);
 

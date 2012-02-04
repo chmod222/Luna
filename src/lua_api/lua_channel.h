@@ -47,4 +47,7 @@ typedef struct luaX_chanuser
 
 int luaX_register_channel(lua_State*, int);
 
+void luaX_push_chanuser(lua_State*, luaX_chanuser*);
+void luaX_push_channel(lua_State*, luaX_channel*);
+
 #endif
