@@ -17,3 +17,6 @@ $(EXECUTABLE): $(OBJECTS)
 
 .c.o:
 	$(CC) $(CFLAGS) $< -o $@
+
+clean:
+	find -name *.o -delete

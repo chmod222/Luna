@@ -53,7 +53,6 @@ int luaX_users_save(lua_State*);
 int luaX_users_getall(lua_State*);
 int luaX_users_reload(lua_State*);
 
-luna_user *find_user_by_userdata(lua_State*, luaX_user*);
 luna_user *luaX_check_user_ud(lua_State*, int);
 
 static const struct luaL_reg luaX_user_functions[] = {
@@ -83,25 +82,17 @@ static const struct luaL_reg luaX_user_methods[] = {
 
 
 luna_user *
-find_user_by_userdata(lua_State *L, luaX_user *u)
-{
-    luna_state *state = api_getstate(L);
-
-    return (luna_user *)list_find(state->users, (void *)u->hostmask,
-                                  &luna_user_host_cmp);
-}
-
-
-luna_user *
 luaX_check_user_ud(lua_State *L, int ind)
 {
-    luaX_user *u = (luaX_user *)luaL_checkudata(L, ind, "luna.user");
-    luna_user *res = NULL;
+    luna_state *s = api_getstate(L);
 
-    if ((res = find_user_by_userdata(L, u)) == NULL)
+    luaX_user *u = (luaX_user *)luaL_checkudata(L, ind, "luna.user");
+    void *res = NULL;
+
+    if ((res = list_find(s->users, u->hostmask, &luna_user_host_cmp)) == NULL)
         luaL_error(L, "no such user '%s'", u->hostmask);
 
-    return res;
+    return (luna_user *)res;
 }
 
 

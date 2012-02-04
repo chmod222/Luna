@@ -38,88 +38,6 @@
 #include "../channel.h"
 
 int
-api_push_script(lua_State *L, luna_script *script)
-{
-    int table;
-
-    lua_newtable(L);
-    table = lua_gettop(L);
-
-    api_setfield_s(L, table, "name", script->name);
-    api_setfield_s(L, table, "description", script->description);
-    api_setfield_s(L, table, "version", script->version);
-    api_setfield_s(L, table, "author", script->author);
-    api_setfield_s(L, table, "file", script->filename);
-
-    return 0;
-}
-
-
-int
-api_push_channel(lua_State *L, irc_channel *channel)
-{
-    int table;
-    int array;
-    int topic_table;
-    int i = 1;
-    list_node *cur = NULL;
-
-    lua_newtable(L);
-    table = lua_gettop(L);
-
-    api_setfield_s(L, table, "name", channel->name);
-
-    lua_pushstring(L, "topic");
-    lua_newtable(L);
-    topic_table = lua_gettop(L);
-    api_setfield_s(L, topic_table, "text", channel->topic);
-    api_setfield_s(L, topic_table, "set_by", channel->topic_setter);
-    api_setfield_n(L, topic_table, "set_at", channel->topic_set);
-    lua_settable(L, table);
-
-    api_setfield_n(L, table, "created", channel->created);
-
-    lua_pushstring(L, "users");
-    lua_newtable(L);
-    array = lua_gettop(L);
-
-    for (cur = channel->users->root; cur != NULL; cur = cur->next)
-    {
-        api_push_user(L, cur->data);
-        lua_rawseti(L, array, i++);
-    }
-
-    lua_settable(L, table);
-
-    return 0;
-}
-
-
-int
-api_push_user(lua_State *L, irc_user *user)
-{
-    int table;
-
-    lua_newtable(L);
-    table = lua_gettop(L);
-
-    api_setfield_s(L, table, "nick", user->nick);
-    api_setfield_s(L, table, "user", user->user);
-    api_setfield_s(L, table, "host", user->host);
-
-    lua_pushstring(L, "op");
-    lua_pushboolean(L, user->op);
-    lua_settable(L, table);
-
-    lua_pushstring(L, "voice");
-    lua_pushboolean(L, user->voice);
-    lua_settable(L, table);
-
-    return 0;
-}
-
-
-int
 api_loglevel_from_string(const char *lev)
 {
     if (!lev)
@@ -165,27 +83,6 @@ api_getstate(lua_State *L)
     return state;
 }
 
-luna_user *
-api_checkuser(lua_State *L, int index)
-{
-    int h;
-
-    luna_state *state = api_getstate(L);
-    const char *m = NULL;
-
-    if (lua_type(L, 1) != LUA_TTABLE)
-        return NULL;
-
-    lua_pushstring(L, "hostmask");
-    lua_gettable(L, index);
-    h = lua_gettop(L);
-
-    /* checking hostmask should do */
-    m = lua_tostring(L, h);
-
-    return (luna_user *)list_find(state->users, (void *)m, &luna_user_host_cmp);
-}
-
 
 int
 api_setfield_s(lua_State *L, int table, const char *key, const char *value)
@@ -197,16 +94,6 @@ api_setfield_s(lua_State *L, int table, const char *key, const char *value)
     return 0;
 }
 
-
-int
-api_setfield_n(lua_State *L, int table, const char *key, double value)
-{
-    lua_pushstring(L, key);
-    lua_pushnumber(L, value);
-    lua_settable(L, table);
-
-    return 0;
-}
 
 
 int

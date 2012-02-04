@@ -39,7 +39,6 @@
 #include "lua_manager.h"
 
 
-int luaX_free_script(lua_State*);
 int luaX_script_getscriptinfo(lua_State*);
 int luaX_script_isself(lua_State*);
 
@@ -67,14 +66,13 @@ static const struct luaL_reg luaX_script_methods[] = {
 int
 luaX_script_getscriptinfo(lua_State *L)
 {
-    void *ud = luaL_checkudata(L, 1, "luna.script");
-    luaL_argcheck(L, ud != NULL, 1, "'luna.script' expected");
+    luna_script *ud = (luna_script *)luaL_checkudata(L, 1, "luna.script");
 
-    lua_pushstring(L, ((luna_script *)ud)->filename);
-    lua_pushstring(L, ((luna_script *)ud)->name);
-    lua_pushstring(L, ((luna_script *)ud)->description);
-    lua_pushstring(L, ((luna_script *)ud)->author);
-    lua_pushstring(L, ((luna_script *)ud)->version);
+    lua_pushstring(L, ud->filename);
+    lua_pushstring(L, ud->name);
+    lua_pushstring(L, ud->description);
+    lua_pushstring(L, ud->author);
+    lua_pushstring(L, ud->version);
 
     return 5;
 }
@@ -83,10 +81,9 @@ luaX_script_getscriptinfo(lua_State *L)
 int
 luaX_script_isself(lua_State *L)
 {
-    void *ud = luaL_checkudata(L, 1, "luna.script");
-    luaL_argcheck(L, ud != NULL, 1, "'luna.script' expected");
+    luna_script *ud = (luna_script *)luaL_checkudata(L, 1, "luna.script");
 
-    lua_pushboolean(L, ((luna_script *)ud)->state == L);
+    lua_pushboolean(L, ud->state == L);
     return 1;
 }
 
@@ -158,21 +155,9 @@ luaX_scripts_getall(lua_State *L)
 
 
 int
-luaX_free_script(lua_State *L)
-{
-    return 0;
-}
-
-
-int
 luaX_register_script(lua_State *L, int regtable)
 {
     int meta = (luaL_newmetatable(L, "luna.script"), lua_gettop(L));
-
-    /* Register garbage collector function */
-    lua_pushstring(L, "__gc");
-    lua_pushcfunction(L, luaX_free_script);
-    lua_settable(L, meta);
 
     /* Register indexing field */
     lua_pushstring(L, "__index");

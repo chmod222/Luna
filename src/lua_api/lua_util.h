@@ -35,19 +35,13 @@
 #include "../channel.h"
 
 
-int api_push_script(lua_State *, luna_script *);
-int api_push_channel(lua_State *, irc_channel *);
-int api_push_user(lua_State *, irc_user *);
-
 int api_loglevel_from_string(const char *);
 
 int api_push_sender(lua_State *, irc_sender *);
 
 luna_state *api_getstate(lua_State *);
-luna_user *api_checkuser(lua_State *, int index);
 
 int api_setfield_s(lua_State *, int, const char *, const char *);
-int api_setfield_n(lua_State *, int, const char *, double);
 
 int script_cmp(void *, void *);
 void script_free(void *);

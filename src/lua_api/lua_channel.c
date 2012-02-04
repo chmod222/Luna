@@ -51,8 +51,6 @@ int luaX_chuser_getstatus(lua_State*);
 int luaX_chuser_getchannel(lua_State*);
 
 irc_channel *find_channel_by_name(lua_State*, const char*);
-irc_channel *find_channel_by_userdata(lua_State*, luaX_channel*);
-
 irc_channel *luaX_check_irc_channel_ud(lua_State*, int);
 
 static const struct luaL_reg luaX_channel_functions[] = {
@@ -88,37 +86,17 @@ find_channel_by_name(lua_State *L, const char *c)
 
 
 irc_channel *
-find_channel_by_userdata(lua_State *L, luaX_channel *c)
-{
-    luna_state *state = api_getstate(L);
-
-    return (irc_channel *)list_find(state->channels, (void *)c->name,
-                                    &channel_cmp);
-}
-
-
-irc_channel *
-luaX_check_irc_channel_name(lua_State *L, const char *c)
-{
-    irc_channel *res = NULL;
-
-    if ((res = find_channel_by_name(L, c)) == NULL)
-        luaL_error(L, "no such channel '%s'", c);
-
-    return res;
-}
-
-
-irc_channel *
 luaX_check_irc_channel_ud(lua_State *L, int ind)
 {
-    luaX_channel *c = (luaX_channel *)luaL_checkudata(L, ind, "luna.channel");
-    irc_channel *res = NULL;
+    luna_state *s = api_getstate(L);
 
-    if ((res = find_channel_by_userdata(L, c)) == NULL)
+    luaX_channel *c = (luaX_channel *)luaL_checkudata(L, ind, "luna.channel");
+    void *res = NULL;
+
+    if ((res = list_find(s->channels, c->name, &channel_cmp)) == NULL)
         luaL_error(L, "no such channel '%s'", c->name);
 
-    return res;
+    return (irc_channel *)res;
 }
 
 
