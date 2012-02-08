@@ -128,3 +128,35 @@ end
 function luna.types.user:isOperator()
     return self:getFlags():find('o') ~= nil
 end
+
+---- Some more utilities
+--
+
+-- str = 'a b c'
+-- str:split(' ') = {'a', 'b', 'c'}
+function string:split(sep)
+    local parts = {}
+    local l = 1
+
+    -- While there is a seperator within the string
+    while self:find(sep, l) do
+        local sep_start, sep_end = self:find(sep, l)
+
+        -- Unless the substring between the last seperators was empty, add
+        -- it to the results
+        if sep_start ~= l then
+            -- Add the part between l (last seperator end or string start) and
+            -- sep_start
+            table.insert(parts, self:sub(l, sep_start - 1))
+        end
+
+        -- put l after the seperator end
+        l = sep_end + 1
+    end
+
+    if self:len() >= l then
+        table.insert(parts, self:sub(l))
+    end
+
+    return parts
+end
