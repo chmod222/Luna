@@ -60,8 +60,9 @@ int
 api_sendline(lua_State *L)
 {
     const char *line = luaL_checkstring(L, 1);
+    luna_state *state = api_getstate(L);
 
-    lua_pushnumber(L, api_command_helper(L, line));
+    lua_pushnumber(L, net_sendfln(state, "%s", line));
 
     return 1;
 }

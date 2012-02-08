@@ -18,24 +18,20 @@
 
 /*******************************************************************************
  *
- *  Lua API utility functions (lua_util.h)
+ *  Lua source object management (lua_source.h)
  *  ---
- *  Provide pushing and checking functions for internal structures
+ *  Provide access to message sources (user, server(?)) within scripts
  *
- *  Created: 03.02.2012 02:25:34
+ *  Created: 08.02.2012 05:21:03
  *
  ******************************************************************************/
-#ifndef LUA_UTIL
-#define LUA_UTIL
+#ifndef LUA_SOURCE_H
+#define LUA_SOURCE_H
 
 #include <lua.h>
 
-#include "lua_manager.h"
-#include "../user.h"
-#include "../channel.h"
+int luaX_register_source(lua_State*, int);
 
-
-int api_loglevel_from_string(const char *);
-luna_state *api_getstate(lua_State *);
+void luaX_push_irc_sender(lua_State*, irc_sender*);
 
 #endif

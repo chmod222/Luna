@@ -105,6 +105,7 @@ luna_mainloop(luna_state *state)
             struct timeval timeout;
             int ready;
 
+            /* Wait a quarter of a second before emitting the "idle" signals */
             timeout.tv_sec  = 0;
             timeout.tv_usec = 250000;
 

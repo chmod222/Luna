@@ -53,6 +53,10 @@ int luaX_chuser_getchannel(lua_State*);
 irc_channel *find_channel_by_name(lua_State*, const char*);
 irc_channel *luaX_check_irc_channel_ud(lua_State*, int);
 
+int luaX_pushchannel(lua_State*, const char*);
+int luaX_pushchanneluser(lua_State*, const char*, const char*);
+
+
 static const struct luaL_reg luaX_channel_functions[] = {
     { "getChannelList", luaX_channels_getall },
     { "find", luaX_channels_find },
@@ -131,6 +135,37 @@ luaX_push_channel(lua_State *L, luaX_channel *c)
 
 
 int
+luaX_pushchannel(lua_State *L, const char *channel)
+{
+    luaX_channel *u =
+        (luaX_channel *)lua_newuserdata(L, sizeof(luaX_channel));
+
+    luaL_getmetatable(L, "luna.channel");
+    lua_setmetatable(L, -2);
+
+    strncpy(u->name, channel, sizeof(u->name) - 1);
+
+    return 0;
+}
+
+
+int
+luaX_pushchanneluser(lua_State *L, const char *channel, const char *nickname)
+{
+    luaX_chanuser *udc =
+        (luaX_chanuser *)lua_newuserdata(L, sizeof(luaX_chanuser));
+
+    luaL_getmetatable(L, "luna.channel.user");
+    lua_setmetatable(L, -2);
+
+    strncpy(udc->channel.name, channel,  sizeof(udc->channel.name) - 1);
+    strncpy(udc->nick,         nickname, sizeof(udc->nick) - 1);
+
+    return 0;
+}
+
+
+int
 luaX_channel_getchannelinfo(lua_State *L)
 {
     irc_channel *target = luaX_check_irc_channel_ud(L, 1);
@@ -151,7 +186,7 @@ luaX_channel_gettopic(lua_State *L)
     lua_pushnumber(L, target->topic_set);
     lua_pushstring(L, target->topic_setter);
 
-    return 2;
+    return 3;
 }
 
 
@@ -169,14 +204,7 @@ luaX_channel_getusers(lua_State *L)
     for (cur = target->users->root; cur != NULL; cur = cur->next)
     {
         irc_user *curuser = (irc_user *)cur->data;
-        luaX_chanuser *udc =
-            (luaX_chanuser *)lua_newuserdata(L, sizeof(luaX_chanuser));
-
-        luaL_getmetatable(L, "luna.channel.user");
-        lua_setmetatable(L, -2);
-
-        strncpy(udc->channel.name, target->name, sizeof(udc->channel.name) - 1);
-        strncpy(udc->nick,         curuser->nick, sizeof(udc->nick) - 1);
+        luaX_pushchanneluser(L, target->name, curuser->nick);
 
         lua_rawseti(L, array, i++);
     }
@@ -196,14 +224,7 @@ luaX_channel_finduser(lua_State *L)
 
     if ((target2 = channel_get_user(state, target->name, user)) != NULL)
     {
-        luaX_chanuser *udc =
-            (luaX_chanuser *)lua_newuserdata(L, sizeof(luaX_chanuser));
-
-        luaL_getmetatable(L, "luna.channel.user");
-        lua_setmetatable(L, -2);
-
-        strncpy(udc->channel.name, target->name, sizeof(udc->channel.name) - 1);
-        strncpy(udc->nick,         target2->nick, sizeof(udc->nick) - 1);
+        luaX_pushchanneluser(L, target->name, target2->nick);
 
         return 1;
     }
@@ -267,12 +288,7 @@ luaX_chuser_getchannel(lua_State *L)
 {
     luaX_chanuser *ud =
         (luaX_chanuser *)luaL_checkudata(L, 1, "luna.channel.user");
-
-    luaX_channel *c = (luaX_channel *)lua_newuserdata(L, sizeof(luaX_channel));
-    luaL_getmetatable(L, "luna.channel");
-    lua_setmetatable(L, -2);
-
-    strncpy(c->name, ud->channel.name, sizeof(c->name) - 1);
+    luaX_pushchannel(L, ud->channel.name);
 
     return 1;
 }
@@ -291,14 +307,9 @@ luaX_channels_getall(lua_State *L)
 
     for (cur = state->channels->root; cur != NULL; cur = cur->next)
     {
-        luaX_channel *u =
-            (luaX_channel *)lua_newuserdata(L, sizeof(luaX_channel));
         irc_channel *chan = (irc_channel *)cur->data;
-
-        luaL_getmetatable(L, "luna.channel");
-        lua_setmetatable(L, -2);
-
-        strncpy(u->name, chan->name, sizeof(u->name) - 1);
+        
+        luaX_pushchannel(L, chan->name);
 
         lua_rawseti(L, array, i++);
     }
@@ -315,13 +326,7 @@ luaX_channels_find(lua_State *L)
 
     if ((target = find_channel_by_name(L, chan)) != NULL)
     {
-        luaX_channel *u =
-            (luaX_channel *)lua_newuserdata(L, sizeof(luaX_channel));
-
-        luaL_getmetatable(L, "luna.channel");
-        lua_setmetatable(L, -2);
-
-        strncpy(u->name, target->name, sizeof(u->name) - 1);
+        luaX_pushchannel(L, target->name);
 
         return 1;
     }

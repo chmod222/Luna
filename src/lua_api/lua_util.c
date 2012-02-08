@@ -35,7 +35,7 @@
 #include "lua_manager.h"
 #include "lua_util.h"
 #include "../user.h"
-#include "../channel.h"
+
 
 int
 api_loglevel_from_string(const char *lev)
@@ -52,83 +52,17 @@ api_loglevel_from_string(const char *lev)
 }
 
 
-int
-api_push_sender(lua_State *L, irc_sender *s)
-{
-    int table_index;
-
-    lua_newtable(L);
-    table_index = lua_gettop(L);
-
-    api_setfield_s(L, table_index, "nick", s->nick);
-    api_setfield_s(L, table_index, "user", s->user);
-    api_setfield_s(L, table_index, "host", s->host);
-
-    return 0;
-}
-
-
 luna_state *
 api_getstate(lua_State *L)
 {
     luna_state *state = NULL;
-    int top = lua_gettop(L);
 
     lua_pushlightuserdata(L, (void *)env_key);
     lua_gettable(L, LUA_REGISTRYINDEX);
 
-    state = lua_touserdata(L, top + 1);
+    state = lua_touserdata(L, -1);
     lua_pop(L, 1);
 
     return state;
-}
-
-
-int
-api_setfield_s(lua_State *L, int table, const char *key, const char *value)
-{
-    lua_pushstring(L, key);
-    lua_pushstring(L, value);
-    lua_settable(L, table);
-
-    return 0;
-}
-
-
-
-int
-script_cmp(void *data, void *list_data)
-{
-    char *name = (char *)data;
-    luna_script *script = (luna_script *)list_data;
-
-    return strcmp(name, script->filename);
-}
-
-
-void
-script_free(void *list_data)
-{
-    luna_script *script = (luna_script *)list_data;
-
-    lua_close(script->state);
-    free(list_data);
-
-    return;
-}
-
-
-int
-api_command_helper(lua_State *L, const char *fmt, ...)
-{
-    va_list args;
-    int ret;
-    luna_state *state = api_getstate(L);
-
-    va_start(args, fmt);
-    ret = net_vsendfln(state, fmt, args);
-    va_end(args);
-
-    return ret;
 }
 

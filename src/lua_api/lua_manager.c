@@ -36,6 +36,7 @@
 #include "lua_script.h"
 #include "lua_self.h"
 #include "lua_channel.h"
+#include "lua_source.h"
 
 
 int script_emit(luna_state *, luna_script *, const char *,
@@ -44,6 +45,28 @@ int script_emit(luna_state *, luna_script *, const char *,
 int script_identify(lua_State *, luna_script *);
 
 const char *env_key = "LUNA_ENV";
+
+
+int
+script_cmp(void *data, void *list_data)
+{
+    char *name = (char *)data;
+    luna_script *script = (luna_script *)list_data;
+
+    return strcmp(name, script->filename);
+}
+
+
+void
+script_free(void *list_data)
+{
+    luna_script *script = (luna_script *)list_data;
+
+    lua_close(script->state);
+    free(list_data);
+
+    return;
+}
 
 
 int
@@ -68,15 +91,12 @@ script_unload(luna_state *state, const char *file)
 int
 script_load(luna_state *state, const char *file)
 {
-    lua_State *L;
-    luna_script *script;
+    lua_State *L = NULL;
+    luna_script *script = NULL;
     int api_table = 0;
 
-    /* Script can be openened and allocated? */
-    if ((script = malloc(sizeof(*script))) == NULL)
-        return 1;
-
-    if ((L = lua_open()) == NULL)
+    /* Script can be openened and allocated, or Lua state cannot be created ? */
+    if (!(script = malloc(sizeof(*script))) || !((L = lua_open())))
     {
         free(script);
 
@@ -96,6 +116,7 @@ script_load(luna_state *state, const char *file)
 
     /* Register library methods */
     luaL_register(L, LIBNAME, api_library);
+
     api_table = lua_gettop(L);
 
     lua_pushstring(L, "types");
@@ -107,6 +128,7 @@ script_load(luna_state *state, const char *file)
     luaX_register_script(L, api_table);
     luaX_register_self(L, api_table);
     luaX_register_channel(L, api_table);
+    luaX_register_source(L, api_table);
 
     /* Register empty callbacks table
      * luna.__callbacks = {} */
@@ -115,6 +137,7 @@ script_load(luna_state *state, const char *file)
     lua_newtable(L);
     lua_settable(L, -3);
 
+    /* TODO: Make this... better */
     if (luaL_dofile(L, "corelib.lua") != 0)
     {
         logger_log(state->logger, LOGLEV_WARNING,
@@ -140,7 +163,7 @@ script_load(luna_state *state, const char *file)
         logger_log(state->logger, LOGLEV_ERROR, "Lua error: %s",
                    lua_tostring(L, -1));
 
-        free(script);
+        script_free(script);
         lua_close(L);
     }
 
@@ -284,7 +307,7 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
                             break;
 
                         case 'p':
-                            api_push_sender(L, va_arg(args, irc_sender *));
+                            luaX_push_irc_sender(L, va_arg(args, irc_sender *));
                             break;
 
                         case 'n':

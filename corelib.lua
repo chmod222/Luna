@@ -81,6 +81,9 @@ end
 --
 -- Some type goodness
 --
+
+---- Channel methods
+--
 function luna.types.channel:getName()
     return ({self:getChannelInfo()})[1]
 end
@@ -93,16 +96,32 @@ function luna.types.channel:privmsg(msg)
     luna.privmsg(self:getName(), msg)
 end
 
+---- Unknown users
+--
+function luna.types.source_user:privmsg(msg)
+    local nick = self:getUserInfo()
+    luna.privmsg(nick, msg)
+end
 
+function luna.types.source_user:getRegUser()
+    local n, u, h = self:getUserInfo()
+    return luna.users.find{nick = n, user = u, host = h}
+end
 
+function luna.types.source_user:respond(msg)
+    local nick = self:getUserInfo()
+    self:privmsg(string.format('%s: %s', nick, msg))
+end
+
+---- Known channel users
+--
 function luna.types.channel_user:getRegUser()
-    n, u, h = self:getUserInfo()
+    local n, u, h = self:getUserInfo()
     return luna.users.find{nick = n, user = u, host = h}
 end
 
 function luna.types.channel_user:respond(msg)
-    nick = self:getUserInfo()
-
+    local nick = self:getUserInfo()
     self:getChannel():privmsg(string.format("%s: %s", nick, msg))
 end
 

@@ -130,7 +130,7 @@ handle_privmsg(luna_state *env, irc_event *ev)
 
     if (priv)
     {
-        signal_dispatch(env, sig, "pss", &(ev->from), ev->param[0], ev->msg);
+        signal_dispatch(env, sig, "ps", &(ev->from), ev->msg);
     }
     else
     {
@@ -184,7 +184,7 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 
     if (priv)
     {
-        signal_dispatch(env, sig, "psss", &(ev->from), ev->param[0], cmd, rest);
+        signal_dispatch(env, sig, "pss", &(ev->from), cmd, rest);
     }
     else
     {
