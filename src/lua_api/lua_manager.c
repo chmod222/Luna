@@ -164,7 +164,6 @@ script_load(luna_state *state, const char *file)
                    lua_tostring(L, -1));
 
         script_free(script);
-        lua_close(L);
     }
 
     return 1;
