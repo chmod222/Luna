@@ -308,7 +308,7 @@ luaX_channels_getall(lua_State *L)
     for (cur = state->channels->root; cur != NULL; cur = cur->next)
     {
         irc_channel *chan = (irc_channel *)cur->data;
-        
+
         luaX_pushchannel(L, chan->name);
 
         lua_rawseti(L, array, i++);

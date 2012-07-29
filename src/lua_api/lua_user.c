@@ -135,7 +135,7 @@ luaX_user_setlevel(lua_State *L)
     const char *level = luaL_checkstring(L, 2);
 
     strncpy(ud->level, level, sizeof(ud->level) - 1);
-    
+
     return 0;
 }
 
@@ -157,7 +157,7 @@ luaX_user_setid(lua_State *L)
     const char *id = luaL_checkstring(L, 2);
 
     strncpy(ud->id, id, sizeof(ud->id) - 1);
-    
+
     return 0;
 }
 
