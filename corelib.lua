@@ -40,7 +40,7 @@ function luna.addSignal(sig, handler)
     for i, v in ipairs(luna.__callbacks) do
         for k, v2 in pairs(luna.__callbacks[i]) do
             if v2 == sig then
-                error("signal '" .. v2 .. "' already in use")
+                error("signal '" .. v2 .. "' already in use", 2)
             end
         end
     end
@@ -64,7 +64,7 @@ end
 --
 function luna.registerScript(inf)
     if luna.__scriptinfo ~= nil then
-        error 'script has already been registered'
+        error('script has already been registered', 2)
     end
 
     if (type(inf.name) == 'string' and #inf.name ~= 0) and
@@ -74,7 +74,8 @@ function luna.registerScript(inf)
 
        luna.__scriptinfo = inf
    else
-       error "fields 'name', 'author', 'description' and 'version' are required"
+       error("fields 'name', 'author', 'description' " ..
+             "and 'version' are required", 2)
    end
 end
 
