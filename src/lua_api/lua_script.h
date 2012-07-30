@@ -30,12 +30,17 @@
 
 #include <lua.h>
 
-/* No need to create middle-man structures for script objects, since they
- * are immutable and need no constant access to the global state */
+typedef struct luaX_script
+{
+    int (*serialize)(lua_State*, struct luaX_serializable*);
+
+    const luna_script *script;
+} luaX_script;
+
 
 int luaX_register_script(lua_State*, int);
 
-int luaX_make_script(luna_script*);
+luaX_script luaX_make_script(const luna_script*);
 int luaX_push_script(lua_State*, luaX_serializable*);
 
 #endif

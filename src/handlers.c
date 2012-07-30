@@ -534,13 +534,13 @@ handle_command_load(luna_state *env, irc_event *ev, const char *name)
             void *loaded = list_find(env->scripts, (void *)name, &script_cmp);
             luna_script *script = (luna_script *)loaded;
 
-            luaX_make_script(script);
+            luaX_script scrpt = luaX_make_script(script);
 
             net_sendfln(env, "PRIVMSG %s :%s: Loaded script '%s v%s'",
                         ev->param[0], ev->from.nick,
                         script->name, script->version);
 
-            signal_dispatch(env, "script_load", script, NULL);
+            signal_dispatch(env, "script_load", &scrpt, NULL);
         }
         else
         {
@@ -591,17 +591,26 @@ int
 handle_command_unload(luna_state *env, irc_event *ev, const char *name)
 {
     void *loaded = list_find(env->scripts, (void *)name, &script_cmp);
+    luna_script temp = *((luna_script*)loaded);
 
     if (!loaded)
         net_sendfln(env, "PRIVMSG %s :%s: Script not loaded!",
                     ev->param[0], ev->from.nick);
     else
         if (!script_unload(env, name))
+        {
+            luaX_script script = luaX_make_script(&temp);
+
             net_sendfln(env, "PRIVMSG %s :%s: Unloaded script!",
                         ev->param[0], ev->from.nick);
+
+            signal_dispatch(env, "script_unload", &script, NULL);
+        }
         else
+        {
             net_sendfln(env, "PRIVMSG %s :%s: Failed to unload script!",
                         ev->param[0], ev->from.nick);
+        }
 
     return 0;
 }

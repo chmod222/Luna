@@ -37,6 +37,7 @@
 
 #include "lua_util.h"
 #include "lua_manager.h"
+#include "lua_script.h"
 
 
 int luaX_script_getscriptinfo(lua_State*);
@@ -190,7 +191,7 @@ luaX_register_script(lua_State *L, int regtable)
 int
 luaX_push_script(lua_State *L, luaX_serializable *_scr)
 {
-    luna_script *script = (luna_script*)_scr;
+    const luna_script *script = ((luaX_script*)_scr)->script;
 
     luna_script *u = (luna_script *)lua_newuserdata(L, sizeof(luna_script));
     luaL_getmetatable(L, "luna.script");
@@ -201,12 +202,12 @@ luaX_push_script(lua_State *L, luaX_serializable *_scr)
     return 0;
 }
 
-int
-luaX_make_script(luna_script *script)
+luaX_script
+luaX_make_script(const luna_script *script)
 {
-    script->serialize = &luaX_push_script;
+    luaX_script ret = { &luaX_push_script, script };
 
-    return 0;
+    return ret;
 }
 
 

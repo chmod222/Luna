@@ -34,16 +34,11 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "lua_serializable.h"
-
-
 #define LIBNAME "luna"
 
 
 typedef struct luna_script
 {
-    int (*serialize)(lua_State*, struct luaX_serializable*);
-
     char filename[256];
 
     char name[32];
