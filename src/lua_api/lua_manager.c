@@ -308,6 +308,8 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
                     logger_log(state->logger, LOGLEV_ERROR,
                                "No serializer function for argument %d of "
                                "signal '%s'!", j, sig);
+
+                    lua_pop(L, -1);
                     return 0;
                 }
             }
