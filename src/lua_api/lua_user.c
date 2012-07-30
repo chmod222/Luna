@@ -165,27 +165,11 @@ luaX_user_setid(lua_State *L)
 int
 luaX_users_find(lua_State *L)
 {
-    luna_state *state = NULL;
+    luna_state *state = api_getstate(L);
 
-    const char *nick = NULL;
-    const char *user = NULL;
-    const char *host = NULL;
-
-    luaL_checktype(L, 1, LUA_TTABLE);
-
-    state = api_getstate(L);
-
-    lua_pushstring(L, "nick");
-    lua_gettable(L, 1);
-    nick = lua_tostring(L, lua_gettop(L));
-
-    lua_pushstring(L, "user");
-    lua_gettable(L, 1);
-    user = lua_tostring(L, lua_gettop(L));
-
-    lua_pushstring(L, "host");
-    lua_gettable(L, 1);
-    host = lua_tostring(L, lua_gettop(L));
+    const char *nick = luaL_checkstring(L, 1);
+    const char *user = luaL_checkstring(L, 2);
+    const char *host = luaL_checkstring(L, 3);
 
     if ((nick && strcmp(nick, "")) &&
         (user && strcmp(user, "")) &&

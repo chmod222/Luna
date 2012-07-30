@@ -294,7 +294,8 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
             lua_pushstring(L, "callback");
             lua_gettable(L, callback_table);
 
-            for (j = 0;; ++j) {
+            for (j = 0;; ++j)
+            {
                 luaX_serializable *v = va_arg(args, luaX_serializable*);
                 if (v == NULL)
                     break;

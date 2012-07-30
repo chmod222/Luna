@@ -62,6 +62,13 @@ end
 --
 -- Register script to Luna
 --
+-- While everything in luna.__scriptinfo can be changed at runtime,
+-- all it really does is confuse the user. The scripts will respect
+-- the value within __scriptinfo but the bot itself has its own
+-- copy of these values.
+--
+-- TODO: Make bot only save lua_State and grab __scriptinfo
+--
 function luna.registerScript(inf)
     if luna.__scriptinfo ~= nil then
         error('script has already been registered', 2)
@@ -99,6 +106,10 @@ end
 
 ---- Unknown users
 --
+function luna.types.source_user:__tostring()
+    return string.format('%s!%s@%s', self:getUserInfo())
+end
+
 function luna.types.source_user:privmsg(msg)
     local nick = self:getUserInfo()
     luna.privmsg(nick, msg)
@@ -117,8 +128,7 @@ end
 ---- Known channel users
 --
 function luna.types.channel_user:getRegUser()
-    local n, u, h = self:getUserInfo()
-    return luna.users.find{nick = n, user = u, host = h}
+    return luna.users.find(self:getUserInfo())
 end
 
 function luna.types.channel_user:respond(msg)
