@@ -1,0 +1,134 @@
+Luna API Doc
+------------
+
+Exported types, extendable in corelib.lua:
+
+  - luna.types.channel
+  --------------------
+    * A channel connected to Lunas internal state.
+
+    Methods (builtin):
+      + getChannelInfo() -> channel name, creation time (UNIX stamp)
+      + getTopic()       -> topic, set at (UNIX stamp), set by
+      + getUserList()    -> array of type luna.types.channel_user
+      + findUser(nick)   -> luna.types.channel_user if found, nil if not
+
+    Methods (extended):
+      + getName()         -> channel name
+      + getCreationDate() -> UNIX stamp
+      + privmsg(message)  -> Send a message to this channel
+
+
+  - luna.types.channel_user
+  -------------------------
+    * An IRC User inside a luna.types.channel.
+
+    Methods (builtin):
+      + getUserInfo() -> nick, user, host
+      + getStatus()   -> user status in channel, one of "op", "voice", "regular"
+      + getChannel()  -> luna.types.channel
+
+    Methods (extended):
+      + getRegUser() -> luna.types.user if found, nil if not
+      + respond(msg) -> respond to the user in the channel of the event
+      + isOperator() -> true if the user is an operator in that channel
+
+  - luna.types.source_user
+  ------------------------
+    * An unrelated IRC source represented by a nickname, username and hostname.
+
+    Methods (builtin):
+      + getUserInfo() -> nick, user, host
+
+    Methods (extended):
+      + getRegUser() -> luna.types.user if found, nil if not
+      + privmsg(msg) -> send a message to this user
+      + respond(msg) -> respond to the user in a private message
+
+  - luna.types.user
+  -----------------
+    * A user within luna (users.txt).
+
+    Methods (builtin):
+      + getFlags()
+      + setFlags(flags)
+      + getLevel()
+      + setLevel(level)
+      + getId()
+      + setId(id)
+
+  - luna.types.script
+  -------------------
+    * A (not necessarily loaded) script.
+
+    Methods (builtin):
+      + getScriptInfo() -> filename, name, description, author, version
+      + isSelf()        -> true if this object represents the current script
+
+Exported functions:
+  - luna.channels
+  ---------------
+    * Namespace of functions related to channels.
+
+    Functions (builtin):
+      + getChannelList()  -> A list of currently joined luna.types.channel
+      + find(channelname) -> luna.types.channel if found, nil if not
+
+  - luna.scripts
+  --------------
+    * Namespace of functions related to scripts.
+
+    Functions (builtin):
+      + load(filename)   -> luna.types.script on success, nil on failure
+      + unload(filename) -> unloads script, returns nil
+      + getScriptList()  -> A list of currently loaded luna.types.script
+
+  - luna.users
+  ------------
+    * Namespace of functions related to users.
+
+    Functions (builtin):
+      + find(nick, user, host) -> luna.types.user if found, nil if not
+      + add(id, mask, flags, lvl) -> adds this user to the list
+      + remove(mask)              -> removes user belonging to hostmask
+      + save()                    -> save the userlist
+      + reload()                  -> reload the userlist
+      + getUserList()             -> A list of all known luna.types.user
+
+  - luna.self
+  -----------
+    * Functions for runtime information about the bot.
+
+    Functions (builtin):
+      + getUserInfo()    -> nick, user, realname
+      + getServerInfo()  -> server host, server port
+      + getRuntimeInfo() -> UNIX stamp when started, UNIX stamp when connected
+
+  - luna
+  ------
+    * Uncategorized functions, including important API functions.
+
+    Functions (builtin):
+      + log(level, msg) -> log a message using a given level
+        # where level is one:
+          ~ 'info'
+          ~ 'warning'
+          ~ 'error'
+
+      + sendLine(msg)   -> send a raw line to IRC, returns bytes sent
+
+    Functions (extended):
+      + changeNick(newnick)     -> change nickname
+      + quit(reason?)           -> quit IRC
+      + joinChannel(chan, key?) -> join a channel
+      + notice(target, msg)     -> send a notice
+      + privmsg(target, msg)    -> send a private message
+      + registerScript(inftab)  -> register your script
+        # The info-table must have at least these fields, not empty:
+          ~ name
+          ~ description
+          ~ author
+          ~ version
+
+      + addSignal(sig, handler) -> register your script for a signal
+      + delSignal(handler)      -> remove this signal handler
