@@ -34,7 +34,7 @@ typedef struct luaX_script
 {
     int (*serialize)(lua_State*, struct luaX_serializable*);
 
-    const luna_script *script;
+    luna_script script;
 } luaX_script;
 
 

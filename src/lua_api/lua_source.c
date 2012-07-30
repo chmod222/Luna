@@ -34,6 +34,7 @@
 
 #include "../irc.h"
 #include "lua_serializable.h"
+#include "lua_source.h"
 
 
 int luaX_user_getuserinfo(lua_State *L);
@@ -45,15 +46,15 @@ static const struct luaL_reg luaX_user_methods[] = {
 
 
 int
-luaX_push_irc_sender(lua_State *L, luaX_serializable *_s)
+luaX_push_source(lua_State *L, luaX_serializable *_s)
 {
-    irc_sender *s = (irc_sender*)_s;
+    luaX_source *s = (luaX_source*)_s;
     irc_sender *u = (irc_sender *)lua_newuserdata(L, sizeof(irc_sender));
 
     luaL_getmetatable(L, "luna.source.user");
     lua_setmetatable(L, -2);
 
-    memcpy(u, s, sizeof(irc_sender));
+    memcpy(u, &(s->source), sizeof(irc_sender));
 
     return 0;
 }
@@ -93,11 +94,11 @@ luaX_register_source(lua_State *L, int regtable)
     return 1;
 }
 
-int
-luaX_make_irc_sender(irc_sender *s)
+luaX_source
+luaX_make_source(irc_sender *s)
 {
-    s->serialize = &luaX_push_irc_sender;
+    luaX_source ret = { &luaX_push_source, *s };
 
-    return 0;
+    return ret;
 }
 

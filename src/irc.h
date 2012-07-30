@@ -58,8 +58,6 @@ typedef enum irc_event_type
 
 typedef struct irc_sender
 {
-    int (*serialize)(lua_State*, struct luaX_serializable*);
-
     char nick[NICKLEN]; /* NULL if server */
     char user[IDENTLEN]; /* NULL if server */
     char host[HOSTLEN];

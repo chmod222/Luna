@@ -89,8 +89,6 @@ int
 handle_event(luna_state *env, irc_event *ev)
 {
     /* Core event handlers */
-    luaX_make_irc_sender(&(ev->from));
-
     switch (ev->type)
     {
         case IRCEV_NUMERIC: return handle_numeric(env, ev);
@@ -139,8 +137,9 @@ handle_privmsg(luna_state *env, irc_event *ev)
     if (priv)
     {
         luaX_string s = luaX_make_string(ev->msg);
+        luaX_source src = luaX_make_source(&(ev->from));
 
-        signal_dispatch(env, sig, &(ev->from), &s, NULL);
+        signal_dispatch(env, sig, &src, &s, NULL);
     }
     else
     {
@@ -198,8 +197,9 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
     {
         luaX_string scmd = luaX_make_string(cmd);
         luaX_string srest = luaX_make_string(rest);
+        luaX_source src = luaX_make_source(&(ev->from));
 
-        signal_dispatch(env, sig, &(ev->from), &scmd, &srest, NULL);
+        signal_dispatch(env, sig, &src, &scmd, &srest, NULL);
     }
     else
     {
@@ -347,7 +347,7 @@ handle_part(luna_state *env, irc_event *ev)
     if (ev->msg)
     {
         luaX_string reason = luaX_make_string(ev->msg);
-        signal_dispatch(env, "channel_part", "ucs", &cu, &ch, &reason, NULL);
+        signal_dispatch(env, "channel_part", &cu, &ch, &reason, NULL);
     }
     else
     {
@@ -376,6 +376,7 @@ handle_quit(luna_state *env, irc_event *ev)
     /* Remove user from all channels */
     list_node *cur;
     luaX_string reason = luaX_make_string(ev->msg);
+    luaX_source src = luaX_make_source(&(ev->from));
 
     for (cur = env->channels->root; cur != NULL; cur = cur->next)
     {
@@ -383,7 +384,7 @@ handle_quit(luna_state *env, irc_event *ev)
         channel_remove_user(env, channel->name, ev->from.nick);
     }
 
-    signal_dispatch(env, "user_quit", &(ev->from), &reason, NULL);
+    signal_dispatch(env, "user_quit", &src, &reason, NULL);
 
     return 0;
 }
@@ -394,8 +395,9 @@ handle_notice(luna_state *env, irc_event *ev)
 {
     luaX_string target = luaX_make_string(ev->param[0]);
     luaX_string msg = luaX_make_string(ev->msg);
+    luaX_source src = luaX_make_source(&(ev->from));
 
-    signal_dispatch(env, "notice", &(ev->from), &target, &msg, NULL);
+    signal_dispatch(env, "notice", &src, &target, &msg, NULL);
 
     return 0;
 }
@@ -406,6 +408,7 @@ handle_nick(luna_state *env, irc_event *ev)
 {
     const char *newnick = ev->msg ? ev->msg : ev->param[0];
     luaX_string nick = luaX_make_string(newnick);
+    luaX_source src = luaX_make_source(&(ev->from));
 
     /* Is it me? */
     if (!strcasecmp(ev->from.nick, env->userinfo.nick))
@@ -418,7 +421,7 @@ handle_nick(luna_state *env, irc_event *ev)
     /* Rename user in all channels */
     user_rename(env, ev->from.nick, newnick);
 
-    signal_dispatch(env, "nick_change", &(ev->from), &nick, NULL);
+    signal_dispatch(env, "nick_change", &src, &nick, NULL);
 
     return 0;
 }
@@ -448,8 +451,9 @@ int
 handle_invite(luna_state *env, irc_event *ev)
 {
     luaX_string channel = luaX_make_string(ev->param[1]);
+    luaX_source src = luaX_make_source(&(ev->from));
 
-    signal_dispatch(env, "invite", &(ev->from), &channel, NULL);
+    signal_dispatch(env, "invite", &src, &channel, NULL);
 
     return 0;
 }
