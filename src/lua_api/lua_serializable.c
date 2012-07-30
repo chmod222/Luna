@@ -18,28 +18,30 @@
 
 /*******************************************************************************
  *
- *  Lua user object management (lua_user.h)
+ *  Serializable objects for Lua (lua_serializable.c)
  *  ---
- *  Provide access to Luna users within scripts
+ *  Provide access to the global channel list within scripts
  *
- *  Created: 03.02.2012 16:39:01
+ *  Created: 29.07.2012 23:56:12
  *
  ******************************************************************************/
-#ifndef LUA_USER_H
-#define LUA_USER_H
-
 #include <lua.h>
 
+#include <string.h>
+
+#include "lua_channel.h"
 #include "lua_serializable.h"
 
-typedef struct luaX_user
+int luaX_push_string(lua_State *L, luaX_serializable *_s)
 {
-    int (*serialize)(lua_State*, struct luaX_serializable*);
+    luaX_string *s = (luaX_string*)_s;
+    lua_pushstring(L, s->string);
 
-    char hostmask[128];
-} luaX_user;
+    return 0;
+}
 
-
-int luaX_register_user(lua_State*, int);
-
-#endif
+luaX_string luaX_make_string(const char *str)
+{
+    luaX_string ret = { &luaX_push_string, str };
+    return ret;
+}

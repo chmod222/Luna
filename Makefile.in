@@ -35,7 +35,7 @@ POST_UNINSTALL = :
 bin_PROGRAMS = luna$(EXEEXT)
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/configure depcomp \
+	$(srcdir)/Makefile.in $(top_srcdir)/configure TODO depcomp \
 	install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -62,7 +62,8 @@ am_luna_OBJECTS = src/luna-luna.$(OBJEXT) src/luna-bot.$(OBJEXT) \
 	src/lua_api/luna-lua_self.$(OBJEXT) \
 	src/lua_api/luna-lua_source.$(OBJEXT) \
 	src/lua_api/luna-lua_user.$(OBJEXT) \
-	src/lua_api/luna-lua_util.$(OBJEXT)
+	src/lua_api/luna-lua_util.$(OBJEXT) \
+	src/lua_api/luna-lua_serializable.$(OBJEXT)
 luna_OBJECTS = $(am_luna_OBJECTS)
 luna_DEPENDENCIES =
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -226,7 +227,9 @@ luna_SOURCES = \
 	src/lua_api/lua_user.c \
 	src/lua_api/lua_user.h \
 	src/lua_api/lua_util.c \
-	src/lua_api/lua_util.h
+	src/lua_api/lua_util.h \
+	src/lua_api/lua_serializable.h \
+	src/lua_api/lua_serializable.c
 
 all: all-am
 
@@ -356,6 +359,9 @@ src/lua_api/luna-lua_user.$(OBJEXT): src/lua_api/$(am__dirstamp) \
 	src/lua_api/$(DEPDIR)/$(am__dirstamp)
 src/lua_api/luna-lua_util.$(OBJEXT): src/lua_api/$(am__dirstamp) \
 	src/lua_api/$(DEPDIR)/$(am__dirstamp)
+src/lua_api/luna-lua_serializable.$(OBJEXT):  \
+	src/lua_api/$(am__dirstamp) \
+	src/lua_api/$(DEPDIR)/$(am__dirstamp)
 luna$(EXEEXT): $(luna_OBJECTS) $(luna_DEPENDENCIES) $(EXTRA_luna_DEPENDENCIES) 
 	@rm -f luna$(EXEEXT)
 	$(LINK) $(luna_OBJECTS) $(luna_LDADD) $(LIBS)
@@ -367,6 +373,7 @@ mostlyclean-compile:
 	-rm -f src/lua_api/luna-lua_manager.$(OBJEXT)
 	-rm -f src/lua_api/luna-lua_script.$(OBJEXT)
 	-rm -f src/lua_api/luna-lua_self.$(OBJEXT)
+	-rm -f src/lua_api/luna-lua_serializable.$(OBJEXT)
 	-rm -f src/lua_api/luna-lua_source.$(OBJEXT)
 	-rm -f src/lua_api/luna-lua_user.$(OBJEXT)
 	-rm -f src/lua_api/luna-lua_util.$(OBJEXT)
@@ -403,6 +410,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/lua_api/$(DEPDIR)/luna-lua_manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/lua_api/$(DEPDIR)/luna-lua_script.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/lua_api/$(DEPDIR)/luna-lua_self.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/lua_api/$(DEPDIR)/luna-lua_serializable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/lua_api/$(DEPDIR)/luna-lua_source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/lua_api/$(DEPDIR)/luna-lua_user.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/lua_api/$(DEPDIR)/luna-lua_util.Po@am__quote@
@@ -702,6 +710,20 @@ src/lua_api/luna-lua_util.obj: src/lua_api/lua_util.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/lua_api/lua_util.c' object='src/lua_api/luna-lua_util.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/lua_api/luna-lua_util.obj `if test -f 'src/lua_api/lua_util.c'; then $(CYGPATH_W) 'src/lua_api/lua_util.c'; else $(CYGPATH_W) '$(srcdir)/src/lua_api/lua_util.c'; fi`
+
+src/lua_api/luna-lua_serializable.o: src/lua_api/lua_serializable.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/lua_api/luna-lua_serializable.o -MD -MP -MF src/lua_api/$(DEPDIR)/luna-lua_serializable.Tpo -c -o src/lua_api/luna-lua_serializable.o `test -f 'src/lua_api/lua_serializable.c' || echo '$(srcdir)/'`src/lua_api/lua_serializable.c
+@am__fastdepCC_TRUE@	$(am__mv) src/lua_api/$(DEPDIR)/luna-lua_serializable.Tpo src/lua_api/$(DEPDIR)/luna-lua_serializable.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/lua_api/lua_serializable.c' object='src/lua_api/luna-lua_serializable.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/lua_api/luna-lua_serializable.o `test -f 'src/lua_api/lua_serializable.c' || echo '$(srcdir)/'`src/lua_api/lua_serializable.c
+
+src/lua_api/luna-lua_serializable.obj: src/lua_api/lua_serializable.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/lua_api/luna-lua_serializable.obj -MD -MP -MF src/lua_api/$(DEPDIR)/luna-lua_serializable.Tpo -c -o src/lua_api/luna-lua_serializable.obj `if test -f 'src/lua_api/lua_serializable.c'; then $(CYGPATH_W) 'src/lua_api/lua_serializable.c'; else $(CYGPATH_W) '$(srcdir)/src/lua_api/lua_serializable.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) src/lua_api/$(DEPDIR)/luna-lua_serializable.Tpo src/lua_api/$(DEPDIR)/luna-lua_serializable.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/lua_api/lua_serializable.c' object='src/lua_api/luna-lua_serializable.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/lua_api/luna-lua_serializable.obj `if test -f 'src/lua_api/lua_serializable.c'; then $(CYGPATH_W) 'src/lua_api/lua_serializable.c'; else $(CYGPATH_W) '$(srcdir)/src/lua_api/lua_serializable.c'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

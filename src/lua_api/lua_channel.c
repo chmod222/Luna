@@ -104,9 +104,10 @@ luaX_check_irc_channel_ud(lua_State *L, int ind)
 }
 
 
-void
-luaX_push_chanuser(lua_State *L, luaX_chanuser *cu)
+int
+luaX_push_chanuser(lua_State *L, struct luaX_serializable *_cu)
 {
+    luaX_chanuser *cu = (luaX_chanuser*)_cu;
     luaX_chanuser *u =
         (luaX_chanuser *)lua_newuserdata(L, sizeof(luaX_chanuser));
 
@@ -115,13 +116,14 @@ luaX_push_chanuser(lua_State *L, luaX_chanuser *cu)
 
     memcpy(u, cu, sizeof(luaX_chanuser));
 
-    return;
+    return 0;
 }
 
 
-void
-luaX_push_channel(lua_State *L, luaX_channel *c)
+int
+luaX_push_channel(lua_State *L, struct luaX_serializable *_c)
 {
+    luaX_channel *c = (luaX_channel*)_c;
     luaX_channel *u =
         (luaX_channel *)lua_newuserdata(L, sizeof(luaX_channel));
 
@@ -130,7 +132,7 @@ luaX_push_channel(lua_State *L, luaX_channel *c)
 
     memcpy(u, c, sizeof(luaX_channel));
 
-    return;
+    return 0;
 }
 
 
@@ -377,4 +379,27 @@ luaX_register_channel(lua_State *L, int regtable)
     lua_settable(L, -3);
 
     return 1;
+}
+
+int
+luaX_make_channel(luaX_channel *t, const char *chan)
+{
+    memset(t, 0, sizeof(*t));
+
+    t->serialize = &luaX_push_channel;
+    strncpy(t->name, chan, sizeof(t->name )- 1);
+
+    return 0;
+}
+
+int
+luaX_make_chanuser(luaX_chanuser *t, const char *user, luaX_channel *chan)
+{
+    memset(t, 0, sizeof(*t));
+
+    t->serialize = &luaX_push_chanuser;
+    strncpy(t->nick, user, sizeof(t->nick) - 1);
+    memcpy(&(t->channel), chan, sizeof(t->channel));
+
+    return 0;
 }

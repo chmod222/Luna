@@ -30,8 +30,13 @@
 
 #include <lua.h>
 
+#include "lua_serializable.h"
+
+
 int luaX_register_source(lua_State*, int);
 
-void luaX_push_irc_sender(lua_State*, irc_sender*);
+int luaX_push_irc_sender(lua_State*, luaX_serializable*);
+
+int luaX_make_irc_sender(irc_sender*);
 
 #endif

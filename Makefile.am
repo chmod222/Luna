@@ -46,4 +46,6 @@ luna_SOURCES = \
 	src/lua_api/lua_user.c \
 	src/lua_api/lua_user.h \
 	src/lua_api/lua_util.c \
-	src/lua_api/lua_util.h
+	src/lua_api/lua_util.h \
+	src/lua_api/lua_serializable.h \
+	src/lua_api/lua_serializable.c

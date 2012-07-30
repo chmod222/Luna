@@ -18,44 +18,49 @@
 
 /*******************************************************************************
  *
- *  Lua channel object management (lua_self.h)
+ *  Serializable objects for Lua (lua_serializable.c)
  *  ---
  *  Provide access to the global channel list within scripts
  *
- *  Created: 03.02.2012 20:41:01
+ *  Created: 29.07.2012 23:56:12
  *
  ******************************************************************************/
-#ifndef LUA_CHANNEL_H
-#define LUA_CHANNEL_H
+#ifndef LUA_SERIALIZABLE_H
+#define LUA_SERIALIZABLE_H
 
 #include <lua.h>
 
-#include "lua_serializable.h"
+/*
+ * Implemented by:
+ *  * luaX_string    (lua_serializable.h)
+ *  * luaX_channel   (lua_channel.h)
+ *  * luaX_chanuser  (lua_channel.h)
+ *  * irc_sender     (irc.h)
+ */
+typedef struct luaX_serializable
+{
+    /*
+     * Basically an interface like you would expect in OOP languages such as
+     * Java
+     *
+     * Every luaX_[type] declares this same function pointer as the first
+     * field so pointers to these structures can be typed as luaX_serializable
+     * and reference their own serialize functions. Implemented by all types
+     * passed into signal_emit().
+     */
+    int (*serialize)(lua_State*, struct luaX_serializable*);
+} luaX_serializable;
 
-/* Only store enough information to retrieve the actual information
- * via the global state */
-typedef struct luaX_channel
+typedef struct luaX_string
 {
     int (*serialize)(lua_State*, struct luaX_serializable*);
 
-    char name[64];
-} luaX_channel;
-
-typedef struct luaX_chanuser
-{
-    int (*serialize)(lua_State*, struct luaX_serializable*);
-
-    luaX_channel channel;
-    char nick[32];
-} luaX_chanuser;
+    const char *string;
+} luaX_string;
 
 
-int luaX_register_channel(lua_State*, int);
+int luaX_push_string(lua_State*, luaX_serializable*);
 
-int luaX_push_chanuser(lua_State*, struct luaX_serializable*);
-int luaX_push_channel(lua_State*, struct luaX_serializable*);
-
-int luaX_make_channel(luaX_channel*, const char*);
-int luaX_make_chanuser(luaX_chanuser*, const char*, luaX_channel*);
+luaX_string luaX_make_string(const char*);
 
 #endif

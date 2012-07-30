@@ -186,3 +186,27 @@ luaX_register_script(lua_State *L, int regtable)
 
     return 1;
 }
+
+int
+luaX_push_script(lua_State *L, luaX_serializable *_scr)
+{
+    luna_script *script = (luna_script*)_scr;
+
+    luna_script *u = (luna_script *)lua_newuserdata(L, sizeof(luna_script));
+    luaL_getmetatable(L, "luna.script");
+    lua_setmetatable(L, -2);
+
+    memcpy(u, script, sizeof(luna_script));
+
+    return 0;
+}
+
+int
+luaX_make_script(luna_script *script)
+{
+    script->serialize = &luaX_push_script;
+
+    return 0;
+}
+
+

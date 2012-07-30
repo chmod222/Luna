@@ -35,4 +35,7 @@
 
 int luaX_register_script(lua_State*, int);
 
+int luaX_make_script(luna_script*);
+int luaX_push_script(lua_State*, luaX_serializable*);
+
 #endif

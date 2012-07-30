@@ -34,11 +34,16 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include "lua_serializable.h"
+
+
 #define LIBNAME "luna"
 
 
 typedef struct luna_script
 {
+    int (*serialize)(lua_State*, struct luaX_serializable*);
+
     char filename[256];
 
     char name[32];
@@ -56,6 +61,6 @@ int script_load(luna_state *, const char *);
 int script_unload(luna_state *, const char *);
 void script_free(void *);
 
-int signal_dispatch(luna_state *, const char *, const char *, ...);
+int signal_dispatch(luna_state *, const char *, ...);
 
 #endif

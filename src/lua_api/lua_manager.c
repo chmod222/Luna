@@ -39,8 +39,7 @@
 #include "lua_source.h"
 
 
-int script_emit(luna_state *, luna_script *, const char *,
-                const char *, va_list);
+int script_emit(luna_state *, luna_script *, const char *, va_list);
 
 int script_identify(lua_State *, luna_script *);
 
@@ -78,7 +77,7 @@ script_unload(luna_state *state, const char *file)
     if (result)
     {
         /* Call unload signal */
-        script_emit(state, (luna_script *)result, "unload", NULL, NULL);
+        script_emit(state, (luna_script *)result, "unload", NULL);
         list_delete(state->scripts, result, &script_free);
 
         return 0;
@@ -153,7 +152,7 @@ script_load(luna_state *state, const char *file)
         list_push_back(state->scripts, script);
         strncpy(script->filename, file, sizeof(script->filename) - 1);
 
-        script_emit(state, script, "load", NULL, NULL);
+        script_emit(state, script, "load", NULL);
 
         return 0;
     }
@@ -238,15 +237,15 @@ script_identify(lua_State *L, luna_script *script)
 
 
 int
-signal_dispatch(luna_state *state, const char *sig, const char *fmt, ...)
+signal_dispatch(luna_state *state, const char *sig, ...)
 {
     va_list args;
     list_node *cur;
 
     for (cur = state->scripts->root; cur != NULL; cur = cur->next)
     {
-        va_start(args, fmt);
-        script_emit(state, cur->data, sig, fmt, args);
+        va_start(args, sig);
+        script_emit(state, cur->data, sig, args);
         va_end(args);
     }
 
@@ -256,7 +255,7 @@ signal_dispatch(luna_state *state, const char *sig, const char *fmt, ...)
 
 int
 script_emit(luna_state *state, luna_script *script, const char *sig,
-            const char *fmt, va_list args)
+            va_list args)
 {
     int api_table;
     int callbacks_array;
@@ -295,36 +294,21 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
             lua_pushstring(L, "callback");
             lua_gettable(L, callback_table);
 
-            if (fmt != NULL)
-            {
-                for (j = 0; fmt[j] != 0; ++j)
+            for (j = 0;; ++j) {
+                luaX_serializable *v = va_arg(args, luaX_serializable*);
+                if (v == NULL)
+                    break;
+
+                if (v->serialize != NULL)
                 {
-                    switch (fmt[j])
-                    {
-                        case 's':
-                            lua_pushstring(L, va_arg(args, char *));
-                            break;
-
-                        case 'p':
-                            luaX_push_irc_sender(L, va_arg(args, irc_sender *));
-                            break;
-
-                        case 'n':
-                            lua_pushnumber(L, va_arg(args, double));
-                            break;
-
-                        case 'u': /* irc user */
-                            luaX_push_chanuser(L, va_arg(args, luaX_chanuser *));
-                            break;
-
-                        case 'c':
-                            luaX_push_channel(L, va_arg(args, luaX_channel *));
-                            break;
-
-                        default:
-                            j--;
-                            break;
-                    }
+                    v->serialize(L, v);
+                }
+                else
+                {
+                    logger_log(state->logger, LOGLEV_ERROR,
+                               "No serializer function for argument %d of "
+                               "signal '%s'!", j, sig);
+                    return 0;
                 }
             }
 
