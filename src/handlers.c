@@ -450,7 +450,7 @@ handle_mode(luna_state *env, irc_event *ev)
 int
 handle_invite(luna_state *env, irc_event *ev)
 {
-    luaX_string channel = luaX_make_string(ev->param[1]);
+    luaX_string channel = luaX_make_string(ev->msg);
     luaX_source src = luaX_make_source(&(ev->from));
 
     signal_dispatch(env, "invite", &src, &channel, NULL);
