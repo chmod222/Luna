@@ -62,7 +62,7 @@ main(int argc, char **argv)
         {
             case 'h':
                 print_usage(argv[0]);
-                break;
+                return 0;
 
             case 'c':
                 memset(config_file, 0, sizeof(config_file));
@@ -123,7 +123,9 @@ void
 print_usage(const char *program)
 {
     printf("Usage: %s [FLAGS..]\n\n", program);
-    printf("  -h\tdisplay this help\n");
+    printf("  -h           display this help\n");
+    printf("  -l <FILE>    log to FILE\n");
+    printf("  -c <FILE>    use configuration file FILE instead of `config.lua'\n");
 
     return;
 }
