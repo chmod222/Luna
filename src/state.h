@@ -66,6 +66,8 @@ typedef struct luna_state
     linked_list *scripts;
     linked_list *users;
 
+    char *bind;
+
     char chanmodes[4][32];
 } luna_state;
 

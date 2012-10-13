@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -40,6 +41,10 @@
 #include "net.h"
 #include "state.h"
 #include "util.h"
+#include "logger.h"
+
+
+int net_bind(luna_state *, int, int, const char *);
 
 
 int
@@ -61,6 +66,9 @@ net_connect(luna_state *state)
         if ((fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
             continue; /* Couldn't create socket */
 
+        if (state->bind)
+            net_bind(state, p->ai_family, fd, state->bind);
+
         if (connect(fd, p->ai_addr, p->ai_addrlen) < 0)
         {
             close(fd);
@@ -81,6 +89,46 @@ net_connect(luna_state *state)
     state->fd = fd;
 
     return fd;
+}
+
+
+int
+net_bind(luna_state *state, int fam, int fd, const char *host)
+{
+    struct addrinfo hints, *resolv, *p;
+    int res;
+    int yes = 1;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = fam;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((res = getaddrinfo(host, NULL, &hints, &resolv)) != 0)
+        return -1;
+
+    for (p = resolv; p != NULL; p = p->ai_next)
+    {
+        char ipstr[INET6_ADDRSTRLEN];
+        inet_ntop(fam, &(((struct sockaddr_in*)(p->ai_addr))->sin_addr), ipstr, INET6_ADDRSTRLEN);
+
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0)
+            logger_log(state->logger, LOGLEV_WARNING,
+                       "Unable to set SO_REUSEADDR");
+
+        if (bind(fd, p->ai_addr, p->ai_addrlen) < 0)
+        {
+            logger_log(state->logger, LOGLEV_ERROR,
+                       "Unable to bind to `%s': %s", ipstr, strerror(errno));
+            continue;
+        }
+
+        logger_log(state->logger, LOGLEV_INFO,
+                   "Successfully bound to `%s'", ipstr);
+
+        break;
+    }
+
+    return 0;
 }
 
 

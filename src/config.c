@@ -26,6 +26,7 @@
  *
  ******************************************************************************/
 #include <string.h>
+#include <stdlib.h>
 
 #include <lua.h>
 #include <lualib.h>
@@ -37,6 +38,7 @@
 
 int config_get_userinfo(luna_state *, lua_State *);
 int config_get_serverinfo(luna_state *, lua_State *);
+int config_get_netinfo(luna_state *, lua_State *);
 
 
 int
@@ -52,9 +54,10 @@ config_load(luna_state *state, const char *filename)
         if (luaL_dofile(L, filename) == 0)
         {
             /* Both user and server must be set (== 0) */
-            if (config_get_userinfo(state, L) ||
-                config_get_serverinfo(state, L))
-                    status = 1;
+            if (config_get_userinfo(state, L)||config_get_serverinfo(state, L))
+                status = 1;
+            else
+                config_get_netinfo(state, L);
         }
         else
         {
@@ -133,4 +136,28 @@ config_get_serverinfo(luna_state *state, lua_State *L)
     }
 
     return 1;
+}
+
+
+int
+config_get_netinfo(luna_state *state, lua_State *L)
+{
+    const char *bind = NULL;
+
+    lua_getglobal(L, "bind");
+    bind = lua_tostring(L, lua_gettop(L));
+
+    if (bind && strcmp("", bind)) {
+        if ((state->bind = malloc(strlen(bind) + 1)) == NULL)
+        {
+            logger_log(state->logger, LOGLEV_WARNING,
+                       "Couldn't allocate memory for bind, keeping NULL");
+        }
+        else
+        {
+            strcpy(state->bind, bind);
+        }
+    }
+
+    return 0;
 }
