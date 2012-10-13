@@ -116,9 +116,17 @@ handle_privmsg(luna_state *env, irc_event *ev)
     char msgcopy[LINELEN];
     char *isitme = NULL;
     char *command = NULL;
-    const int priv  = ev->param[0][0] != '#';
-    const char *sig = ev->param[0][0] == '#' ? "public_message"
-                                             : "private_message";
+    int priv;
+    luna_server_support *chanprefixes =
+        (luna_server_support *)list_find(env->server_support,
+                                         "CHANTYPES", &support_by_key);
+
+    if (chanprefixes)
+        priv = strchr(chanprefixes->value, ev->param[0][0]) == NULL;
+    else
+        priv = ev->param[0][0] != '#';
+
+    const char *sig = !priv ? "public_message" : "private_message";
 
     /* Make a copy of the message that we can modify without screwing
      * later operations */
@@ -160,9 +168,18 @@ handle_privmsg(luna_state *env, irc_event *ev)
 int
 handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 {
-    const int priv  = ev->param[0][0] != '#';
-    const char *sig = ev->param[0][0] == '#' ? "public_command"
-                                             : "private_command";
+    luna_server_support *chanprefixes =
+        (luna_server_support *)list_find(env->server_support,
+                                         "CHANTYPES", &support_by_key);
+    int priv;
+
+    if (chanprefixes)
+        priv = strchr(chanprefixes->value, ev->param[0][0]) == NULL;
+    else
+        priv = ev->param[0][0] != '#';
+
+    const char *sig = !priv ? "public_command" : "private_command";
+
     luna_user *user = user_match(env, &(ev->from));
 
     if ((user) && (strchr(user->flags, 'o')))
@@ -625,9 +642,29 @@ handle_server_supports(luna_state *env, irc_event *ev)
 {
     int i;
 
-    for (i = 0; i < ev->param_count; ++i)
+    for (i = 1; i < ev->param_count; ++i)
     {
-        if (strstr(ev->param[i], "CHANMODES="))
+        char *key = strtok(ev->param[i], "=");
+        char *val = strtok(NULL, "");
+
+        luna_server_support *ssp = malloc(sizeof(*ssp));
+        if (ssp)
+        {
+            memset(ssp, 0, sizeof(*ssp));
+
+            ssp->key = malloc(strlen(key) + 1);
+            strcpy(ssp->key, key);
+
+            if (val)
+            {
+                ssp->value = malloc(strlen(val) + 1);
+                strcpy(ssp->value, val);
+            }
+
+            list_push_back(env->server_support, ssp);
+        }
+
+        /*if (strstr(ev->param[i], "CHANMODES="))
         {
             char *tok = NULL;
             char *part = NULL;
@@ -645,7 +682,7 @@ handle_server_supports(luna_state *env, irc_event *ev)
                 strncpy(env->chanmodes[j], part, sizeof(env->chanmodes[j]) - 1);
                 part = strtok(NULL, ",");
             }
-        }
+        }*/
     }
 
     return 0;

@@ -68,11 +68,23 @@ typedef struct luna_state
 
     char *bind;
 
+    linked_list *server_support;
+
     char chanmodes[4][32];
 } luna_state;
 
 
+typedef struct luna_server_support
+{
+    char *key;
+    char *value;
+} luna_server_support;
+
+
 int state_init(luna_state *);
 int state_destroy(luna_state *);
+
+int support_by_key(void *, void *);
+void server_support_free(void *);
 
 #endif

@@ -53,7 +53,11 @@ main(int argc, char **argv)
     luna_state state;
     luna_log *log = NULL;
 
-    state_init(&state);
+    if (state_init(&state) != 0)
+    {
+        fprintf(stderr, "Unable to initialize state\n");
+        return 1;
+    }
 
     /* Parse command line arguments */
     while ((opt = getopt(argc, argv, "hc:l:")) >= 0)
