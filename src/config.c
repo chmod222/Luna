@@ -147,7 +147,8 @@ config_get_netinfo(luna_state *state, lua_State *L)
     lua_getglobal(L, "bind");
     bind = lua_tostring(L, lua_gettop(L));
 
-    if (bind && strcmp("", bind)) {
+    if (bind && strcmp("", bind))
+    {
         if ((state->bind = malloc(strlen(bind) + 1)) == NULL)
         {
             logger_log(state->logger, LOGLEV_WARNING,
