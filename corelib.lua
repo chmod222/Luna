@@ -3,6 +3,30 @@
 --
 
 --
+-- Utils
+--
+function table.copy(t)
+    local t2 = {}
+    for k,v in pairs(t) do
+        t2[k] = v
+    end
+    return t2
+end
+
+-- Copy a metatables methods and introduce getter attributes
+function make_getters(tab, attrs)
+    local meth = table.copy(tab)
+
+    tab.__index = function(self, key)
+        if attrs[key] ~= nil then
+            return meth[attrs[key]](self)
+        else
+            return meth[key]
+        end
+    end
+end
+
+--
 -- Command helpers
 --
 function luna.changeNick(new_nick)
@@ -75,15 +99,15 @@ function luna.registerScript(inf)
     end
 
     if (type(inf.name) == 'string' and #inf.name ~= 0) and
-       (type(inf.author) == 'string' and #inf.author ~= 0) and
-       (type(inf.description) == 'string' and #inf.description ~= 0) and
-       (type(inf.version) == 'string' and #inf.version ~= 0) then
+        (type(inf.author) == 'string' and #inf.author ~= 0) and
+        (type(inf.description) == 'string' and #inf.description ~= 0) and
+        (type(inf.version) == 'string' and #inf.version ~= 0) then
 
-       luna.__scriptinfo = inf
-   else
-       error("fields 'name', 'author', 'description' " ..
-             "and 'version' are required", 2)
-   end
+        luna.__scriptinfo = inf
+    else
+        error("fields 'name', 'author', 'description' " ..
+        "and 'version' are required", 2)
+    end
 end
 
 --
@@ -92,6 +116,40 @@ end
 
 ---- Channel methods
 --
+
+function dump(t, max)
+    local res = '{'
+
+    if max == 0 then
+        return 'overflow'
+    end
+
+    for key, val in pairs(t) do
+        local str = ''
+
+        if type(val) == 'string' then
+            str = '"' .. val .. '"'
+        elseif type(val) == 'number' then
+            str = tostring(val)
+        elseif type(val) == 'table' then
+            i = i + 1
+            str = dump(val, max - 1)
+        elseif type(val) == 'function' then
+            str = 'f()'
+        else
+            str = '<unknown@' .. type(val) .. '>'
+        end
+
+        if type(key) == 'number' then
+            res = res .. string.format('%s, ', str)
+        else
+            res = res .. string.format('%s = %s, ', key, str)
+        end
+    end
+
+    return res:sub(1, res:len() - 2) .. '}'
+end
+
 function luna.types.channel:getName()
     return ({self:getChannelInfo()})[1]
 end
@@ -103,6 +161,14 @@ end
 function luna.types.channel:privmsg(msg)
     luna.privmsg(self:getName(), msg)
 end
+
+make_getters(luna.types.channel, {
+    name    = 'getName',
+    created = 'getCreationDate',
+    modes   = 'getModes',
+    topic   = 'getTopic'
+})
+
 
 ---- Unknown users
 --
@@ -136,9 +202,52 @@ function luna.types.channel_user:respond(msg)
     self:getChannel():privmsg(string.format("%s: %s", nick, msg))
 end
 
+make_getters(luna.types.channel_user, {
+    status  = 'getStatus',
+    modes   = 'getModes',
+    channel = 'getChannel',
+    info    = 'getUserInfo'
+})
+
 function luna.types.user:isOperator()
     return self:getFlags():find('o') ~= nil
 end
+
+make_getters(luna.types.user, {
+    flags = 'getFlags',
+    level = 'getLevel',
+    id    = 'getId'
+})
+
+---- Scripts
+--
+function luna.types.script:getFilename()
+    return ({self:getScriptInfo()})[1]
+end
+
+function luna.types.script:getName()
+    return ({self:getScriptInfo()})[2]
+end
+
+function luna.types.script:getDescription()
+    return ({self:getScriptInfo()})[3]
+end
+
+function luna.types.script:getAuthor()
+    return ({self:getScriptInfo()})[4]
+end
+
+function luna.types.script:getVersion()
+    return ({self:getScriptInfo()})[5]
+end
+
+make_getters(luna.types.script, {
+    file        = 'getFilename',
+    name        = 'getName',
+    description = 'getDescription',
+    author      = 'getAuthor',
+    version     = 'getVersion'
+})
 
 ---- Some more utilities
 --

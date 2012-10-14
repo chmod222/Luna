@@ -141,6 +141,8 @@ script_load(luna_state *state, const char *file)
     {
         logger_log(state->logger, LOGLEV_WARNING,
                    "Unable to load Luna core library '%s'", "corelib.lua");
+        logger_log(state->logger, LOGLEV_WARNING,
+                   "Error was: %s", lua_tostring(L, -1));
     }
 
     /* Clean the stack */
