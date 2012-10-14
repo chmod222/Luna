@@ -339,6 +339,7 @@ handle_join(luna_state *env, irc_event *ev)
     luaX_make_chanuser(&cu, ev->from.nick, &ch);
 
     /* Is it me? */
+    /* TODO: Instead of now, call join hook for self after /WHO END numeric */
     if (!strcasecmp(ev->from.nick, env->userinfo.nick))
     {
         /* Yes! Add channel to list */
