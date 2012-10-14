@@ -670,9 +670,9 @@ handle_server_supports(luna_state *env, irc_event *ev)
         {
             /*PREFIX=(ov)@+ */
             int k;
+            int max = sizeof(env->userprefix) / sizeof(env->userprefix[0]);
 
-            /* TODO: Fix possible buffer overflow with static array userprefix */
-            for (k = 0; k < strlen(val) / 2 - 1; ++k)
+            for (k = 0; (k < strlen(val) / 2 - 1) && (k < max); ++k)
             {
                 env->userprefix[k].mode = *(val+k+1);
                 env->userprefix[k].prefix = *(val + k + strlen(val) / 2 + 1);
@@ -716,6 +716,8 @@ handle_mode_change(luna_state *state, const char *channel,
 
     while (*flags)
     {
+        int max = sizeof(target->flags) / sizeof(target->flags[0]);
+
         switch (*flags)
         {
             case '+': action = 0; flags++; break;
@@ -723,6 +725,13 @@ handle_mode_change(luna_state *state, const char *channel,
         }
 
         int flag = *flags - 'A';
+
+        if (flag >= max)
+        {
+            logger_log(state->logger, LOGLEV_WARNING, "Mode `%c' out of range",
+                       *flags);
+            return 0;
+        }
 
         /*
          * Do all modes that need an argument
