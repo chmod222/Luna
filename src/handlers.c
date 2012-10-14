@@ -40,7 +40,6 @@
 #include "lua_api/lua_script.h"
 #include "lua_api/lua_channel.h"
 
-void make_pair(luaX_channel*, luaX_chanuser*, const char *, const char *);
 
 int handle_ping(luna_state *,    irc_event *);
 int handle_numeric(luna_state *, irc_event *);
@@ -66,23 +65,6 @@ int handle_server_supports(luna_state *, irc_event *);
 int handle_mode_change(luna_state *, const char *, const char *, char **, int);
 int mode_set(luna_state *, const char *, char, const char *);
 int mode_unset(luna_state *, const char *, char, const char *);
-
-
-void
-make_pair(luaX_channel *c, luaX_chanuser *u, const char *n, const char *ch)
-{
-    memset(c, 0, sizeof(*c));
-    memset(u, 0, sizeof(*u));
-
-    u->serialize = &luaX_push_chanuser;
-    c->serialize = &luaX_push_channel;
-
-    strncpy(c->name, ch, sizeof(c->name) - 1);
-    strncpy(u->nick, n,  sizeof(u->nick) - 1);
-    memcpy(&(u->channel), c, sizeof(u->channel));
-
-    return;
-}
 
 
 int
@@ -211,7 +193,8 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
         luaX_string scmd = luaX_make_string(cmd);
         luaX_string srest = luaX_make_string(rest);
 
-        make_pair(&ch, &cu, ev->from.nick, ev->param[0]);
+        luaX_make_channel(&ch, ev->param[0]);
+        luaX_make_chanuser(&cu, ev->from.nick, &ch);
 
         signal_dispatch(env, sig, &cu, &ch, &scmd, &srest, NULL);
     }
@@ -241,12 +224,29 @@ handle_numeric(luna_state *env, irc_event *ev)
     int i = 0;
 
     irc_user *target = NULL;
-    char *mode = NULL;
 
     switch (ev->numeric)
     {
         case 5: /* ISUPPORT */
             handle_server_supports(env, ev);
+
+            break;
+
+        case 315: /* WHO End */
+            /* param 0: me
+             * param 1: channel
+             */
+            target = channel_get_user(env, ev->param[1], ev->param[0]);
+            if (target)
+            {
+                luaX_channel ch;
+                luaX_chanuser cu;
+
+                luaX_make_channel(&ch, ev->param[1]);
+                luaX_make_chanuser(&cu, ev->param[0], &ch);
+
+                signal_dispatch(env, "channel_join", &cu, &ch, NULL);
+            }
 
             break;
 
@@ -265,20 +265,23 @@ handle_numeric(luna_state *env, irc_event *ev)
              * param 5: nick
              * param 6: modestr
              * msg: <hops> <realname> */
-            channel_add_user(env, ev->param[1], ev->param[5], ev->param[2],
-                             ev->param[3]);
+            channel_add_user(env,
+                    ev->param[1],
+                    ev->param[5],
+                    ev->param[2],
+                    ev->param[3]);
 
             target = channel_get_user(env, ev->param[1], ev->param[5]);
             if (target)
             {
-                /* TODO: Dynamic mode size in case IRC networks start
+                /*
+                 * TODO: Dynamic mode size in case IRC networks start
                  *       allowing Unicode flags?
                  */
                 int max = sizeof(env->userprefix) / sizeof(env->userprefix[0]);
+                char *mode = ev->param[6];
 
-                mode = ev->param[6];
-
-                while (*mode)
+                while (*mode++)
                 {
                     for (i = 0; ((i < max) && (env->userprefix[i].prefix != 0));
                          ++i)
@@ -290,8 +293,6 @@ handle_numeric(luna_state *env, irc_event *ev)
                             target->modes[len+1] = 0;
                         }
                     }
-
-                    *mode++;
                 }
             }
 
@@ -303,8 +304,10 @@ handle_numeric(luna_state *env, irc_event *ev)
             break;
 
         case 333: /* TOPIC META */
-            channel_set_topic_meta(env, ev->param[1],
-                                   ev->param[2], atoi(ev->param[3]));
+            channel_set_topic_meta(env,
+                    ev->param[1],
+                    ev->param[2],
+                    atoi(ev->param[3]));
 
             break;
 
@@ -322,7 +325,6 @@ handle_numeric(luna_state *env, irc_event *ev)
     }
 
     /* TODO: dispatch template flag for string arrays */
-
     return 0;
 }
 
@@ -353,9 +355,8 @@ handle_join(luna_state *env, irc_event *ev)
     {
         /* Nah, add user to channel */
         channel_add_user(env, c, ev->from.nick, ev->from.user, ev->from.host);
+        signal_dispatch(env, "channel_join", &cu, &ch, NULL);
     }
-
-    signal_dispatch(env, "channel_join", &cu, &ch, NULL);
 
     return 0;
 }

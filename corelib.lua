@@ -202,11 +202,30 @@ function luna.types.channel_user:respond(msg)
     self:getChannel():privmsg(string.format("%s: %s", nick, msg))
 end
 
+function luna.types.channel_user:isMe()
+    return self.nick == ({luna.self.getUserInfo()})[1]
+end
+
+function luna.types.channel_user:getNick()
+    return ({self:getUserInfo()})[1]
+end
+
+function luna.types.channel_user:getUser()
+    return ({self:getUserInfo()})[2]
+end
+
+function luna.types.channel_user:getHost()
+    return ({self:getUserInfo()})[3]
+end
+
 make_getters(luna.types.channel_user, {
     status  = 'getStatus',
     modes   = 'getModes',
     channel = 'getChannel',
-    info    = 'getUserInfo'
+    info    = 'getUserInfo',
+    nick    = 'getNick',
+    user    = 'getUser',
+    host    = 'getHost'
 })
 
 function luna.types.user:isOperator()
