@@ -238,20 +238,14 @@ handle_ping(luna_state *env, irc_event *ev)
 int
 handle_numeric(luna_state *env, irc_event *ev)
 {
+    int max = 16; /* TODO: Calculate */
+    int i = 0;
+
+    irc_user *target = NULL;
     char *mode = NULL;
 
     switch (ev->numeric)
     {
-        case 4: /* DUNNO LOL */
-            /* param 0: me
-             * param 1: server
-             * param 2: version
-             * param 3: usermodes
-             * param 4: chanmodes (all)
-             * param 5: chanmodes (require args)
-             */
-            break;
-
         case 5: /* ISUPPORT */
             handle_server_supports(env, ev);
 
@@ -275,12 +269,28 @@ handle_numeric(luna_state *env, irc_event *ev)
             channel_add_user(env, ev->param[1], ev->param[5], ev->param[2],
                              ev->param[3]);
 
-            mode = ev->param[6];
+            target = channel_get_user(env, ev->param[1], ev->param[5]);
+            if (target)
+            {
+                mode = ev->param[6];
 
-            if (mode[1] == '@')
-                channel_op_user(env, ev->param[1], ev->param[5]);
-            else if (mode[1] == '+')
-                channel_voice_user(env, ev->param[1], ev->param[5]);
+                // TODO: Use env->prefix
+                while (*mode)
+                {
+                    for (i = 0; ((i < max) && (env->userprefix[i].prefix != 0));
+                         ++i)
+                    {
+                        if (env->userprefix[i].prefix == *mode)
+                        {
+                            int len = strlen(target->modes);
+                            target->modes[len] = env->userprefix[i].mode;
+                            target->modes[len+1] = 0;
+                        }
+                    }
+
+                    *mode++;
+                }
+            }
 
             break;
 
@@ -446,14 +456,7 @@ handle_mode(luna_state *env, irc_event *ev)
 
     /* If not me... */
     if (strcasecmp(ev->param[0], env->userinfo.nick))
-        if (handle_mode_change(env, ev->param[0], ev->param[1], ev->param, 2))
-            net_sendfln(env, "WHO %s", ev->param[0]);
-
-    /* TODO: Later....
-     * Format:
-     *    target = param[0]
-     *    modestr = param[1]
-     *    args = msg */
+        handle_mode_change(env, ev->param[0], ev->param[1], ev->param, 2);
 
     return 0;
 }
@@ -668,8 +671,8 @@ handle_server_supports(luna_state *env, irc_event *ev)
             /* TODO: Fix possible buffer overflow with static array userprefix */
             for (k = 0; k < strlen(val) / 2 - 1; ++k)
             {
-                env->userprefix[k].prefix = *(val+k+1);
-                env->userprefix[k].mode = *(val + k + strlen(val) / 2 + 1);
+                env->userprefix[k].mode = *(val+k+1);
+                env->userprefix[k].prefix = *(val + k + strlen(val) / 2 + 1);
 
                 channel_modes *m = &(env->chanmodes);
                 if (strlen(m->param_nick) < sizeof(m->param_nick) - 1)
@@ -792,13 +795,45 @@ handle_mode_change(luna_state *state, const char *channel,
         }
         else if (strchr(state->chanmodes.param_nick, *flags))
         {
-            printf("Set/Unset mode %c on %s\n", flag, args[i++]);
-            /*
-            if (!action)
-                user_mode_set(state, channel, *flags, args[i++]);
+            const char *arg = args[i++];
+            printf("Set/Unset mode %c on %s\n", *flags, arg);
+
+            irc_user *user = channel_get_user(state, channel, arg);
+            if (user)
+            {
+                if (!action)
+                {
+                    if ((strlen(user->modes) < sizeof(user->modes))
+                            && (!strchr(user->modes, *flags)))
+                    {
+                        int len = strlen(user->modes);
+                        user->modes[len] = *flags;
+                        user->modes[len+1] = 0;
+                    }
+                }
+                else
+                {
+                    const char *oldmodes = user->modes;
+                    memset(user->modes, 0, sizeof(user->modes));
+
+                    while (*oldmodes)
+                    {
+                        if (*oldmodes != *flags)
+                        {
+                            int len = strlen(user->modes);
+                            user->modes[len] = *oldmodes;
+                            user->modes[len+1] = 0;
+                        }
+
+                        oldmodes++;
+                    }
+                }
+            }
             else
-                user_mode_unset(state, channel, *flags, args[i--]);
-                */
+            {
+                logger_log(state->logger, LOGLEV_WARNING,
+                           "Tried to alter unknown user `%s'", arg);
+            }
         }
         else
         {

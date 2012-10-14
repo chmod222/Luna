@@ -50,6 +50,7 @@ int luaX_channel_finduser(lua_State*);
 int luaX_chuser_getuserinfo(lua_State*);
 int luaX_chuser_getstatus(lua_State*);
 int luaX_chuser_getchannel(lua_State*);
+int luaX_chuser_getmodes(lua_State*);
 
 irc_channel *find_channel_by_name(lua_State*, const char*);
 irc_channel *luaX_check_irc_channel_ud(lua_State*, int);
@@ -78,6 +79,7 @@ static const struct luaL_reg luaX_chuser_methods[] = {
     { "getUserInfo", luaX_chuser_getuserinfo },
     { "getStatus", luaX_chuser_getstatus },
     { "getChannel", luaX_chuser_getchannel },
+    { "getModes", luaX_chuser_getmodes },
     { NULL, NULL }
 };
 
@@ -347,6 +349,25 @@ luaX_chuser_getchannel(lua_State *L)
     luaX_pushchannel(L, ud->channel.name);
 
     return 1;
+}
+
+
+int
+luaX_chuser_getmodes(lua_State *L)
+{
+    luaX_chanuser *ud =
+        (luaX_chanuser *)luaL_checkudata(L, 1, "luna.channel.user");
+    irc_user *target = NULL;
+    luna_state *state = api_getstate(L);
+
+    if ((target = channel_get_user(state, ud->channel.name, ud->nick)) != NULL)
+    {
+        lua_pushstring(L, target->modes);
+        return 1;
+    }
+
+    return luaL_error(L, "no such user '%s' in channel '%s'",
+                      ud->nick, ud->channel.name);
 }
 
 
