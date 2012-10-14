@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT(Luna, 3.14, webmaster@flippeh.de)
+AC_INIT(Luna, 3.141, webmaster@flippeh.de)
 AC_CONFIG_SRCDIR([src/])
 
 AM_INIT_AUTOMAKE([subdir-objects])

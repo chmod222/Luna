@@ -42,6 +42,20 @@ void log_session_start(luna_log *);
 void log_session_end(luna_log *);
 
 
+void
+set_environment()
+{
+    /*
+     * Set some environment variables that scripts might use
+     */
+    setenv("LUNA_NAME", PACKAGE_NAME, 1);
+    setenv("LUNA_VERSION", PACKAGE_VERSION, 1);
+    setenv("LUNA_FULL_VERSION", PACKAGE_STRING, 1);
+
+    setenv("__DATE__", __DATE__, 1);
+    setenv("__TIME__", __TIME__, 1);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -52,6 +66,8 @@ main(int argc, char **argv)
     /* Initialize logger */
     luna_state state;
     luna_log *log = NULL;
+
+    set_environment();
 
     if (state_init(&state) != 0)
     {
