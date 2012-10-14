@@ -326,9 +326,9 @@ luaX_chuser_getstatus(lua_State *L)
 
     if ((target = channel_get_user(state, ud->channel.name, ud->nick)) != NULL)
     {
-        if (target->op)
+        if (strchr(target->modes, "o"))
             lua_pushstring(L, "op");
-        else if (target->voice)
+        else if (strchr(target->modes, "v"))
             lua_pushstring(L, "voice");
         else
             lua_pushstring(L, "regular");

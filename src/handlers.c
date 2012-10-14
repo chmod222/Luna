@@ -238,7 +238,6 @@ handle_ping(luna_state *env, irc_event *ev)
 int
 handle_numeric(luna_state *env, irc_event *ev)
 {
-    int max = 16; /* TODO: Calculate */
     int i = 0;
 
     irc_user *target = NULL;
@@ -272,9 +271,13 @@ handle_numeric(luna_state *env, irc_event *ev)
             target = channel_get_user(env, ev->param[1], ev->param[5]);
             if (target)
             {
+                /* TODO: Dynamic mode size in case IRC networks start
+                 *       allowing Unicode flags?
+                 */
+                int max = sizeof(env->userprefix) / sizeof(env->userprefix[0]);
+
                 mode = ev->param[6];
 
-                // TODO: Use env->prefix
                 while (*mode)
                 {
                     for (i = 0; ((i < max) && (env->userprefix[i].prefix != 0));
@@ -729,7 +732,7 @@ handle_mode_change(luna_state *state, const char *channel,
              (strchr(state->chanmodes.param_whenset, *flags) && !action))
         {
             /* Set/Unset flag "*flags" with argument "args[i]" */
-            const char *arg = args[i++];
+            char *arg = args[i++];
 
             printf("Set/Unset flag %c with param %s\n", *flags, arg);
 
@@ -864,34 +867,3 @@ handle_mode_change(luna_state *state, const char *channel,
     return force_reload;
 }
 
-
-int
-mode_set(luna_state *state, const char *channel, char flag, const char *arg)
-{
-    if (arg)
-    {
-        switch (flag)
-        {
-            case 'o': return channel_op_user(state, channel, arg);
-            case 'v': return channel_voice_user(state, channel, arg);
-        }
-    }
-
-    return 0;
-}
-
-
-int
-mode_unset(luna_state *state, const char *channel, char flag, const char *arg)
-{
-    if (arg)
-    {
-        switch (flag)
-        {
-            case 'o': return channel_deop_user(state, channel, arg);
-            case 'v': return channel_devoice_user(state, channel, arg);
-        }
-    }
-
-    return 0;
-}

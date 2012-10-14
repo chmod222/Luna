@@ -76,9 +76,6 @@ typedef struct irc_user
     char user[16];
     char host[128];
 
-    int op;    // TODO obsolete
-    int voice; // TODO obsolete
-
     char modes[16];
 } irc_user;
 
