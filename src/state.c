@@ -46,9 +46,6 @@ state_init(luna_state *state)
     if (list_init(&(state->scripts)) != 0)
         return 1;
 
-    if (list_init(&(state->server_support)) != 0)
-        return 1;
-
     return 0;
 }
 
@@ -59,30 +56,7 @@ state_destroy(luna_state *state)
     logger_destroy(state->logger);
     list_destroy(state->users,   &free);
     list_destroy(state->scripts, &script_free);
-    list_destroy(state->server_support, &server_support_free);
 
     return 0;
 }
 
-
-int
-support_by_key(void *data, void *list_data)
-{
-    char *key = (char *)data;
-    luna_server_support *ssp = (luna_server_support *)list_data;
-
-    return strcasecmp(key, ssp->key);
-}
-
-
-void
-server_support_free(void *data)
-{
-    luna_server_support *srv = (luna_server_support *)data;
-
-    free(srv->key);
-    free(srv->value);
-    free(srv);
-
-    return;
-}

@@ -117,14 +117,8 @@ handle_privmsg(luna_state *env, irc_event *ev)
     char *isitme = NULL;
     char *command = NULL;
     int priv;
-    luna_server_support *chanprefixes =
-        (luna_server_support *)list_find(env->server_support,
-                                         "CHANTYPES", &support_by_key);
 
-    if (chanprefixes)
-        priv = strchr(chanprefixes->value, ev->param[0][0]) == NULL;
-    else
-        priv = ev->param[0][0] != '#';
+    priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
 
     const char *sig = !priv ? "public_message" : "private_message";
 
@@ -168,16 +162,7 @@ handle_privmsg(luna_state *env, irc_event *ev)
 int
 handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 {
-    luna_server_support *chanprefixes =
-        (luna_server_support *)list_find(env->server_support,
-                                         "CHANTYPES", &support_by_key);
-    int priv;
-
-    if (chanprefixes)
-        priv = strchr(chanprefixes->value, ev->param[0][0]) == NULL;
-    else
-        priv = ev->param[0][0] != '#';
-
+    int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
     const char *sig = !priv ? "public_command" : "private_command";
 
     luna_user *user = user_match(env, &(ev->from));
@@ -228,7 +213,7 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 
         make_pair(&ch, &cu, ev->from.nick, ev->param[0]);
 
-        signal_dispatch(env, sig, &cu, &cu, &scmd, &srest, NULL);
+        signal_dispatch(env, sig, &cu, &ch, &scmd, &srest, NULL);
     }
 
     return 0;
@@ -257,6 +242,16 @@ handle_numeric(luna_state *env, irc_event *ev)
 
     switch (ev->numeric)
     {
+        case 4: /* DUNNO LOL */
+            /* param 0: me
+             * param 1: server
+             * param 2: version
+             * param 3: usermodes
+             * param 4: chanmodes (all)
+             * param 5: chanmodes (require args)
+             */
+            break;
+
         case 5: /* ISUPPORT */
             handle_server_supports(env, ev);
 
@@ -647,42 +642,49 @@ handle_server_supports(luna_state *env, irc_event *ev)
         char *key = strtok(ev->param[i], "=");
         char *val = strtok(NULL, "");
 
-        luna_server_support *ssp = malloc(sizeof(*ssp));
-        if (ssp)
+        if (!strcasecmp(key, "CHANMODES"))
         {
-            memset(ssp, 0, sizeof(*ssp));
+            char *tok = strtok(val, ",");
+            strncpy(env->chanmodes.param_address, tok,
+                    sizeof(env->chanmodes.param_address) - 1);
 
-            ssp->key = malloc(strlen(key) + 1);
-            strcpy(ssp->key, key);
+            tok = strtok(NULL, ",");
+            strncpy(env->chanmodes.param_always, tok,
+                    sizeof(env->chanmodes.param_always) - 1);
 
-            if (val)
-            {
-                ssp->value = malloc(strlen(val) + 1);
-                strcpy(ssp->value, val);
-            }
+            tok = strtok(NULL, ",");
+            strncpy(env->chanmodes.param_whenset, tok,
+                    sizeof(env->chanmodes.param_whenset) - 1);
 
-            list_push_back(env->server_support, ssp);
+            tok = strtok(NULL, ",");
+            strncpy(env->chanmodes.param_never, tok,
+                    sizeof(env->chanmodes.param_never) - 1);
         }
-
-        /*if (strstr(ev->param[i], "CHANMODES="))
+        else if (!strcasecmp(key, "PREFIX"))
         {
-            char *tok = NULL;
-            char *part = NULL;
-            int j;
+            /*PREFIX=(ov)@+ */
+            int k;
 
-            strtok(ev->param[i], "=");
-            tok = strtok(NULL, "");
-
-            part = strtok(tok, ",");
-
-            for (j = 0; j < 4; ++j)
+            /* TODO: Fix possible buffer overflow with static array userprefix */
+            for (k = 0; k < strlen(val) / 2 - 1; ++k)
             {
-                memset(env->chanmodes[j], 0, sizeof(env->chanmodes[j]));
+                env->userprefix[k].prefix = *(val+k+1);
+                env->userprefix[k].mode = *(val + k + strlen(val) / 2 + 1);
 
-                strncpy(env->chanmodes[j], part, sizeof(env->chanmodes[j]) - 1);
-                part = strtok(NULL, ",");
+                channel_modes *m = &(env->chanmodes);
+                if (strlen(m->param_nick) < sizeof(m->param_nick) - 1)
+                {
+                    int ind = strlen(m->param_nick);
+
+                    m->param_nick[ind] = *(val + k + 1);
+                    m->param_nick[ind+1] = 0;
+                }
             }
-        }*/
+        }
+        else if (!strcasecmp(key, "CHANTYPES"))
+        {
+            strncpy(env->chantypes, val, sizeof(env->chantypes) - 1);
+        }
     }
 
     return 0;
@@ -697,6 +699,15 @@ handle_mode_change(luna_state *state, const char *channel,
     int i = argind;
     int force_reload = 0;
 
+    irc_channel *target = (irc_channel *)list_find(
+            state->channels, (void *)channel, &channel_cmp);
+    if (!target)
+    {
+        logger_log(state->logger, LOGLEV_WARNING, "Unknown channel `%s'",
+                   channel);
+        return 1;
+    }
+
     while (*flags)
     {
         switch (*flags)
@@ -705,35 +716,111 @@ handle_mode_change(luna_state *state, const char *channel,
             case '-': action = 1; flags++; break;
         }
 
-        /* If...
-         *   - Flag in chanmodes[0] (Address parameter, always) OR
-         *   - Flag in chanmodes[1] (Setting, always) OR
-         *   - Flag in chanmodes[2] and action is setting (Param when set) OR
-         *   - Flag is either 'o' or 'v' which are not sent for chanmodes but
-         *     behave like flags in chanmodes[1] */
-        if  (strchr(state->chanmodes[0], *flags) ||
-             strchr(state->chanmodes[1], *flags) ||
-            (strchr(state->chanmodes[2], *flags) && !action) ||
-            (*flags == 'o') ||
-            (*flags == 'v'))
+        int flag = *flags - 'A';
+
+        /*
+         * Do all modes that need an argument
+         */
+        if  (strchr(state->chanmodes.param_address, *flags) ||
+             strchr(state->chanmodes.param_always, *flags) ||
+             (strchr(state->chanmodes.param_whenset, *flags) && !action))
         {
             /* Set/Unset flag "*flags" with argument "args[i]" */
-            if (!action)
-                mode_set(state, channel, *flags, args[i++]);
-            else
-                mode_unset(state, channel, *flags, args[i++]);
+            const char *arg = args[i++];
 
-            if (*flags == 'o')
-                force_reload = 1;
+            printf("Set/Unset flag %c with param %s\n", *flags, arg);
+
+            if (!action)
+            {
+                if (strchr(state->chanmodes.param_address, *flags))
+                {
+                    /* Add to (or create) list */
+                    if (!target->flags[flag].set)
+                    {
+                        printf("Creating new list for +%c...\n", *flags);
+
+                        /* Flag not set, set it and create the list */
+                        target->flags[flag].set = 1;
+                        target->flags[flag].type = FLAG_LIST;
+                        list_init(&target->flags[flag].list);
+                    }
+
+                    printf("Adding `%s' to +%c..\n", arg, *flags);
+
+                    list_push_back(target->flags[flag].list, strdup(arg));
+                }
+                else
+                {
+                    printf("Set +%c = `%s'\n", *flags, arg);
+
+                    target->flags[flag].set = 1;
+                    target->flags[flag].type = FLAG_STRING;
+                    target->flags[flag].string = strdup(arg);
+                }
+            }
+            else
+            {
+                /* Remove from list, possibly remove list, too */
+                if (target->flags[flag].set)
+                {
+                    if (strchr(state->chanmodes.param_address, *flags))
+                    {
+                        char *entry = (char *)list_find(target->flags[flag].list, arg, &strcasecmp);
+                        if (entry)
+                        {
+                            printf("Removing `%s' from list %c\n", arg, *flags);
+                            list_delete(target->flags[flag].list, entry, &free);
+                        }
+
+                        if (target->flags[flag].list->length == 0)
+                        {
+                            printf("Removing list belonging to flag %c\n", *flags);
+                            list_destroy(target->flags[flag].list, &free);
+                            target->flags[flag].type = FLAG_NONE;
+                            target->flags[flag].set = 0;
+                        }
+                    }
+                    else
+                    {
+                        target->flags[flag].set = 0;
+                        free(target->flags[flag].string);
+                        target->flags[flag].string = NULL;
+                        target->flags[flag].type = FLAG_NONE;
+                    }
+                }
+            }
         }
-        else if ((strchr(state->chanmodes[3], *flags)) ||
-                 (strchr(state->chanmodes[2], *flags) && action))
+        else if (strchr(state->chanmodes.param_nick, *flags))
         {
+            printf("Set/Unset mode %c on %s\n", flag, args[i++]);
+            /*
+            if (!action)
+                user_mode_set(state, channel, *flags, args[i++]);
+            else
+                user_mode_unset(state, channel, *flags, args[i--]);
+                */
+        }
+        else
+        {
+            /* Unknown flags and whenset-parameters */
+
+            /* Unknown flags are treated as if they require no parameter */
+            printf("Set/Unset paramless flag %c\n", *flags);
+
             /* Set/Unset flag "*flags" for channel */
             if (!action)
-                mode_set(state, channel, *flags, NULL);
+            {
+                target->flags[flag].set = 1;
+            }
             else
-                mode_unset(state, channel, *flags, NULL);
+            {
+                target->flags[flag].set = 0;
+
+                if (target->flags[flag].type == FLAG_STRING)
+                    free(target->flags[flag].string);
+
+                target->flags[flag].type = FLAG_NONE;
+            }
         }
 
         flags++;

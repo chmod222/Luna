@@ -32,6 +32,29 @@
 
 #include "state.h"
 
+#define FLAG(x) ((x) - 'A')
+
+typedef enum flag_type
+{
+    FLAG_NONE, /* default for flags without args */
+    FLAG_STRING,
+    FLAG_LIST
+} flag_type;
+
+
+typedef struct flag
+{
+    int set;
+    flag_type type;
+
+    union
+    {
+        int bool;
+        char *string;
+        linked_list *list;
+    };
+} flag;
+
 
 typedef struct irc_channel
 {
@@ -43,6 +66,7 @@ typedef struct irc_channel
     time_t created;
 
     linked_list *users;
+    flag flags[64]; /* enough to cover flags [a-zA-Z] */
 } irc_channel;
 
 
@@ -52,8 +76,10 @@ typedef struct irc_user
     char user[16];
     char host[128];
 
-    int op;
-    int voice;
+    int op;    // TODO obsolete
+    int voice; // TODO obsolete
+
+    char modes[16];
 } irc_user;
 
 int channel_cmp(void *, void *);

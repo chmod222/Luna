@@ -49,6 +49,23 @@ typedef struct luna_serverinfo
 } luna_serverinfo;
 
 
+typedef struct channel_modes
+{
+    char param_address[128]; // Things to add to some channel list
+    char param_always[128];  // Things to add to channel modes
+    char param_whenset[128]; // ""
+    char param_never[128];   // ""
+    char param_nick[128];    // Things to add to channel user (o,v, ..)
+} channel_modes;
+
+
+typedef struct prefix
+{
+    char prefix;
+    char mode;
+} prefix;
+
+
 typedef struct luna_state
 {
     luna_userinfo userinfo;
@@ -68,23 +85,18 @@ typedef struct luna_state
 
     char *bind;
 
-    linked_list *server_support;
+    // Channel modes
+    struct channel_modes chanmodes;
 
-    char chanmodes[4][32];
+    // User prefixes
+    struct prefix userprefix[16];
+
+    char chantypes[8];
+
 } luna_state;
-
-
-typedef struct luna_server_support
-{
-    char *key;
-    char *value;
-} luna_server_support;
 
 
 int state_init(luna_state *);
 int state_destroy(luna_state *);
-
-int support_by_key(void *, void *);
-void server_support_free(void *);
 
 #endif

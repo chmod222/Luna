@@ -43,6 +43,7 @@ int luaX_channels_find(lua_State*);
 
 int luaX_channel_getchannelinfo(lua_State*);
 int luaX_channel_gettopic(lua_State*);
+int luaX_channel_getmodes(lua_State*);
 int luaX_channel_getusers(lua_State*);
 int luaX_channel_finduser(lua_State*);
 
@@ -67,6 +68,7 @@ static const struct luaL_reg luaX_channel_functions[] = {
 static const struct luaL_reg luaX_channel_methods[] = {
     { "getChannelInfo", luaX_channel_getchannelinfo },
     { "getTopic", luaX_channel_gettopic },
+    { "getModes", luaX_channel_getmodes },
     { "getUserList", luaX_channel_getusers },
     { "findUser", luaX_channel_finduser },
     { NULL, NULL }
@@ -189,6 +191,58 @@ luaX_channel_gettopic(lua_State *L)
     lua_pushstring(L, target->topic_setter);
 
     return 3;
+}
+
+
+int
+luaX_channel_getmodes(lua_State *L)
+{
+    int max = 64; /* TODO: Calculate */
+    int i;
+    int table;
+
+    irc_channel *target = luaX_check_irc_channel_ud(L, 1);
+
+    table = (lua_newtable(L), lua_gettop(L));
+
+    for (i = 0; i < max; ++i)
+    {
+        if (target->flags[i].set)
+        {
+            list_node *cur = NULL;
+            int list;
+            int j = 1;
+
+            flag *f = &(target->flags[i]);
+
+            lua_pushfstring(L, "%c", i + 'A');
+            switch (f->type)
+            {
+                case FLAG_NONE:
+                    lua_pushboolean(L, 1);
+                    break;
+
+                case FLAG_STRING:
+                    lua_pushstring(L, f->string);
+                    break;
+
+                case FLAG_LIST:
+                    list = (lua_newtable(L), lua_gettop(L));
+
+                    for (cur = f->list->root; cur != NULL; cur = cur->next)
+                    {
+                        lua_pushstring(L, cur->data);
+                        lua_rawseti(L, list, i++);
+                    }
+
+                    break;
+            }
+
+            lua_settable(L, table);
+        }
+    }
+
+    return 1;
 }
 
 

@@ -56,6 +56,19 @@ void
 channel_free(void *data)
 {
     irc_channel *channel = (irc_channel *)data;
+    int max = 64; /* TODO: calculate */
+    int i;
+
+    for (i = 0; i < max; ++i)
+    {
+        if (channel->flags[i].set)
+        {
+            if (channel->flags[i].type == FLAG_STRING)
+                free(channel->flags[i].string);
+            else if (channel->flags[i].type == FLAG_LIST)
+                list_destroy(channel->flags[i].list, &free);
+        }
+    }
 
     list_destroy(channel->users, &free); /* No lists in irc_user -- free() */
     free(channel);
