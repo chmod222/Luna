@@ -689,7 +689,7 @@ handle_server_supports(luna_state *env, irc_event *ev)
         }
         else if (!strcasecmp(key, "CHANTYPES"))
         {
-            strncpy(env->chantypes, val, sizeof(env->chantypes) - 1);
+            env->chantypes = strdup(val);
         }
     }
 

@@ -57,6 +57,8 @@ state_destroy(luna_state *state)
     list_destroy(state->users,   &free);
     list_destroy(state->scripts, &script_free);
 
+    free(state->chantypes);
+
     return 0;
 }
 

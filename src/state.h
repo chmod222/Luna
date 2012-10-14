@@ -88,10 +88,10 @@ typedef struct luna_state
     // Channel modes
     struct channel_modes chanmodes;
 
-    // User prefixes
+    // User prefixes TODO: Make dynamic
     struct prefix userprefix[16];
 
-    char chantypes[8];
+    char *chantypes;
 
 } luna_state;
 
