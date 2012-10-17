@@ -151,6 +151,8 @@ irc_parse_line(struct irc_event *dest, char *line)
     {
         if (tmp[0] == ':')
         {
+            char *j;
+
             char msg[MSGLEN];
             char *rest = strtok(NULL, "");
 
@@ -161,6 +163,12 @@ irc_parse_line(struct irc_event *dest, char *line)
                 strncat(msg, " ", MSGLEN);
                 strncat(msg, rest, MSGLEN);
             }
+
+            j = msg + strlen(msg) - 1;
+            while ((j >= msg) && isspace(*j))
+                j--;
+
+            *(j+1) = 0;
 
             dest->msg = (char *)malloc(strlen(msg) + 1);
 

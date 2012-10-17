@@ -55,6 +55,8 @@ int handle_topic(luna_state *,   irc_event *);
 int handle_kick(luna_state *,    irc_event *);
 int handle_unknown(luna_state *, irc_event *);
 int handle_command(luna_state *, irc_event *, const char *, char *);
+int handle_ctcp(luna_state *,    irc_event *, const char *, char *);
+int handle_action(luna_state *,  irc_event *, const char *);
 
 int handle_command_load(luna_state *, irc_event *, const char *);
 int handle_command_reload(luna_state *, irc_event *, const char *);
@@ -98,17 +100,30 @@ handle_privmsg(luna_state *env, irc_event *ev)
     char msgcopy[LINELEN];
     char *isitme = NULL;
     char *command = NULL;
-    int priv;
-
-    priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
-
-    const char *sig = !priv ? "public_message" : "private_message";
+    int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
 
     /* Make a copy of the message that we can modify without screwing
      * later operations */
     memset(msgcopy, 0, sizeof(msgcopy));
 
     strcpy(msgcopy, ev->msg);
+    if ((ev->msg[0] == 0x01) && (ev->msg[strlen(ev->msg) - 1] == 0x01))
+    {
+        char *ctcp = strtok(msgcopy, " ");
+        char *rest = strtok(NULL, "");
+
+        /* Strip leading \x01 from CTCP command */
+        ++ctcp;
+
+        /* If the message is non-empty, remove \x01 from its end, otherwise
+         * remove it from the command */
+        if (rest)
+            rest[strlen(rest) - 1] = '\0';
+        else
+            ctcp[strlen(ctcp) - 1] = '\0';
+
+        return handle_ctcp(env, ev, ctcp, rest);
+    }
 
     /* Check for a "<botnick>: <command> <...>" command */
     if  (((isitme = strtok(msgcopy, ":")) != NULL) &&
@@ -118,23 +133,91 @@ handle_privmsg(luna_state *env, irc_event *ev)
             handle_command(env, ev, command, strtok(NULL, ""));
     }
 
+    luaX_string s = luaX_make_string(ev->msg);
+
     if (priv)
     {
-        luaX_string s = luaX_make_string(ev->msg);
         luaX_source src = luaX_make_source(&(ev->from));
 
-        signal_dispatch(env, sig, &src, &s, NULL);
+        signal_dispatch(env, "private_message", &src, &s, NULL);
     }
     else
     {
         luaX_channel ch;
         luaX_chanuser cu;
-        luaX_string s = luaX_make_string(ev->msg);
 
         luaX_make_channel(&ch, ev->param[0]);
         luaX_make_chanuser(&cu, ev->from.nick, &ch);
 
-        signal_dispatch(env, sig, &cu, &cu, &s, NULL);
+        signal_dispatch(env, "public_message", &cu, &ch, &s, NULL);
+    }
+
+    return 0;
+}
+
+
+int
+handle_ctcp(luna_state *env, irc_event *ev, const char *ctcp, char *msg)
+{
+    luaX_string cmd = luaX_make_string(ctcp);
+    luaX_string mesg = luaX_make_string(msg);
+
+    int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
+
+    /* Special case for /ME commands */
+    if (!strcmp(ctcp, "ACTION"))
+        return handle_action(env, ev, msg);
+
+    if (priv)
+    {
+        luaX_source src = luaX_make_source(&(ev->from));
+
+        if (ev->type == IRCEV_PRIVMSG)
+            signal_dispatch(env, "private_ctcp", &src, &cmd, &mesg, NULL);
+        else if (ev->type == IRCEV_NOTICE)
+            signal_dispatch(env, "private_ctcp_response",
+                            &src, &cmd, &mesg, NULL);
+    }
+    else
+    {
+        luaX_channel ch;
+        luaX_chanuser cu;
+
+        luaX_make_channel(&ch, ev->param[0]);
+        luaX_make_chanuser(&cu, ev->from.nick, &ch);
+
+        if (ev->type == IRCEV_PRIVMSG)
+            signal_dispatch(env, "public_ctcp", &cu, &ch, &cmd, &mesg, NULL);
+        else if (ev->type == IRCEV_NOTICE)
+            signal_dispatch(env, "public_ctcp_response",
+                            &cu, &ch, &cmd, &mesg, NULL);
+    }
+
+    return 0;
+}
+
+
+int
+handle_action(luna_state *env, irc_event *ev, const char *message)
+{
+    luaX_string msg = luaX_make_string(message);
+    int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
+
+    if (priv)
+    {
+        luaX_source src = luaX_make_source(&(ev->from));
+
+        signal_dispatch(env, "private_action", &src, &msg, NULL);
+    }
+    else
+    {
+        luaX_channel ch;
+        luaX_chanuser cu;
+
+        luaX_make_channel(&ch, ev->param[0]);
+        luaX_make_chanuser(&cu, ev->from.nick, &ch);
+
+        signal_dispatch(env, "public_action", &cu, &ch, &msg, NULL);
     }
 
     return 0;
@@ -144,8 +227,10 @@ handle_privmsg(luna_state *env, irc_event *ev)
 int
 handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 {
+    luaX_string scmd = luaX_make_string(cmd);
+    luaX_string srest = luaX_make_string(rest);
+
     int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
-    const char *sig = !priv ? "public_command" : "private_command";
 
     luna_user *user = user_match(env, &(ev->from));
 
@@ -179,24 +264,19 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 
     if (priv)
     {
-        luaX_string scmd = luaX_make_string(cmd);
-        luaX_string srest = luaX_make_string(rest);
         luaX_source src = luaX_make_source(&(ev->from));
 
-        signal_dispatch(env, sig, &src, &scmd, &srest, NULL);
+        signal_dispatch(env, "private_command", &src, &scmd, &srest, NULL);
     }
     else
     {
         luaX_chanuser cu;
         luaX_channel ch;
 
-        luaX_string scmd = luaX_make_string(cmd);
-        luaX_string srest = luaX_make_string(rest);
-
         luaX_make_channel(&ch, ev->param[0]);
         luaX_make_chanuser(&cu, ev->from.nick, &ch);
 
-        signal_dispatch(env, sig, &cu, &ch, &scmd, &srest, NULL);
+        signal_dispatch(env, "public_command", &cu, &ch, &scmd, &srest, NULL);
     }
 
     return 0;
@@ -424,7 +504,25 @@ handle_notice(luna_state *env, irc_event *ev)
     luaX_string msg = luaX_make_string(ev->msg);
     luaX_source src = luaX_make_source(&(ev->from));
 
-    signal_dispatch(env, "notice", &src, &target, &msg, NULL);
+    /* CTCP response */
+    if ((ev->msg[0] == 0x01) && (ev->msg[strlen(ev->msg) - 1] == 0x01))
+    {
+        char *ctcp = strtok(ev->msg, " ");
+        char *rest = strtok(NULL, "");
+
+        ++ctcp;
+
+        if (rest)
+            rest[strlen(rest) - 1] = '\0';
+        else
+            ctcp[strlen(ctcp) - 1] = '\0';
+
+        return handle_ctcp(env, ev, ctcp, rest);
+    }
+    else
+    {
+        signal_dispatch(env, "notice", &src, &target, &msg, NULL);
+    }
 
     return 0;
 }

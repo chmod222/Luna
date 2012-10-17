@@ -57,6 +57,22 @@ function luna.privmsg(target, message)
     luna.sendLine(string.format("PRIVMSG %s :%s", target, message))
 end
 
+function luna.ctcp(target, ctcp, message)
+    if message then
+        luna.privmsg(target, string.format('\001%s %s\001', ctcp, message))
+    else
+        luna.privmsg(target, string.format('\001%s\001', ctcp))
+    end
+end
+
+function luna.ctcpReply(target, ctcp, message)
+    if message then
+        luna.notice(target, string.format('\001%s %s\001', ctcp, message))
+    else
+        luna.notice(target, string.format('\001%s\001', ctcp))
+    end
+end
+
 --
 -- Add and delete signal handlers
 --
@@ -191,6 +207,39 @@ function luna.types.source_user:respond(msg)
     self:privmsg(string.format('%s: %s', nick, msg))
 end
 
+function luna.types.source_user:notice(msg)
+    local nick = self:getUserInfo()
+    luna.notice(nick, msg)
+end
+
+function luna.types.source_user:ctcp(ctcp, msg)
+    local nick = self:getUserInfo()
+    luna.ctcp(nick, ctcp, msg)
+end
+
+function luna.types.source_user:ctcpReply(ctcp, msg)
+    local nick = self:getUserInfo()
+    luna.ctcpReply(nick, ctcp, msg)
+end
+
+function luna.types.source_user:getNick()
+    return ({self:getUserInfo()})[1]
+end
+
+function luna.types.source_user:getUser()
+    return ({self:getUserInfo()})[2]
+end
+
+function luna.types.source_user:getHost()
+    return ({self:getUserInfo()})[3]
+end
+
+make_getters(luna.types.source_user, {
+    nick = 'getNick',
+    user = 'getUser',
+    host = 'getHost'
+})
+
 ---- Known channel users
 --
 function luna.types.channel_user:getRegUser()
@@ -217,6 +266,22 @@ end
 function luna.types.channel_user:getHost()
     return ({self:getUserInfo()})[3]
 end
+
+function luna.types.channel_user:notice(msg)
+    local nick = self:getUserInfo()
+    luna.notice(nick, msg)
+end
+
+function luna.types.channel_user:ctcp(ctcp, msg)
+    local nick = self:getUserInfo()
+    luna.ctcp(nick, ctcp, msg)
+end
+
+function luna.types.channel_user:ctcpReply(ctcp, msg)
+    local nick = self:getUserInfo()
+    luna.ctcpReply(nick, ctcp, msg)
+end
+
 
 make_getters(luna.types.channel_user, {
     status  = 'getStatus',
