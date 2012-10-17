@@ -803,7 +803,6 @@ handle_mode_change(luna_state *state, const char *channel,
 {
     int action = 0; /* 0 = set, 1 = unset */
     int i = argind;
-    int force_reload = 0;
 
     irc_channel *target = (irc_channel *)list_find(
             state->channels, (void *)channel, &channel_cmp);
@@ -843,8 +842,6 @@ handle_mode_change(luna_state *state, const char *channel,
             /* Set/Unset flag "*flags" with argument "args[i]" */
             char *arg = args[i++];
 
-            printf("Set/Unset flag %c with param %s\n", *flags, arg);
-
             if (!action)
             {
                 if (strchr(state->chanmodes.param_address, *flags))
@@ -852,22 +849,16 @@ handle_mode_change(luna_state *state, const char *channel,
                     /* Add to (or create) list */
                     if (!target->flags[flag].set)
                     {
-                        printf("Creating new list for +%c...\n", *flags);
-
                         /* Flag not set, set it and create the list */
                         target->flags[flag].set = 1;
                         target->flags[flag].type = FLAG_LIST;
                         list_init(&target->flags[flag].list);
                     }
 
-                    printf("Adding `%s' to +%c..\n", arg, *flags);
-
                     list_push_back(target->flags[flag].list, strdup(arg));
                 }
                 else
                 {
-                    printf("Set +%c = `%s'\n", *flags, arg);
-
                     target->flags[flag].set = 1;
                     target->flags[flag].type = FLAG_STRING;
                     target->flags[flag].string = strdup(arg);
@@ -883,13 +874,11 @@ handle_mode_change(luna_state *state, const char *channel,
                         char *entry = (char *)list_find(target->flags[flag].list, arg, &strcasecmp);
                         if (entry)
                         {
-                            printf("Removing `%s' from list %c\n", arg, *flags);
                             list_delete(target->flags[flag].list, entry, &free);
                         }
 
                         if (target->flags[flag].list->length == 0)
                         {
-                            printf("Removing list belonging to flag %c\n", *flags);
                             list_destroy(target->flags[flag].list, &free);
                             target->flags[flag].type = FLAG_NONE;
                             target->flags[flag].set = 0;
@@ -908,7 +897,6 @@ handle_mode_change(luna_state *state, const char *channel,
         else if (strchr(state->chanmodes.param_nick, *flags))
         {
             const char *arg = args[i++];
-            printf("Set/Unset mode %c on %s\n", *flags, arg);
 
             irc_user *user = channel_get_user(state, channel, arg);
             if (user)
@@ -950,9 +938,7 @@ handle_mode_change(luna_state *state, const char *channel,
         else
         {
             /* Unknown flags and whenset-parameters */
-
             /* Unknown flags are treated as if they require no parameter */
-            printf("Set/Unset paramless flag %c\n", *flags);
 
             /* Set/Unset flag "*flags" for channel */
             if (!action)
@@ -973,6 +959,6 @@ handle_mode_change(luna_state *state, const char *channel,
         flags++;
     }
 
-    return force_reload;
+    return 0;
 }
 
