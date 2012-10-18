@@ -34,8 +34,6 @@
 
 typedef struct luaX_user
 {
-    int (*serialize)(lua_State*, struct luaX_serializable*);
-
     char hostmask[128];
 } luaX_user;
 

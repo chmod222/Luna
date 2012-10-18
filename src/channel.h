@@ -79,8 +79,8 @@ typedef struct irc_user
     char modes[16];
 } irc_user;
 
-int channel_cmp(void *, void *);
-int user_cmp(void *, void *);
+int channel_cmp(const void *, const void *);
+int user_cmp(const void *, const void *);
 
 int channel_add(luna_state *, const char *);
 int channel_remove(luna_state *, const char *);

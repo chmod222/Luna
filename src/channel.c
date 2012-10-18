@@ -33,9 +33,9 @@
 
 
 int
-channel_cmp(void *data, void *list_data)
+channel_cmp(const void *data, const void *list_data)
 {
-    char *name = (char *)data;
+    const char *name = (const char *)data;
     irc_channel *channel = (irc_channel *)list_data;
 
     return strcasecmp(name, channel->name);
@@ -43,9 +43,9 @@ channel_cmp(void *data, void *list_data)
 
 
 int
-user_cmp(void *data, void *list_data)
+user_cmp(const void *data, const void *list_data)
 {
-    char *name = (char *)data;
+    const char *name = (const char *)data;
     irc_user *user = (irc_user *)list_data;
 
     return strcasecmp(name, user->nick);
@@ -80,11 +80,13 @@ channel_free(void *data)
 int
 channel_add(luna_state *state, const char *channel_name)
 {
-    /* Maybe check whether this channel is already in - proper coding should
-     * prevent this from happening anyways*/
-    irc_channel *tmp = malloc(sizeof(*tmp));
+    irc_channel *tmp = (irc_channel *)list_find(state->channels,
+            (void *)channel_name, &channel_cmp);
 
     if (tmp)
+        return 1;
+
+    if ((tmp = malloc(sizeof(*tmp))))
     {
         memset(tmp, 0, sizeof(*tmp));
 

@@ -47,7 +47,7 @@ const char *env_key = "LUNA_ENV";
 
 
 int
-script_cmp(void *data, void *list_data)
+script_cmp(const void *data, const void *list_data)
 {
     char *name = (char *)data;
     luna_script *script = (luna_script *)list_data;

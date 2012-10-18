@@ -97,8 +97,8 @@ luaX_scripts_load(lua_State *L)
 
     if (!script_load(state, file))
     {
-        void *script = list_find(state->scripts, (void *)file, &script_cmp);
-        luna_script *s = (luna_script *)script;
+        luna_script *s = (luna_script *)list_find(
+                state->scripts, (void *)file, &script_cmp);
         luna_script *u = (luna_script *)lua_newuserdata(L, sizeof(luna_script));
 
         luaL_getmetatable(L, "luna.script");
@@ -121,7 +121,16 @@ luaX_scripts_unload(lua_State *L)
     const char *file = luaL_checkstring(L, 1);
     luna_state *state = api_getstate(L);
 
-    script_unload(state, file);
+    luna_script *script = (luna_script *)list_find(
+            state->scripts, (void *)file, &script_cmp);
+
+    if (script)
+    {
+        if (script->state == L)
+            return luaL_error(L, "cannot unload self");
+        else
+            script_unload(state, file);
+    }
 
     return 0;
 }

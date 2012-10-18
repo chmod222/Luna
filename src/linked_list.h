@@ -54,7 +54,8 @@ list_node *list_push_front(linked_list *, void *);
 list_node *list_push_back(linked_list *, void *);
 list_node *list_insert_before(linked_list *, list_node *, void *);
 list_node *list_insert_after(linked_list *, list_node *, void *);
-list_node *list_find(linked_list *, void *, int (*)(void *, void *));
+void *list_find(linked_list *, const void *,
+        int (*)(const void *, const void *));
 
 void list_delete(linked_list *, void *, void (*)(void *));
 

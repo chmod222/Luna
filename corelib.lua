@@ -26,6 +26,18 @@ function make_getters(tab, attrs)
     end
 end
 
+function make_setters(tab, attrs)
+    local meth = table.copy(tab)
+
+    tab.__newindex = function(self, key, value)
+        if attrs[key] ~= nil then
+            meth[attrs[key]](self, value)
+        else
+            error(string.format('no such field \'%s\'', key))
+        end
+    end
+end
+
 --
 -- Command helpers
 --
@@ -303,6 +315,12 @@ make_getters(luna.types.user, {
     id    = 'getId'
 })
 
+make_setters(luna.types.user, {
+    flags = 'setFlags',
+    level = 'setLevel',
+    id    = 'setId'
+})
+
 ---- Scripts
 --
 function luna.types.script:getFilename()
@@ -335,6 +353,41 @@ make_getters(luna.types.script, {
 
 ---- Some more utilities
 --
+function luna.self.getNick()
+    return ({luna.self.getUserInfo()})[1]
+end
+
+function luna.self.getUser()
+    return ({luna.self.getUserInfo()})[2]
+end
+
+function luna.self.getReal()
+    return ({luna.self.getUserInfo()})[3]
+end
+
+function luna.self.getStarted()
+    return ({luna.self.getRuntimeInfo()})[1]
+end
+
+function luna.self.getConnected()
+    return ({luna.self.getRuntimeInfo()})[2]
+end
+
+getters = {
+    nick = 'getNick',
+    user = 'getUser',
+    real = 'getReal',
+    connected = 'getConnected',
+    started   = 'getStartet'
+}
+
+luna.self = setmetatable(luna.self, {
+    __index = function(self, key)
+        if getters[key] ~= nil then
+            return luna.self[getters[key]]()
+        end
+    end
+})
 
 -- str = 'a b c'
 -- str:split(' ') = {'a', 'b', 'c'}

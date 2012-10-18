@@ -49,8 +49,8 @@ int users_add(luna_state *, const char *, const char *,
               const char *, const char *);
 int users_remove(luna_state *, const char *);
 
-int luna_user_cmp(void *, void *);
-int luna_user_host_cmp(void *, void *);
+int luna_user_cmp(const void *, const void *);
+int luna_user_host_cmp(const void *, const void *);
 
 luna_user *user_match(luna_state *, irc_sender *);
 

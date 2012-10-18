@@ -100,7 +100,13 @@ handle_privmsg(luna_state *env, irc_event *ev)
     char msgcopy[LINELEN];
     char *isitme = NULL;
     char *command = NULL;
-    int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
+    int priv;
+
+    /* Needs at least the target */
+    if (ev->param_count < 1)
+        return 1;
+
+    priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
 
     /* Make a copy of the message that we can modify without screwing
      * later operations */
@@ -286,12 +292,14 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 int
 handle_ping(luna_state *env, irc_event *ev)
 {
-    const char *pingstr = (ev->param_count > 0)
-        ? ev->param[0]
-        : ev->msg;
+    const char *pingstr;
+
+    if ((ev->msg == NULL) && (ev->param_count < 1))
+        return 1;
+
+    pingstr = (ev->param_count > 0) ? ev->param[0] : ev->msg;
 
     net_sendfln(env, "PONG :%s", pingstr);
-
     signal_dispatch(env, "ping", NULL);
 
     return 0;
@@ -316,6 +324,9 @@ handle_numeric(luna_state *env, irc_event *ev)
             /* param 0: me
              * param 1: channel
              */
+            if (ev->param_count < 2)
+                return 1;
+
             target = channel_get_user(env, ev->param[1], ev->param[0]);
             if (target)
             {
@@ -345,6 +356,9 @@ handle_numeric(luna_state *env, irc_event *ev)
              * param 5: nick
              * param 6: modestr
              * msg: <hops> <realname> */
+            if (ev->param_count < 7)
+                return 1;
+
             channel_add_user(env,
                     ev->param[1],
                     ev->param[5],
@@ -379,11 +393,17 @@ handle_numeric(luna_state *env, irc_event *ev)
             break;
 
         case 332: /* TOPIC */
+            if (ev->param_count < 2)
+                return 1;
+
             channel_set_topic(env, ev->param[1], ev->msg);
 
             break;
 
         case 333: /* TOPIC META */
+            if (ev->param_count < 4)
+                return 1;
+
             channel_set_topic_meta(env,
                     ev->param[1],
                     ev->param[2],
@@ -393,12 +413,18 @@ handle_numeric(luna_state *env, irc_event *ev)
 
         case 324: /* REPL_MODE */
             /* <server> 324 <me> <channel> <flags> [param[,param[,...]]] */
+            if (ev->param_count < 4)
+                return 1;
+
             handle_mode_change(env, ev->param[1], ev->param[2], ev->param, 3);
 
             break;
 
         case 329: /* REPL_MODE2 */
             /* :aperture.esper.net 329 Luna^ #lulz2 1298798377 */
+            if (ev->param_count < 3)
+                return 1;
+
             channel_set_creation_time(env, ev->param[1], atoi(ev->param[2]));
 
             break;
@@ -412,7 +438,12 @@ handle_numeric(luna_state *env, irc_event *ev)
 int
 handle_join(luna_state *env, irc_event *ev)
 {
-    const char *c = ev->msg ? ev->msg : ev->param[0];
+    const char *c;
+
+    if ((ev->msg == NULL) && ev->param_count < 1)
+        return 1;
+
+    c = ev->msg ? ev->msg : ev->param[0];
 
     luaX_channel ch;
     luaX_chanuser cu;
@@ -447,6 +478,9 @@ handle_part(luna_state *env, irc_event *ev)
 {
     luaX_channel ch;
     luaX_chanuser cu;
+
+    if (ev->param_count < 1)
+        return 1;
 
     luaX_make_channel(&ch, ev->param[0]);
     luaX_make_chanuser(&cu, ev->from.nick, &ch);
@@ -500,7 +534,12 @@ handle_quit(luna_state *env, irc_event *ev)
 int
 handle_notice(luna_state *env, irc_event *ev)
 {
-    luaX_string target = luaX_make_string(ev->param[0]);
+    luaX_string target;
+
+    if (ev->param_count < 1)
+        return 1;
+
+    target = luaX_make_string(ev->param[0]);
     luaX_string msg = luaX_make_string(ev->msg);
     luaX_source src = luaX_make_source(&(ev->from));
 
@@ -531,7 +570,12 @@ handle_notice(luna_state *env, irc_event *ev)
 int
 handle_nick(luna_state *env, irc_event *ev)
 {
-    const char *newnick = ev->msg ? ev->msg : ev->param[0];
+    const char *newnick;
+
+    if ((ev->msg == NULL) && (ev->param_count < 1))
+        return 1;
+
+    newnick = ev->msg ? ev->msg : ev->param[0];
     luaX_string nick = luaX_make_string(newnick);
     luaX_source src = luaX_make_source(&(ev->from));
 
@@ -557,6 +601,9 @@ handle_mode(luna_state *env, irc_event *ev)
 {
     /* <sender> MODE <channel> <flags> [param[,param[,...]]] */
 
+    if (ev->param_count < 2)
+        return 1;
+
     /* If not me... */
     if (strcasecmp(ev->param[0], env->userinfo.nick))
         handle_mode_change(env, ev->param[0], ev->param[1], ev->param, 2);
@@ -581,6 +628,9 @@ int
 handle_topic(luna_state *env, irc_event *ev)
 {
     char hoststring[128];
+
+    if (ev->param_count < 1)
+        return 1;
 
     luaX_channel ch;
     luaX_chanuser cu;
@@ -608,7 +658,12 @@ handle_kick(luna_state *env, irc_event *ev)
     luaX_channel ch;
     luaX_chanuser kicker;
     luaX_chanuser kicked;
-    luaX_string reason = luaX_make_string(ev->msg);
+    luaX_string reason;
+
+    if (ev->param_count < 2)
+        return 1;
+
+    reason = luaX_make_string(ev->msg);
 
     luaX_make_channel(&ch, ev->param[0]);
     luaX_make_chanuser(&kicker, ev->from.nick, &ch);
@@ -642,7 +697,8 @@ handle_unknown(luna_state *env, irc_event *ev)
 int
 handle_command_load(luna_state *env, irc_event *ev, const char *name)
 {
-    void *already_loaded = list_find(env->scripts, (void *)name, &script_cmp);
+    void *already_loaded = list_find(env->scripts,
+            (const void *)name, &script_cmp);
 
     if (already_loaded)
     {
@@ -653,9 +709,10 @@ handle_command_load(luna_state *env, irc_event *ev, const char *name)
     {
         if (!script_load(env, name))
         {
-            void *loaded = list_find(env->scripts, (void *)name, &script_cmp);
-            luna_script *script = (luna_script *)loaded;
+            void *loaded = list_find(env->scripts,
+                    (const void *)name, &script_cmp);
 
+            luna_script *script = (luna_script *)loaded;
             luaX_script scrpt = luaX_make_script(script);
 
             net_sendfln(env, "PRIVMSG %s :%s: Loaded script '%s v%s'",
@@ -678,7 +735,7 @@ handle_command_load(luna_state *env, irc_event *ev, const char *name)
 int
 handle_command_reload(luna_state *env, irc_event *ev, const char *name)
 {
-    void *loaded = list_find(env->scripts, (void *)name, &script_cmp);
+    void *loaded = list_find(env->scripts, (const void *)name, &script_cmp);
 
     if (!loaded)
     {
@@ -805,7 +862,7 @@ handle_mode_change(luna_state *state, const char *channel,
     int i = argind;
 
     irc_channel *target = (irc_channel *)list_find(
-            state->channels, (void *)channel, &channel_cmp);
+            state->channels, (const void *)channel, &channel_cmp);
     if (!target)
     {
         logger_log(state->logger, LOGLEV_WARNING, "Unknown channel `%s'",
@@ -871,7 +928,14 @@ handle_mode_change(luna_state *state, const char *channel,
                 {
                     if (strchr(state->chanmodes.param_address, *flags))
                     {
-                        char *entry = (char *)list_find(target->flags[flag].list, arg, &strcasecmp);
+                        /* This will throw a warning because strcasecmp
+                         * is not of type int (*)(const void *, const void *),
+                         * but I prefer the warning to writing a wrapper for
+                         * strcasecmp
+                         */
+                        char *entry = (char *)list_find(
+                                target->flags[flag].list, arg, &strcasecmp);
+
                         if (entry)
                         {
                             list_delete(target->flags[flag].list, entry, &free);

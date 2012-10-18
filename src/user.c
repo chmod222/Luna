@@ -138,7 +138,12 @@ int
 users_add(luna_state *state, const char *id, const char *hostmask,
           const char *flags, const char *level)
 {
-    luna_user *user = malloc(sizeof(*user));
+    luna_user *user = (luna_user *)list_find(state->users, (void *)hostmask,
+                       &luna_user_host_cmp);
+    if (user)
+        return 1;
+
+    user = malloc(sizeof(*user));
 
     if (user)
     {
@@ -152,7 +157,7 @@ users_add(luna_state *state, const char *id, const char *hostmask,
         list_push_back(state->users, user);
     }
 
-    return 1;
+    return 0;
 }
 
 
@@ -172,7 +177,7 @@ users_remove(luna_state *state, const char *hostmask)
 
 
 int
-luna_user_cmp(void *data, void *list_data)
+luna_user_cmp(const void *data, const void *list_data)
 {
     char host[256];
 
@@ -187,7 +192,7 @@ luna_user_cmp(void *data, void *list_data)
 
 
 int
-luna_user_host_cmp(void *data, void *list_data)
+luna_user_host_cmp(const void *data, const void *list_data)
 {
     char *key = (char *)data;
     luna_user *user = (luna_user *)list_data;

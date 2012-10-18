@@ -51,7 +51,7 @@ typedef struct luna_script
 
 extern const char *env_key;
 
-int script_cmp(void *, void *);
+int script_cmp(const void *, const void *);
 int script_load(luna_state *, const char *);
 int script_unload(luna_state *, const char *);
 void script_free(void *);

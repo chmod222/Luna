@@ -177,8 +177,9 @@ list_push_back(linked_list *list, void *data)
 }
 
 
-list_node *
-list_find(linked_list *list, void *data, int (*cmp)(void *, void *))
+void *
+list_find(linked_list *list, const void *data,
+        int (*cmp)(const void *, const void *))
 {
     list_node *cur = NULL;
 
