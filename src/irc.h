@@ -36,8 +36,6 @@
 
 #define MSGLEN LINELEN
 
-#include "lua_api/lua_serializable.h"
-
 typedef enum irc_event_type
 {
     IRCEV_UNKNOWN,

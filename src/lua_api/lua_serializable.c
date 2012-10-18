@@ -29,10 +29,13 @@
 
 #include <string.h>
 
-#include "lua_channel.h"
+#include "../irc.h"
+//#include "lua_channel.h"
 #include "lua_serializable.h"
+#include "lua_source.h"
 
-int luaX_push_string(lua_State *L, luaX_serializable *_s)
+int
+luaX_push_string(lua_State *L, luaX_serializable *_s)
 {
     luaX_string *s = (luaX_string*)_s;
     lua_pushstring(L, s->string);
@@ -40,8 +43,34 @@ int luaX_push_string(lua_State *L, luaX_serializable *_s)
     return 0;
 }
 
-luaX_string luaX_make_string(const char *str)
+int
+luaX_push_string_array(lua_State *L, luaX_serializable *_s)
+{
+    int i;
+    int array;
+    const char **a = ((luaX_string_array*)_s)->array;
+    size_t len = ((luaX_string_array*)_s)->len;
+
+    array = (lua_newtable(L), lua_gettop(L));
+    for (i = 0; i < len; ++i)
+    {
+        lua_pushstring(L, a[i]);
+        lua_rawseti(L, array, i+1);
+    }
+
+    return 1;
+}
+
+luaX_string
+luaX_make_string(const char *str)
 {
     luaX_string ret = { &luaX_push_string, str };
+    return ret;
+}
+
+luaX_string_array
+luaX_make_string_array(const char **arr, size_t len)
+{
+    luaX_string_array ret = { &luaX_push_string_array, arr, len };
     return ret;
 }

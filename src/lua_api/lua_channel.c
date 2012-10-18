@@ -250,20 +250,21 @@ luaX_channel_getmodes(lua_State *L)
 int
 luaX_channel_getusers(lua_State *L)
 {
-    int i = 1;
-    int array;
+    int table;
 
     irc_channel *target = luaX_check_irc_channel_ud(L, 1);
     list_node *cur = NULL;
 
-    array = (lua_newtable(L), lua_gettop(L));
+    table = (lua_newtable(L), lua_gettop(L));
 
     for (cur = target->users->root; cur != NULL; cur = cur->next)
     {
         irc_user *curuser = (irc_user *)cur->data;
+
+        lua_pushstring(L, curuser->nick);
         luaX_push_chanuser_by_nick(L, target->name, curuser->nick);
 
-        lua_rawseti(L, array, i++);
+        lua_settable(L, table);
     }
 
     return 1;
@@ -373,21 +374,21 @@ luaX_chuser_getmodes(lua_State *L)
 int
 luaX_channels_getall(lua_State *L)
 {
-    int array;
-    int i = 1;
+    int table;
     luna_state *state = api_getstate(L);
     list_node *cur = NULL;
 
     lua_newtable(L);
-    array = lua_gettop(L);
+    table = lua_gettop(L);
 
     for (cur = state->channels->root; cur != NULL; cur = cur->next)
     {
         irc_channel *chan = (irc_channel *)cur->data;
 
+        lua_pushstring(L, chan->name);
         luaX_push_channel_by_name(L, chan->name);
 
-        lua_rawseti(L, array, i++);
+        lua_settable(L, table);
     }
 
     return 1;

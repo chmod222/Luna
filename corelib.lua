@@ -26,6 +26,7 @@ function make_getters(tab, attrs)
     end
 end
 
+-- Same with setters
 function make_setters(tab, attrs)
     local meth = table.copy(tab)
 
@@ -36,6 +37,17 @@ function make_setters(tab, attrs)
             error(string.format('no such field \'%s\'', key))
         end
     end
+end
+
+-- And getters for library functions
+function make_lib_getters(tab, attrs)
+    tab = setmetatable(tab, {
+        __index = function(self, key)
+            if attrs[key] ~= nil then
+                return tab[attrs[key]]()
+            end
+        end
+    })
 end
 
 --
@@ -194,7 +206,8 @@ make_getters(luna.types.channel, {
     name    = 'getName',
     created = 'getCreationDate',
     modes   = 'getModes',
-    topic   = 'getTopic'
+    topic   = 'getTopic',
+    userlist = 'getUserList'
 })
 
 
@@ -373,21 +386,26 @@ function luna.self.getConnected()
     return ({luna.self.getRuntimeInfo()})[2]
 end
 
-getters = {
+make_lib_getters(luna.self, {
     nick = 'getNick',
     user = 'getUser',
     real = 'getReal',
     connected = 'getConnected',
     started   = 'getStartet'
-}
-
-luna.self = setmetatable(luna.self, {
-    __index = function(self, key)
-        if getters[key] ~= nil then
-            return luna.self[getters[key]]()
-        end
-    end
 })
+
+make_lib_getters(luna.channels, {
+    channellist = 'getChannelList'
+})
+
+make_lib_getters(luna.scripts, {
+    scriptlist = 'getScriptList'
+})
+
+make_lib_getters(luna.users, {
+    userlist = 'getUserList'
+})
+
 
 -- str = 'a b c'
 -- str:split(' ') = {'a', 'b', 'c'}

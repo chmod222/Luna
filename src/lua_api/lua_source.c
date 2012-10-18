@@ -54,7 +54,7 @@ luaX_push_source(lua_State *L, luaX_serializable *_s)
     luaL_getmetatable(L, "luna.source.user");
     lua_setmetatable(L, -2);
 
-    memcpy(u, &(s->source), sizeof(irc_sender));
+    memcpy(u, s->source, sizeof(irc_sender));
 
     return 0;
 }
@@ -95,9 +95,9 @@ luaX_register_source(lua_State *L, int regtable)
 }
 
 luaX_source
-luaX_make_source(irc_sender *s)
+luaX_make_source(const irc_sender *s)
 {
-    luaX_source ret = { &luaX_push_source, *s };
+    luaX_source ret = { &luaX_push_source, s };
 
     return ret;
 }

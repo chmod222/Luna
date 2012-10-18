@@ -30,6 +30,8 @@
 
 #include <lua.h>
 
+#include "../irc.h"
+
 /*
  * Implemented by:
  *  * luaX_string    (lua_serializable.h)
@@ -58,9 +60,18 @@ typedef struct luaX_string
     const char *string;
 } luaX_string;
 
+typedef struct luaX_string_array
+{
+    int (*serialize)(lua_State*, struct luaX_serializable*);
+
+    const char **array;
+    size_t len;
+} luaX_string_array;
 
 int luaX_push_string(lua_State*, luaX_serializable*);
+int luaX_push_event(lua_State*, luaX_serializable*);
 
 luaX_string luaX_make_string(const char*);
+luaX_string_array luaX_make_string_array(const char**, size_t);
 
 #endif

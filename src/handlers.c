@@ -72,6 +72,26 @@ int mode_unset(luna_state *, const char *, char, const char *);
 int
 handle_event(luna_state *env, irc_event *ev)
 {
+    /* First, send the raw event */
+    luaX_source src = luaX_make_source(&(ev->from));
+    luaX_string msg = luaX_make_string(ev->msg);
+    luaX_string_array args = luaX_make_string_array(ev->param, ev->param_count);
+    luaX_string cmd;
+
+    char numeric[4] = {0};
+
+    if (ev->type != IRCEV_NUMERIC)
+    {
+        cmd = luaX_make_string(irc_event_type_to_string(ev->type));
+    }
+    else
+    {
+        snprintf(numeric, sizeof(numeric), "%d", ev->numeric);
+        cmd = luaX_make_string(numeric);
+    }
+
+    signal_dispatch(env, "raw", &src, &cmd, &args, &msg, NULL);
+
     /* Core event handlers */
     switch (ev->type)
     {
@@ -115,20 +135,15 @@ handle_privmsg(luna_state *env, irc_event *ev)
     strcpy(msgcopy, ev->msg);
     if ((ev->msg[0] == 0x01) && (ev->msg[strlen(ev->msg) - 1] == 0x01))
     {
-        char *ctcp = strtok(msgcopy, " ");
-        char *rest = strtok(NULL, "");
+        char *ctcp = NULL;
+        char *args = NULL;
 
-        /* Strip leading \x01 from CTCP command */
-        ++ctcp;
+        ev->msg[strlen(ev->msg) - 1] = '\0';
 
-        /* If the message is non-empty, remove \x01 from its end, otherwise
-         * remove it from the command */
-        if (rest)
-            rest[strlen(rest) - 1] = '\0';
-        else
-            ctcp[strlen(ctcp) - 1] = '\0';
+        ctcp = strtok(ev->msg + 1, " ");
+        args = strtok(NULL, "");
 
-        return handle_ctcp(env, ev, ctcp, rest);
+        return handle_ctcp(env, ev, ctcp, args);
     }
 
     /* Check for a "<botnick>: <command> <...>" command */
@@ -546,17 +561,15 @@ handle_notice(luna_state *env, irc_event *ev)
     /* CTCP response */
     if ((ev->msg[0] == 0x01) && (ev->msg[strlen(ev->msg) - 1] == 0x01))
     {
-        char *ctcp = strtok(ev->msg, " ");
-        char *rest = strtok(NULL, "");
+        char *ctcp;
+        char *args;
 
-        ++ctcp;
+        ev->msg[strlen(ev->msg) - 1] = '\0';
 
-        if (rest)
-            rest[strlen(rest) - 1] = '\0';
-        else
-            ctcp[strlen(ctcp) - 1] = '\0';
+        ctcp = strtok(ev->msg + 1, " ");
+        args = strtok(NULL, "");
 
-        return handle_ctcp(env, ev, ctcp, rest);
+        return handle_ctcp(env, ev, ctcp, args);
     }
     else
     {

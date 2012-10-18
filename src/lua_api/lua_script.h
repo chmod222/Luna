@@ -30,6 +30,8 @@
 
 #include <lua.h>
 
+#include "lua_serializable.h"
+
 typedef struct luaX_script
 {
     int (*serialize)(lua_State*, struct luaX_serializable*);
