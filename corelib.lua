@@ -435,3 +435,23 @@ function string:split(sep)
 
     return parts
 end
+
+function string:colour(f,b)
+    if not b then
+        return string.format('^C%02d%s^C', f, self)
+    else
+        return string.format('^C%02d,%02d%s^C', f, b, self)
+    end
+end
+
+function string:bold()
+    return string.format('^B%s^B', self)
+end
+
+function string:underline()
+    return string.format('^U%s^U', self)
+end
+
+function string:reverse()
+    return string.format('^R%s^R', self)
+end
