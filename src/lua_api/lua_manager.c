@@ -118,10 +118,11 @@ script_load(luna_state *state, const char *file)
 
     /* Register library methods */
     /* luaL_Register(L, LIBNAME, api_library); */
-    api_register(L);
+    api_table = (api_register(L), lua_gettop(L));
+
+    /* Copy the value for call to lua_setglobal() and make the call */
     lua_pushvalue(L, -1);
     lua_setglobal(L, LIBNAME);
-    api_table = lua_gettop(L);
 
     lua_pushstring(L, "types");
     lua_newtable(L);
