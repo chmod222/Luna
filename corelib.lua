@@ -438,20 +438,20 @@ end
 
 function string:colour(f,b)
     if not b then
-        return string.format('^C%02d%s^C', f, self)
+        return string.format('\x03%02d%s\x03', f, self)
     else
-        return string.format('^C%02d,%02d%s^C', f, b, self)
+        return string.format('\x03%02d,%02d%s\x03', f, b, self)
     end
 end
 
 function string:bold()
-    return string.format('^B%s^B', self)
+    return string.format('\x02%s\x02', self)
 end
 
 function string:underline()
-    return string.format('^U%s^U', self)
+    return string.format('\x1f%s\x1f', self)
 end
 
 function string:reverse()
-    return string.format('^R%s^R', self)
+    return string.format('\x16%s\x16', self)
 end
