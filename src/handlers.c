@@ -75,7 +75,8 @@ handle_event(luna_state *env, irc_event *ev)
     /* First, send the raw event */
     luaX_source src = luaX_make_source(&(ev->from));
     luaX_string msg = luaX_make_string(ev->msg);
-    luaX_string_array args = luaX_make_string_array(ev->param, ev->param_count);
+    luaX_string_array args = luaX_make_string_array((const char **)ev->param,
+                             ev->param_count);
     luaX_string cmd;
 
     char numeric[4] = {0};
@@ -975,7 +976,9 @@ handle_mode_change(luna_state *state, const char *channel,
                          * strcasecmp
                          */
                         char *entry = (char *)list_find(
-                                          target->flags[flag].list, arg, &strcasecmp);
+                                          target->flags[flag].list,
+                                          arg,
+                                          &strcasecmp);
 
                         if (entry)
                         {
