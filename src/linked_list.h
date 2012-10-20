@@ -32,6 +32,7 @@ typedef struct linked_list linked_list;
 typedef struct list_node list_node;
 
 typedef linked_list list;
+typedef int (*list_find_fn)(const void *, const void *);
 
 
 struct linked_list

@@ -970,15 +970,10 @@ handle_mode_change(luna_state *state, const char *channel,
                 {
                     if (strchr(state->chanmodes.param_address, *flags))
                     {
-                        /* This will throw a warning because strcasecmp
-                         * is not of type int (*)(const void *, const void *),
-                         * but I prefer the warning to writing a wrapper for
-                         * strcasecmp
-                         */
                         char *entry = (char *)list_find(
                                           target->flags[flag].list,
                                           arg,
-                                          &strcasecmp);
+                                          (list_find_fn)&strcasecmp);
 
                         if (entry)
                         {
