@@ -40,14 +40,15 @@
 #include "lua_script.h"
 
 
-int luaX_script_getscriptinfo(lua_State*);
-int luaX_script_isself(lua_State*);
+int luaX_script_getscriptinfo(lua_State *);
+int luaX_script_isself(lua_State *);
 
-int luaX_scripts_load(lua_State*);
-int luaX_scripts_unload(lua_State*);
-int luaX_scripts_getall(lua_State*);
+int luaX_scripts_load(lua_State *);
+int luaX_scripts_unload(lua_State *);
+int luaX_scripts_getall(lua_State *);
 
-static const struct luaL_Reg luaX_script_functions[] = {
+static const struct luaL_Reg luaX_script_functions[] =
+{
     { "load", luaX_scripts_load },
     { "unload", luaX_scripts_unload },
     { "getScriptList", luaX_scripts_getall },
@@ -56,7 +57,8 @@ static const struct luaL_Reg luaX_script_functions[] = {
 };
 
 
-static const struct luaL_Reg luaX_script_methods[] = {
+static const struct luaL_Reg luaX_script_methods[] =
+{
     { "getScriptInfo", luaX_script_getscriptinfo },
     { "isSelf", luaX_script_isself },
 
@@ -98,7 +100,7 @@ luaX_scripts_load(lua_State *L)
     if (!script_load(state, file))
     {
         luna_script *s = (luna_script *)list_find(
-                state->scripts, (void *)file, &script_cmp);
+                             state->scripts, (void *)file, &script_cmp);
         luna_script *u = (luna_script *)lua_newuserdata(L, sizeof(luna_script));
 
         luaL_getmetatable(L, "luna.script");
@@ -122,7 +124,7 @@ luaX_scripts_unload(lua_State *L)
     luna_state *state = api_getstate(L);
 
     luna_script *script = (luna_script *)list_find(
-            state->scripts, (void *)file, &script_cmp);
+                              state->scripts, (void *)file, &script_cmp);
 
     if (script)
     {
@@ -203,7 +205,7 @@ luaX_register_script(lua_State *L, int regtable)
 int
 luaX_push_script(lua_State *L, luaX_serializable *_scr)
 {
-    const luna_script *script = &(((luaX_script*)_scr)->script);
+    const luna_script *script = &(((luaX_script *)_scr)->script);
 
     luna_script *u = (luna_script *)lua_newuserdata(L, sizeof(luna_script));
     luaL_getmetatable(L, "luna.script");

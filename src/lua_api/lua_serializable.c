@@ -37,7 +37,7 @@
 int
 luaX_push_string(lua_State *L, luaX_serializable *_s)
 {
-    luaX_string *s = (luaX_string*)_s;
+    luaX_string *s = (luaX_string *)_s;
     lua_pushstring(L, s->string);
 
     return 0;
@@ -48,14 +48,15 @@ luaX_push_string_array(lua_State *L, luaX_serializable *_s)
 {
     int i;
     int array;
-    const char **a = ((luaX_string_array*)_s)->array;
-    size_t len = ((luaX_string_array*)_s)->len;
+    const char **a = ((luaX_string_array *)_s)->array;
+    size_t len = ((luaX_string_array *)_s)->len;
 
     array = (lua_newtable(L), lua_gettop(L));
+
     for (i = 0; i < len; ++i)
     {
         lua_pushstring(L, a[i]);
-        lua_rawseti(L, array, i+1);
+        lua_rawseti(L, array, i + 1);
     }
 
     return 1;

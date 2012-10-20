@@ -55,12 +55,12 @@ list_node *list_push_back(linked_list *, void *);
 list_node *list_insert_before(linked_list *, list_node *, void *);
 list_node *list_insert_after(linked_list *, list_node *, void *);
 void *list_find(linked_list *, const void *,
-        int (*)(const void *, const void *));
+                int ( *)(const void *, const void *));
 
-void list_delete(linked_list *, void *, void (*)(void *));
+void list_delete(linked_list *, void *, void ( *)(void *));
 
-void list_map(linked_list *, void (*)(void *));
-void list_destroy(linked_list *, void (*)(void *));
+void list_map(linked_list *, void ( *)(void *));
+void list_destroy(linked_list *, void ( *)(void *));
 
 
 #endif /* ifndef LINKED_LIST_H */

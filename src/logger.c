@@ -109,21 +109,21 @@ logger_level_to_string(luna_loglevel loglevel, char *dest, size_t len)
 
     switch (loglevel)
     {
-        case LOGLEV_INFO:
-            string = "INFO";
-            break;
+    case LOGLEV_INFO:
+        string = "INFO";
+        break;
 
-        case LOGLEV_WARNING:
-            string = "WARNING";
-            break;
+    case LOGLEV_WARNING:
+        string = "WARNING";
+        break;
 
-        case LOGLEV_ERROR:
-            string = "ERROR";
-            break;
+    case LOGLEV_ERROR:
+        string = "ERROR";
+        break;
 
-        default:
-            string = "UNKNOWN";
-            break;
+    default:
+        string = "UNKNOWN";
+        break;
     }
 
     strncpy(dest, string, sizeof(dest) - 1);

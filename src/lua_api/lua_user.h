@@ -38,6 +38,6 @@ typedef struct luaX_user
 } luaX_user;
 
 
-int luaX_register_user(lua_State*, int);
+int luaX_register_user(lua_State *, int);
 
 #endif

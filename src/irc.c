@@ -88,10 +88,10 @@ irc_parse_line(struct irc_event *dest, char *line)
         arg_params = strtok(NULL, "");
 
         if ((arg_command == NULL) || (arg_params == NULL) ||
-           !(strcmp(arg_command, "")) || !(strcmp(arg_params, "")))
+                !(strcmp(arg_command, "")) || !(strcmp(arg_params, "")))
         {
             fprintf(stderr, "parse(): Incomplete line, missing either command "
-                            "or arguments.\n");
+                    "or arguments.\n");
 
             return 1;
         }
@@ -108,7 +108,7 @@ irc_parse_line(struct irc_event *dest, char *line)
         arg_sender++; /* Remove ':' at the beginning */
 
         if ((strstr(arg_sender, "!") != NULL) &&
-            (strstr(arg_sender, "@") != NULL))
+                (strstr(arg_sender, "@") != NULL))
         {
             nick = strtok(arg_sender, "!");
             user = strtok(NULL, "@");
@@ -166,17 +166,18 @@ irc_parse_line(struct irc_event *dest, char *line)
             }
 
             j = msg + strlen(msg) - 1;
+
             while ((j >= msg) && isspace(*j))
                 j--;
 
-            *(j+1) = 0;
+            *(j + 1) = 0;
 
             dest->msg = (char *)malloc(strlen(msg) + 1);
 
             if (dest->msg == NULL)
             {
                 fprintf(stderr, "parse(): Couldn't allocate memory "
-                                "for message\n");
+                        "for message\n");
 
                 free(dest->msg);
 
@@ -194,13 +195,13 @@ irc_parse_line(struct irc_event *dest, char *line)
         }
 
         dest->param[i] = (char *)malloc(strlen(tmp) + 1);
-        dest->param = (char **)realloc(dest->param, sizeof(char *) * (i+2));
+        dest->param = (char **)realloc(dest->param, sizeof(char *) * (i + 2));
 
         if ((dest->param[i] == NULL) ||
                 (dest->param == NULL))
         {
             fprintf(stderr, "parse(): Couldn't allocate memory for arg #%d\n",
-                    i+1);
+                    i + 1);
 
             free_stringtable(dest->param, dest->param_count);
 
@@ -267,15 +268,16 @@ irc_print_irc_event(struct irc_event *i)
     {
         if (strcmp(i->from.user, "") != 0)
             printf(":%s!%s@%s ",
-                    i->from.nick,
-                    i->from.user,
-                    i->from.host);
+                   i->from.nick,
+                   i->from.user,
+                   i->from.host);
         else
             printf(":%s ", i->from.host);
 
     }
 
     printf("%s ", irc_event_type_to_string(i->type));
+
     if (i->type == IRCEV_NUMERIC)
         printf("(%d) ", i->numeric);
 

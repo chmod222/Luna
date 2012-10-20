@@ -35,6 +35,7 @@ int
 list_init(linked_list **list)
 {
     *list = malloc(sizeof(**list));
+
     if (*list)
     {
         (*list)->root = NULL;
@@ -66,6 +67,7 @@ list_push_front(linked_list *list, void *data)
         return NULL;
 
     tmp = malloc(sizeof(list_node));
+
     if (tmp)
     {
         list_node *root = list_get_root(list);
@@ -103,6 +105,7 @@ list_insert_before(linked_list *list, list_node *pos, void *data)
         return list_push_front(list, data);
 
     pre = list_get_root(list);
+
     while (pre->next != pos)
     {
         pre = pre->next;
@@ -112,6 +115,7 @@ list_insert_before(linked_list *list, list_node *pos, void *data)
     }
 
     tmp = malloc(sizeof(list_node));
+
     if (tmp)
     {
         memset(tmp, 0, sizeof(*tmp));
@@ -149,6 +153,7 @@ list_push_back(linked_list *list, void *data)
         return NULL;
 
     tmp = malloc(sizeof(list_node));
+
     if (tmp)
     {
         list_node *root = list_get_root(list);
@@ -179,7 +184,7 @@ list_push_back(linked_list *list, void *data)
 
 void *
 list_find(linked_list *list, const void *data,
-        int (*cmp)(const void *, const void *))
+          int (*cmp)(const void *, const void *))
 {
     list_node *cur = NULL;
 

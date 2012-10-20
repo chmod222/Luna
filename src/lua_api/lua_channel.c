@@ -38,35 +38,37 @@
 #include "lua_channel.h"
 
 
-int luaX_channels_getall(lua_State*);
-int luaX_channels_find(lua_State*);
+int luaX_channels_getall(lua_State *);
+int luaX_channels_find(lua_State *);
 
-int luaX_channel_getchannelinfo(lua_State*);
-int luaX_channel_gettopic(lua_State*);
-int luaX_channel_getmodes(lua_State*);
-int luaX_channel_getusers(lua_State*);
-int luaX_channel_finduser(lua_State*);
+int luaX_channel_getchannelinfo(lua_State *);
+int luaX_channel_gettopic(lua_State *);
+int luaX_channel_getmodes(lua_State *);
+int luaX_channel_getusers(lua_State *);
+int luaX_channel_finduser(lua_State *);
 
-int luaX_chuser_getuserinfo(lua_State*);
-int luaX_chuser_getstatus(lua_State*);
-int luaX_chuser_getchannel(lua_State*);
-int luaX_chuser_getmodes(lua_State*);
+int luaX_chuser_getuserinfo(lua_State *);
+int luaX_chuser_getstatus(lua_State *);
+int luaX_chuser_getchannel(lua_State *);
+int luaX_chuser_getmodes(lua_State *);
 
-irc_channel *find_channel_by_name(lua_State*, const char*);
-irc_channel *luaX_check_irc_channel_ud(lua_State*, int);
+irc_channel *find_channel_by_name(lua_State *, const char *);
+irc_channel *luaX_check_irc_channel_ud(lua_State *, int);
 
-int luaX_push_channel_by_name(lua_State*, const char*);
-int luaX_push_chanuser_by_nick(lua_State*, const char*, const char*);
+int luaX_push_channel_by_name(lua_State *, const char *);
+int luaX_push_chanuser_by_nick(lua_State *, const char *, const char *);
 
 
-static const struct luaL_Reg luaX_channel_functions[] = {
+static const struct luaL_Reg luaX_channel_functions[] =
+{
     { "getChannelList", luaX_channels_getall },
     { "find", luaX_channels_find },
 
     { NULL, NULL }
 };
 
-static const struct luaL_Reg luaX_channel_methods[] = {
+static const struct luaL_Reg luaX_channel_methods[] =
+{
     { "getChannelInfo", luaX_channel_getchannelinfo },
     { "getTopic", luaX_channel_gettopic },
     { "getModes", luaX_channel_getmodes },
@@ -75,7 +77,8 @@ static const struct luaL_Reg luaX_channel_methods[] = {
     { NULL, NULL }
 };
 
-static const struct luaL_Reg luaX_chuser_methods[] = {
+static const struct luaL_Reg luaX_chuser_methods[] =
+{
     { "getUserInfo", luaX_chuser_getuserinfo },
     { "getStatus", luaX_chuser_getstatus },
     { "getChannel", luaX_chuser_getchannel },
@@ -111,7 +114,7 @@ luaX_check_irc_channel_ud(lua_State *L, int ind)
 int
 luaX_push_chanuser(lua_State *L, struct luaX_serializable *_cu)
 {
-    luaX_chanuser *cu = (luaX_chanuser*)_cu;
+    luaX_chanuser *cu = (luaX_chanuser *)_cu;
     luaX_chanuser *u =
         (luaX_chanuser *)lua_newuserdata(L, sizeof(luaX_chanuser));
 
@@ -127,7 +130,7 @@ luaX_push_chanuser(lua_State *L, struct luaX_serializable *_cu)
 int
 luaX_push_channel(lua_State *L, struct luaX_serializable *_c)
 {
-    luaX_channel *c = (luaX_channel*)_c;
+    luaX_channel *c = (luaX_channel *)_c;
     luaX_channel *u =
         (luaX_channel *)lua_newuserdata(L, sizeof(luaX_channel));
 
@@ -217,26 +220,27 @@ luaX_channel_getmodes(lua_State *L)
             flag *f = &(target->flags[i]);
 
             lua_pushfstring(L, "%c", i + 'A');
+
             switch (f->type)
             {
-                case FLAG_NONE:
-                    lua_pushboolean(L, 1);
-                    break;
+            case FLAG_NONE:
+                lua_pushboolean(L, 1);
+                break;
 
-                case FLAG_STRING:
-                    lua_pushstring(L, f->string);
-                    break;
+            case FLAG_STRING:
+                lua_pushstring(L, f->string);
+                break;
 
-                case FLAG_LIST:
-                    list = (lua_newtable(L), lua_gettop(L));
+            case FLAG_LIST:
+                list = (lua_newtable(L), lua_gettop(L));
 
-                    for (cur = f->list->root; cur != NULL; cur = cur->next)
-                    {
-                        lua_pushstring(L, cur->data);
-                        lua_rawseti(L, list, i++);
-                    }
+                for (cur = f->list->root; cur != NULL; cur = cur->next)
+                {
+                    lua_pushstring(L, cur->data);
+                    lua_rawseti(L, list, i++);
+                }
 
-                    break;
+                break;
             }
 
             lua_settable(L, table);
@@ -311,7 +315,7 @@ luaX_chuser_getuserinfo(lua_State *L)
     }
 
     return luaL_error(L, "no such user '%s' in channel '%s'",
-                     ud->nick, ud->channel.name);
+                      ud->nick, ud->channel.name);
 }
 
 
@@ -337,7 +341,7 @@ luaX_chuser_getstatus(lua_State *L)
     }
 
     return luaL_error(L, "no such user '%s' in channel '%s'",
-                     ud->nick, ud->channel.name);
+                      ud->nick, ud->channel.name);
 }
 
 
@@ -466,7 +470,7 @@ luaX_make_channel(luaX_channel *t, const char *chan)
     memset(t, 0, sizeof(*t));
 
     t->serialize = &luaX_push_channel;
-    strncpy(t->name, chan, sizeof(t->name )- 1);
+    strncpy(t->name, chan, sizeof(t->name ) - 1);
 
     return 0;
 }

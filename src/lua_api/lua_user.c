@@ -39,23 +39,24 @@
 #include "lua_user.h"
 
 
-int luaX_user_getflags(lua_State*);
-int luaX_user_setflags(lua_State*);
-int luaX_user_getlevel(lua_State*);
-int luaX_user_setlevel(lua_State*);
-int luaX_user_getid(lua_State*);
-int luaX_user_setid(lua_State*);
+int luaX_user_getflags(lua_State *);
+int luaX_user_setflags(lua_State *);
+int luaX_user_getlevel(lua_State *);
+int luaX_user_setlevel(lua_State *);
+int luaX_user_getid(lua_State *);
+int luaX_user_setid(lua_State *);
 
-int luaX_users_find(lua_State*);
-int luaX_users_add(lua_State*);
-int luaX_users_remove(lua_State*);
-int luaX_users_save(lua_State*);
-int luaX_users_getall(lua_State*);
-int luaX_users_reload(lua_State*);
+int luaX_users_find(lua_State *);
+int luaX_users_add(lua_State *);
+int luaX_users_remove(lua_State *);
+int luaX_users_save(lua_State *);
+int luaX_users_getall(lua_State *);
+int luaX_users_reload(lua_State *);
 
-luna_user *luaX_check_user_ud(lua_State*, int);
+luna_user *luaX_check_user_ud(lua_State *, int);
 
-static const struct luaL_Reg luaX_user_functions[] = {
+static const struct luaL_Reg luaX_user_functions[] =
+{
     { "find", luaX_users_find },
     { "add", luaX_users_add },
     { "remove", luaX_users_remove },
@@ -67,7 +68,8 @@ static const struct luaL_Reg luaX_user_functions[] = {
 };
 
 
-static const struct luaL_Reg luaX_user_methods[] = {
+static const struct luaL_Reg luaX_user_methods[] =
+{
     { "getFlags", luaX_user_getflags },
     { "setFlags", luaX_user_setflags },
 
@@ -172,8 +174,8 @@ luaX_users_find(lua_State *L)
     const char *host = luaL_checkstring(L, 3);
 
     if ((nick && strcmp(nick, "")) &&
-        (user && strcmp(user, "")) &&
-        (host && strcmp(host, "")))
+            (user && strcmp(user, "")) &&
+            (host && strcmp(host, "")))
     {
         /* Copy values over */
         irc_sender tmp;

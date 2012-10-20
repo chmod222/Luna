@@ -81,7 +81,7 @@ int
 channel_add(luna_state *state, const char *channel_name)
 {
     irc_channel *tmp = (irc_channel *)list_find(state->channels,
-            (void *)channel_name, &channel_cmp);
+                       (void *)channel_name, &channel_cmp);
 
     if (tmp)
         return 1;

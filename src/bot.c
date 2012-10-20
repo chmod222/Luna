@@ -113,6 +113,7 @@ luna_mainloop(luna_state *state)
             FD_SET(state->fd, &reads);
 
             ready = select(state->fd + 1, &reads, NULL, NULL, &timeout);
+
             if ((ready > 0) && (FD_ISSET(state->fd, &reads)))
             {
                 /* We got data! */
@@ -173,8 +174,8 @@ luna_send_login(luna_state *state)
 {
     net_sendfln(state, "NICK %s", state->userinfo.nick);
     net_sendfln(state, "USER %s * 0 :%s",
-            state->userinfo.user,
-            state->userinfo.real);
+                state->userinfo.user,
+                state->userinfo.real);
 
     return;
 }

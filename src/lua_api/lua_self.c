@@ -37,12 +37,13 @@
 #include "lua_util.h"
 
 
-int luaX_self_getuserinfo(lua_State*);
-int luaX_self_getserver(lua_State*);
-int luaX_self_getruntimes(lua_State*);
+int luaX_self_getuserinfo(lua_State *);
+int luaX_self_getserver(lua_State *);
+int luaX_self_getruntimes(lua_State *);
 
 
-static const struct luaL_Reg luaX_self_functions[] = {
+static const struct luaL_Reg luaX_self_functions[] =
+{
     { "getUserInfo", luaX_self_getuserinfo },
     { "getServerInfo", luaX_self_getserver },
     { "getRuntimeInfo", luaX_self_getruntimes },

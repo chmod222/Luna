@@ -109,7 +109,7 @@ net_bind(luna_state *state, int fam, int fd, const char *host)
     for (p = resolv; p != NULL; p = p->ai_next)
     {
         char ipstr[INET6_ADDRSTRLEN];
-        inet_ntop(fam, &(((struct sockaddr_in*)(p->ai_addr))->sin_addr), ipstr, INET6_ADDRSTRLEN);
+        inet_ntop(fam, &(((struct sockaddr_in *)(p->ai_addr))->sin_addr), ipstr, INET6_ADDRSTRLEN);
 
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0)
             logger_log(state->logger, LOGLEV_WARNING,
@@ -193,7 +193,7 @@ net_recvln(luna_state *state, char *buffer, size_t len)
             {
                 buffer[i] = 0;
 
-                return i+1;
+                return i + 1;
             }
             else
                 buffer[i] = ch;

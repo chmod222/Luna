@@ -38,6 +38,7 @@ int
 users_load(luna_state *state, const char *file)
 {
     FILE *userfile = fopen(file, "r");
+
     if (userfile)
     {
         char buffer[256];
@@ -139,7 +140,8 @@ users_add(luna_state *state, const char *id, const char *hostmask,
           const char *flags, const char *level)
 {
     luna_user *user = (luna_user *)list_find(state->users, (void *)hostmask,
-                       &luna_user_host_cmp);
+                      &luna_user_host_cmp);
+
     if (user)
         return 1;
 
@@ -247,17 +249,17 @@ strwcmp(const char *str, const char *pat)
 {
     switch (*pat)
     {
-        case 0:
-            return !(*str);
+    case 0:
+        return !(*str);
 
-        case '*':
-            return (strwcmp(str, pat + 1) || (*str && strwcmp(str + 1, pat)));
+    case '*':
+        return (strwcmp(str, pat + 1) || (*str && strwcmp(str + 1, pat)));
 
-        case '?':
-            return (*str && strwcmp(str + 1, pat + 1));
+    case '?':
+        return (*str && strwcmp(str + 1, pat + 1));
 
-        default:
-            return ((*str == *pat) && (strwcmp(str + 1, pat + 1)));
+    default:
+        return ((*str == *pat) && (strwcmp(str + 1, pat + 1)));
     }
 
     return 0;
@@ -269,19 +271,19 @@ strwcasecmp(const char *str, const char *pat)
 {
     switch (*pat)
     {
-        case 0:
-            return !(*str);
+    case 0:
+        return !(*str);
 
-        case '*':
-            return ((strwcasecmp(str, pat + 1) ||
-                    (*str && strwcasecmp(str + 1, pat))));
+    case '*':
+        return ((strwcasecmp(str, pat + 1) ||
+                 (*str && strwcasecmp(str + 1, pat))));
 
-        case '?':
-            return (*str && strwcasecmp(str + 1, pat + 1));
+    case '?':
+        return (*str && strwcasecmp(str + 1, pat + 1));
 
-        default:
-            return ((tolower(*str) == tolower(*pat)) &&
-                    (strwcasecmp(str + 1, pat + 1)));
+    default:
+        return ((tolower(*str) == tolower(*pat)) &&
+                (strwcasecmp(str + 1, pat + 1)));
     }
 
     return 0;

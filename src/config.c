@@ -54,7 +54,7 @@ config_load(luna_state *state, const char *filename)
         if (luaL_dofile(L, filename) == 0)
         {
             /* Both user and server must be set (== 0) */
-            if (config_get_userinfo(state, L)||config_get_serverinfo(state, L))
+            if (config_get_userinfo(state, L) || config_get_serverinfo(state, L))
                 status = 1;
             else
                 config_get_netinfo(state, L);

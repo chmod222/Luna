@@ -30,6 +30,6 @@
 
 #include <lua.h>
 
-int luaX_register_self(lua_State*, int);
+int luaX_register_self(lua_State *, int);
 
 #endif

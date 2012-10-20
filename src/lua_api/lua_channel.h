@@ -36,26 +36,26 @@
  * via the global state */
 typedef struct luaX_channel
 {
-    int (*serialize)(lua_State*, struct luaX_serializable*);
+    int (*serialize)(lua_State *, struct luaX_serializable *);
 
     char name[64];
 } luaX_channel;
 
 typedef struct luaX_chanuser
 {
-    int (*serialize)(lua_State*, struct luaX_serializable*);
+    int (*serialize)(lua_State *, struct luaX_serializable *);
 
     luaX_channel channel;
     char nick[32];
 } luaX_chanuser;
 
 
-int luaX_register_channel(lua_State*, int);
+int luaX_register_channel(lua_State *, int);
 
-int luaX_push_chanuser(lua_State*, struct luaX_serializable*);
-int luaX_push_channel(lua_State*, struct luaX_serializable*);
+int luaX_push_chanuser(lua_State *, struct luaX_serializable *);
+int luaX_push_channel(lua_State *, struct luaX_serializable *);
 
-int luaX_make_channel(luaX_channel*, const char*);
-int luaX_make_chanuser(luaX_chanuser*, const char*, luaX_channel*);
+int luaX_make_channel(luaX_channel *, const char *);
+int luaX_make_chanuser(luaX_chanuser *, const char *, luaX_channel *);
 
 #endif

@@ -36,7 +36,8 @@
 #include "lua_api_functions.h"
 #include "lua_util.h"
 
-const luaL_Reg api_library[] = {
+const luaL_Reg api_library[] =
+{
     { "log",             api_log },
     { "sendLine",        api_sendline },
 

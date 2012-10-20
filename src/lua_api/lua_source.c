@@ -39,7 +39,8 @@
 
 int luaX_user_getuserinfo(lua_State *L);
 
-static const struct luaL_Reg luaX_user_methods[] = {
+static const struct luaL_Reg luaX_user_methods[] =
+{
     { "getUserInfo", luaX_user_getuserinfo },
     { NULL, NULL }
 };
@@ -48,7 +49,7 @@ static const struct luaL_Reg luaX_user_methods[] = {
 int
 luaX_push_source(lua_State *L, luaX_serializable *_s)
 {
-    luaX_source *s = (luaX_source*)_s;
+    luaX_source *s = (luaX_source *)_s;
     irc_sender *u = (irc_sender *)lua_newuserdata(L, sizeof(irc_sender));
 
     luaL_getmetatable(L, "luna.source.user");

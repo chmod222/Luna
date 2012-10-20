@@ -223,9 +223,9 @@ script_identify(lua_State *L, luna_script *script)
 
     /* Values must be strings and nonempty */
     if ((name && strcmp(name, ""))   &&
-        (descr && strcmp(descr, "")) &&
-        (author && strcmp(author, "")) &&
-        (version && strcmp(version, "")))
+            (descr && strcmp(descr, "")) &&
+            (author && strcmp(author, "")) &&
+            (version && strcmp(version, "")))
     {
         /* Copy values over */
         strncpy(script->name, name, sizeof(script->name) - 1);
@@ -304,7 +304,8 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
 
             for (j = 0;; ++j)
             {
-                luaX_serializable *v = va_arg(args, luaX_serializable*);
+                luaX_serializable *v = va_arg(args, luaX_serializable *);
+
                 if (v == NULL)
                     break;
 

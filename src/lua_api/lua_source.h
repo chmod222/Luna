@@ -35,15 +35,15 @@
 
 typedef struct luaX_source
 {
-    int (*serialize)(lua_State*, struct luaX_serializable*);
+    int (*serialize)(lua_State *, struct luaX_serializable *);
 
     const irc_sender *source;
 } luaX_source;
 
-int luaX_register_source(lua_State*, int);
+int luaX_register_source(lua_State *, int);
 
-int luaX_push_source(lua_State*, luaX_serializable*);
+int luaX_push_source(lua_State *, luaX_serializable *);
 
-luaX_source luaX_make_source(const irc_sender*);
+luaX_source luaX_make_source(const irc_sender *);
 
 #endif

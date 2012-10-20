@@ -80,21 +80,21 @@ main(int argc, char **argv)
     {
         switch (opt)
         {
-            case 'h':
-                print_usage(argv[0]);
-                return 0;
+        case 'h':
+            print_usage(argv[0]);
+            return 0;
 
-            case 'c':
-                memset(config_file, 0, sizeof(config_file));
-                strncpy(config_file, optarg, sizeof(config_file) - 1);
+        case 'c':
+            memset(config_file, 0, sizeof(config_file));
+            strncpy(config_file, optarg, sizeof(config_file) - 1);
 
-                break;
+            break;
 
-            case 'l':
-                memset(log_file, 0, sizeof(log_file));
-                strncpy(log_file, optarg, sizeof(log_file) - 1);
+        case 'l':
+            memset(log_file, 0, sizeof(log_file));
+            strncpy(log_file, optarg, sizeof(log_file) - 1);
 
-                break;
+            break;
         }
     }
 
@@ -122,11 +122,11 @@ main(int argc, char **argv)
     log_session_start(log);
 
     logger_log(log, LOGLEV_INFO, "Configuration: %s!%s (%s) -> %s:%d",
-            state.userinfo.nick,
-            state.userinfo.user,
-            state.userinfo.real,
-            state.serverinfo.host,
-            state.serverinfo.port);
+               state.userinfo.nick,
+               state.userinfo.user,
+               state.userinfo.real,
+               state.serverinfo.host,
+               state.serverinfo.port);
 
     logger_log(log, LOGLEV_INFO, "Entering main loop");
     luna_mainloop(&state);
