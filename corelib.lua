@@ -391,7 +391,7 @@ make_lib_getters(luna.self, {
     user = 'getUser',
     real = 'getReal',
     connected = 'getConnected',
-    started   = 'getStartet'
+    started   = 'getStarted'
 })
 
 make_lib_getters(luna.channels, {
