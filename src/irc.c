@@ -160,10 +160,7 @@ irc_parse_line(struct irc_event *dest, char *line)
             strncpy(msg, ++tmp, MSGLEN);
 
             if (rest != NULL)
-            {
-                strncat(msg, " ", MSGLEN);
-                strncat(msg, rest, MSGLEN);
-            }
+                snprintf(msg + strlen(tmp), MSGLEN, " %s", rest);
 
             j = msg + strlen(msg) - 1;
 
