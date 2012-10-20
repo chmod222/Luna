@@ -42,7 +42,7 @@ int luaX_self_getserver(lua_State*);
 int luaX_self_getruntimes(lua_State*);
 
 
-static const struct luaL_reg luaX_self_functions[] = {
+static const struct luaL_Reg luaX_self_functions[] = {
     { "getUserInfo", luaX_self_getuserinfo },
     { "getServerInfo", luaX_self_getserver },
     { "getRuntimeInfo", luaX_self_getruntimes },
@@ -94,8 +94,11 @@ luaX_register_self(lua_State *L, int regtable)
     /* And register other functions inside regtable
      * luna.self = { ... } */
     lua_pushstring(L, "self");
-    lua_newtable(L);
-    luaL_register(L, NULL, luaX_self_functions);
+    /*
+     * lua_newtable(L);
+     * luaL_Register(L, NULL, luaX_self_functions);
+     */
+    luaL_newlib(L, luaX_self_functions);
     lua_settable(L, regtable);
 
     return 1;

@@ -59,14 +59,14 @@ int luaX_push_channel_by_name(lua_State*, const char*);
 int luaX_push_chanuser_by_nick(lua_State*, const char*, const char*);
 
 
-static const struct luaL_reg luaX_channel_functions[] = {
+static const struct luaL_Reg luaX_channel_functions[] = {
     { "getChannelList", luaX_channels_getall },
     { "find", luaX_channels_find },
 
     { NULL, NULL }
 };
 
-static const struct luaL_reg luaX_channel_methods[] = {
+static const struct luaL_Reg luaX_channel_methods[] = {
     { "getChannelInfo", luaX_channel_getchannelinfo },
     { "getTopic", luaX_channel_gettopic },
     { "getModes", luaX_channel_getmodes },
@@ -75,7 +75,7 @@ static const struct luaL_reg luaX_channel_methods[] = {
     { NULL, NULL }
 };
 
-static const struct luaL_reg luaX_chuser_methods[] = {
+static const struct luaL_Reg luaX_chuser_methods[] = {
     { "getUserInfo", luaX_chuser_getuserinfo },
     { "getStatus", luaX_chuser_getstatus },
     { "getChannel", luaX_chuser_getchannel },
@@ -436,8 +436,12 @@ luaX_register_channel(lua_State *L, int regtable)
     /* And register other functions inside regtable
      * luna.channels = { ... } */
     lua_pushstring(L, "channels");
-    lua_newtable(L);
-    luaL_register(L, NULL, luaX_channel_functions);
+    /*
+     * lua_newtable(L);
+     * luaL_register(L, NULL, luaX_channel_functions);
+     */
+    luaL_newlib(L, luaX_channel_functions);
+
     lua_settable(L, regtable);
 
 

@@ -55,7 +55,7 @@ int luaX_users_reload(lua_State*);
 
 luna_user *luaX_check_user_ud(lua_State*, int);
 
-static const struct luaL_reg luaX_user_functions[] = {
+static const struct luaL_Reg luaX_user_functions[] = {
     { "find", luaX_users_find },
     { "add", luaX_users_add },
     { "remove", luaX_users_remove },
@@ -67,7 +67,7 @@ static const struct luaL_reg luaX_user_functions[] = {
 };
 
 
-static const struct luaL_reg luaX_user_methods[] = {
+static const struct luaL_Reg luaX_user_methods[] = {
     { "getFlags", luaX_user_getflags },
     { "setFlags", luaX_user_setflags },
 
@@ -308,8 +308,11 @@ luaX_register_user(lua_State *L, int regtable)
     /* And register other functions inside regtable
      * luna.users = { ... } */
     lua_pushstring(L, "users");
-    lua_newtable(L);
-    luaL_register(L, NULL, luaX_user_functions);
+    /*
+     * lua_newtable(L);
+     * luaL_Register(L, NULL, luaX_user_functions);
+     */
+    luaL_newlib(L, luaX_user_functions);
     lua_settable(L, regtable);
 
     /* Finally, register the meta table for extending */

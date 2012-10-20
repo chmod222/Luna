@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT(Luna, 3.14159, webmaster@flippeh.de)
+AC_INIT(Luna, 3.141592, webmaster@flippeh.de)
 AC_CONFIG_SRCDIR([src/])
 
 AM_INIT_AUTOMAKE([subdir-objects])
@@ -23,7 +23,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset select socket strcasecmp strchr strstr])
-PKG_CHECK_MODULES([LUA], [lua5.1 >= 5.1])
+PKG_CHECK_MODULES([LUA], [lua5.2 >= 5.2])
 
 AC_SEARCH_LIBS([socket], [socket], [], [
     AC_MSG_ERROR([unable to find socket()])

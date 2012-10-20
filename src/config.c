@@ -47,7 +47,7 @@ config_load(luna_state *state, const char *filename)
     lua_State *L = NULL;
 
     /* Create lua environment */
-    if ((L = lua_open()))
+    if ((L = luaL_newstate()))
     {
         int status = 0;
 

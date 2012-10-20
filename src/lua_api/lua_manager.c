@@ -28,6 +28,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
 #include "lua_manager.h"
 #include "lua_util.h"
 
@@ -40,7 +44,6 @@
 
 
 int script_emit(luna_state *, luna_script *, const char *, va_list);
-
 int script_identify(lua_State *, luna_script *);
 
 const char *env_key = "LUNA_ENV";
@@ -95,7 +98,7 @@ script_load(luna_state *state, const char *file)
     int api_table = 0;
 
     /* Script can be openened and allocated, or Lua state cannot be created ? */
-    if (!(script = malloc(sizeof(*script))) || !((L = lua_open())))
+    if (!(script = malloc(sizeof(*script))) || !((L = luaL_newstate())))
     {
         free(script);
 
@@ -114,8 +117,10 @@ script_load(luna_state *state, const char *file)
     lua_settable(L, LUA_REGISTRYINDEX);
 
     /* Register library methods */
-    luaL_register(L, LIBNAME, api_library);
-
+    /* luaL_Register(L, LIBNAME, api_library); */
+    api_register(L);
+    lua_pushvalue(L, -1);
+    lua_setglobal(L, LIBNAME);
     api_table = lua_gettop(L);
 
     lua_pushstring(L, "types");
@@ -273,7 +278,7 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
     lua_pushstring(L, "__callbacks");
     lua_gettable(L, api_table);
     callbacks_array = lua_gettop(L);
-    len = lua_objlen(L, callbacks_array);
+    len = lua_rawlen(L, callbacks_array);
 
     while (i <= len)
     {

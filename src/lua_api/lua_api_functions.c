@@ -36,7 +36,7 @@
 #include "lua_api_functions.h"
 #include "lua_util.h"
 
-luaL_Reg api_library[] = {
+const luaL_Reg api_library[] = {
     { "log",             api_log },
     { "sendLine",        api_sendline },
 
@@ -65,4 +65,10 @@ api_sendline(lua_State *L)
     lua_pushnumber(L, net_sendfln(state, "%s", line));
 
     return 1;
+}
+
+int
+api_register(lua_State *L)
+{
+    luaL_newlib(L, api_library);
 }

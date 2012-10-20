@@ -29,10 +29,12 @@
 #define LUA_API_FUNCTIONS_H
 
 #include <lua.h>
-
-extern luaL_Reg api_library[];
+#include <lualib.h>
+#include <lauxlib.h>
 
 int api_log(lua_State *);
 int api_sendline(lua_State *);
+
+int api_register(lua_State *);
 
 #endif

@@ -39,7 +39,7 @@
 
 int luaX_user_getuserinfo(lua_State *L);
 
-static const struct luaL_reg luaX_user_methods[] = {
+static const struct luaL_Reg luaX_user_methods[] = {
     { "getUserInfo", luaX_user_getuserinfo },
     { NULL, NULL }
 };

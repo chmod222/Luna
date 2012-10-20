@@ -47,7 +47,7 @@ int luaX_scripts_load(lua_State*);
 int luaX_scripts_unload(lua_State*);
 int luaX_scripts_getall(lua_State*);
 
-static const struct luaL_reg luaX_script_functions[] = {
+static const struct luaL_Reg luaX_script_functions[] = {
     { "load", luaX_scripts_load },
     { "unload", luaX_scripts_unload },
     { "getScriptList", luaX_scripts_getall },
@@ -56,7 +56,7 @@ static const struct luaL_reg luaX_script_functions[] = {
 };
 
 
-static const struct luaL_reg luaX_script_methods[] = {
+static const struct luaL_Reg luaX_script_methods[] = {
     { "getScriptInfo", luaX_script_getscriptinfo },
     { "isSelf", luaX_script_isself },
 
@@ -180,8 +180,11 @@ luaX_register_script(lua_State *L, int regtable)
     /* And register other functions inside regtable
      * luna.script = { ... } */
     lua_pushstring(L, "scripts");
-    lua_newtable(L);
-    luaL_register(L, NULL, luaX_script_functions);
+    /*
+     * lua_newtable(L);
+     * luaL_Register(L, NULL, luaX_script_functions);
+     */
+    luaL_newlib(L, luaX_script_functions);
     lua_settable(L, regtable);
 
     /* Finally, register the meta table for extending */
