@@ -12,11 +12,19 @@ Exported types, extendable in corelib.lua:
       + getTopic()       -> topic, set at (UNIX stamp), set by
       + getUserList()    -> array of type luna.types.channel_user
       + findUser(nick)   -> luna.types.channel_user if found, nil if not
+      + getModes()       -> {'t' = true, 'b' = { 'ban1', 'ban2' }, 'k' = 'key' }
 
     Methods (extended):
       + getName()         -> channel name
       + getCreationDate() -> UNIX stamp
       + privmsg(message)  -> Send a message to this channel
+
+    Attributes:
+      + name        getName()
+      + created     getCreationDate()
+      + modes       getModes()
+      + topic       getTopic()
+      + userlist    getUserList()
 
 
   - luna.types.channel_user
@@ -27,11 +35,30 @@ Exported types, extendable in corelib.lua:
       + getUserInfo() -> nick, user, host
       + getStatus()   -> user status in channel, one of "op", "voice", "regular"
       + getChannel()  -> luna.types.channel
+      + getModes()    -> example: 'ov' for voice and op
 
     Methods (extended):
       + getRegUser() -> luna.types.user if found, nil if not
       + respond(msg) -> respond to the user in the channel of the event
-      + isOperator() -> true if the user is an operator in that channel
+      + isMe()       -> true if botnick == usernick
+      + getNick()
+      + getUser()
+      + getHost()
+      + notice(msg)  -> send the user a NOTICE
+      + privmsg(msg) -> send the user a PRIVMSG
+      + ctcp(ctcp, msg)      -> send a ctcp request for 'ctcp' with argument 'msg'
+                                e.g. user:ctcp('PING', os.time())
+      + ctcpReply(ctcp, msg) -> send a ctcp response for 'ctcp' with argument 'msg'
+                                e.g.. user:ctcpReply('VERSION', 'Luna')
+
+    Attributes:
+      + nick        getNick()
+      + user        getUser()
+      + host        getHost()
+      + status      getStatus()
+      + channel     getChannel()
+      + modes       getModes()
+
 
   - luna.types.source_user
   ------------------------
@@ -42,8 +69,22 @@ Exported types, extendable in corelib.lua:
 
     Methods (extended):
       + getRegUser() -> luna.types.user if found, nil if not
-      + privmsg(msg) -> send a message to this user
       + respond(msg) -> respond to the user in a private message
+      + getNick()
+      + getUser()
+      + getHost()
+      + privmsg(msg) -> send a message to this user
+      + notice(msg)  -> send a notice to this user
+      + ctcp(ctcp, msg)      -> send a ctcp request for 'ctcp' with argument 'msg'
+                                e.g. user:ctcp('PING', os.time())
+      + ctcpReply(ctcp, msg) -> send a ctcp response for 'ctcp' with argument 'msg'
+                                e.g.. user:ctcpReply('VERSION', 'Luna')
+
+    Attributes:
+      + nick   getNick()
+      + user   getUser()
+      + host   getHost()
+
 
   - luna.types.user
   -----------------
@@ -57,6 +98,15 @@ Exported types, extendable in corelib.lua:
       + getId()
       + setId(id)
 
+    Methods (extended):
+      + isOperator()    -> true if flags contains 'o'
+
+    Attributes:
+      + flags   getFlags()  setFlags()
+      + level   getLevel()  setLevel()
+      + id      getId()     setId()
+
+
   - luna.types.script
   -------------------
     * A (not necessarily loaded) script.
@@ -64,6 +114,21 @@ Exported types, extendable in corelib.lua:
     Methods (builtin):
       + getScriptInfo() -> filename, name, description, author, version
       + isSelf()        -> true if this object represents the current script
+
+    Methods (extended):
+      + getFilename()
+      + getName()
+      + getDescription()
+      + getAuthor()
+      + getVersion()
+
+    Attributes:
+      + file            getFilename()
+      + name            getName()
+      + description     getDescription()
+      + author          getAuthor()
+      + version         getVersion()
+
 
 Exported functions:
   - luna.channels
@@ -74,6 +139,9 @@ Exported functions:
       + getChannelList()  -> A list of currently joined luna.types.channel
       + find(channelname) -> luna.types.channel if found, nil if not
 
+    Attributes:
+      + channellist     getChannelList()
+
   - luna.scripts
   --------------
     * Namespace of functions related to scripts.
@@ -82,6 +150,9 @@ Exported functions:
       + load(filename)   -> luna.types.script on success, nil on failure
       + unload(filename) -> unloads script, returns nil
       + getScriptList()  -> A list of currently loaded luna.types.script
+
+    Attributes:
+      + scriptlist      getScriptList()
 
   - luna.users
   ------------
@@ -95,6 +166,9 @@ Exported functions:
       + reload()                  -> reload the userlist
       + getUserList()             -> A list of all known luna.types.user
 
+    Attributes:
+      + userlist    getUserList()
+
   - luna.self
   -----------
     * Functions for runtime information about the bot.
@@ -102,7 +176,28 @@ Exported functions:
     Functions (builtin):
       + getUserInfo()    -> nick, user, realname
       + getServerInfo()  -> server host, server port
+      + getMemoryInfo()  -> bytes in use, allocations, deallocations
       + getRuntimeInfo() -> UNIX stamp when started, UNIX stamp when connected
+
+    Functions (extended):
+      + getNick()
+      + getUser()
+      + getReal()
+      + getStarted()
+      + getConnected()
+      + getMemoryInUse()
+      + getMemoryAllocations()
+      + getMemoryDeallocations()
+
+    Attributes:
+      + nick        getNick()
+      + user        getUser()
+      + real        getReal()
+      + started     getStarted()
+      + connected   getConnected()
+      + memory      getMemoryInUse()
+      + allocs      getMemoryAllocations()
+      + deallocs    getMemoryDeallocations()
 
   - luna
   ------
@@ -123,6 +218,8 @@ Exported functions:
       + joinChannel(chan, key?) -> join a channel
       + notice(target, msg)     -> send a notice
       + privmsg(target, msg)    -> send a private message
+      + ctcp(target, ctcp, msg)         -> send a CTCP request
+      + ctcpReply(target, ctcp, msg)    -> send a CTCP response
       + registerScript(inftab)  -> register your script
         # The info-table must have at least these fields, not empty:
           ~ name
@@ -132,3 +229,23 @@ Exported functions:
 
       + addSignal(sig, handler) -> register your script for a signal
       + delSignal(handler)      -> remove this signal handler
+
+Additions to standard library:
+  - table
+  -------
+    Functions:
+      + table.copy(table)   -> copy a table
+
+  - string
+  --------
+    Functions:
+      + str:split(sep)      -> string.split('a, b, c', ', ') => {'a', 'b', 'c'}
+      + str:colour(fg,bg?)
+      + str:bold()
+      + str:underline()
+      + str:reverse()
+
+      Calls to string formatting functions can be chained, e.g.
+        str = 'fancy'
+        channel:privmsg(str:bold():underline():color(4, 8))
+

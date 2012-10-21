@@ -297,6 +297,11 @@ function luna.types.channel_user:notice(msg)
     luna.notice(nick, msg)
 end
 
+function luna.types.channel_user:privmsg(msg)
+    local nick = self:getUserInfo()
+    luna.privmsg(nick, msg)
+end
+
 function luna.types.channel_user:ctcp(ctcp, msg)
     local nick = self:getUserInfo()
     luna.ctcp(nick, ctcp, msg)
@@ -312,7 +317,6 @@ make_getters(luna.types.channel_user, {
     status  = 'getStatus',
     modes   = 'getModes',
     channel = 'getChannel',
-    info    = 'getUserInfo',
     nick    = 'getNick',
     user    = 'getUser',
     host    = 'getHost'
@@ -386,12 +390,27 @@ function luna.self.getConnected()
     return ({luna.self.getRuntimeInfo()})[2]
 end
 
+function luna.self.getMemoryInUse()
+    return ({luna.self.getMemoryInfo()})[1]
+end
+
+function luna.self.getMemoryAllocations()
+    return ({luna.self.getMemoryInfo()})[2]
+end
+
+function luna.self.getMemoryDeallocations()
+    return ({luna.self.getMemoryInfo()})[3]
+end
+
 make_lib_getters(luna.self, {
     nick = 'getNick',
     user = 'getUser',
     real = 'getReal',
     connected = 'getConnected',
-    started   = 'getStarted'
+    started   = 'getStarted',
+    memory =  'getMemoryInUse',
+    allocs =  'getMemoryAllocations',
+    dealloc = 'getMemoryDeallocations'
 })
 
 make_lib_getters(luna.channels, {
