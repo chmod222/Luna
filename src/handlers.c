@@ -39,7 +39,9 @@
 #include "lua_api/lua_source.h"
 #include "lua_api/lua_script.h"
 #include "lua_api/lua_channel.h"
+#include "mm.h"
 
+char *_strdup(const char *);
 
 int handle_ping(luna_state *,    irc_event *);
 int handle_numeric(luna_state *, irc_event *);
@@ -67,6 +69,14 @@ int handle_server_supports(luna_state *, irc_event *);
 int handle_mode_change(luna_state *, const char *, const char *, char **, int);
 int mode_set(luna_state *, const char *, char, const char *);
 int mode_unset(luna_state *, const char *, char, const char *);
+
+char *
+_strdup(const char *s)
+{
+    char *n = mm_malloc(strlen(s) + 1);
+
+    return strcpy(n, s);
+}
 
 
 int
@@ -881,7 +891,7 @@ handle_server_supports(luna_state *env, irc_event *ev)
         }
         else if (!strcasecmp(key, "CHANTYPES"))
         {
-            env->chantypes = strdup(val);
+            env->chantypes = _strdup(val);
         }
     }
 
@@ -954,13 +964,13 @@ handle_mode_change(luna_state *state, const char *channel,
                         list_init(&target->flags[flag].list);
                     }
 
-                    list_push_back(target->flags[flag].list, strdup(arg));
+                    list_push_back(target->flags[flag].list, _strdup(arg));
                 }
                 else
                 {
                     target->flags[flag].set = 1;
                     target->flags[flag].type = FLAG_STRING;
-                    target->flags[flag].string = strdup(arg);
+                    target->flags[flag].string = _strdup(arg);
                 }
             }
             else
@@ -977,12 +987,13 @@ handle_mode_change(luna_state *state, const char *channel,
 
                         if (entry)
                         {
-                            list_delete(target->flags[flag].list, entry, &free);
+                            list_delete(target->flags[flag].list, entry,
+                                        &mm_free);
                         }
 
                         if (target->flags[flag].list->length == 0)
                         {
-                            list_destroy(target->flags[flag].list, &free);
+                            list_destroy(target->flags[flag].list, &mm_free);
                             target->flags[flag].type = FLAG_NONE;
                             target->flags[flag].set = 0;
                         }
@@ -990,7 +1001,7 @@ handle_mode_change(luna_state *state, const char *channel,
                     else
                     {
                         target->flags[flag].set = 0;
-                        free(target->flags[flag].string);
+                        mm_free(target->flags[flag].string);
                         target->flags[flag].string = NULL;
                         target->flags[flag].type = FLAG_NONE;
                     }
@@ -1054,7 +1065,7 @@ handle_mode_change(luna_state *state, const char *channel,
                 target->flags[flag].set = 0;
 
                 if (target->flags[flag].type == FLAG_STRING)
-                    free(target->flags[flag].string);
+                    mm_free(target->flags[flag].string);
 
                 target->flags[flag].type = FLAG_NONE;
             }

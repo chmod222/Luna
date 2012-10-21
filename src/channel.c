@@ -30,6 +30,7 @@
 
 #include "channel.h"
 #include "state.h"
+#include "mm.h"
 
 
 int
@@ -64,14 +65,14 @@ channel_free(void *data)
         if (channel->flags[i].set)
         {
             if (channel->flags[i].type == FLAG_STRING)
-                free(channel->flags[i].string);
+                mm_free(channel->flags[i].string);
             else if (channel->flags[i].type == FLAG_LIST)
-                list_destroy(channel->flags[i].list, &free);
+                list_destroy(channel->flags[i].list, &mm_free);
         }
     }
 
-    list_destroy(channel->users, &free); /* No lists in irc_user -- free() */
-    free(channel);
+    list_destroy(channel->users, &mm_free); /* No lists in irc_user -- free() */
+    mm_free(channel);
 
     return;
 }
@@ -86,7 +87,7 @@ channel_add(luna_state *state, const char *channel_name)
     if (tmp)
         return 1;
 
-    if ((tmp = malloc(sizeof(*tmp))))
+    if ((tmp = mm_malloc(sizeof(*tmp))))
     {
         memset(tmp, 0, sizeof(*tmp));
 
@@ -95,7 +96,7 @@ channel_add(luna_state *state, const char *channel_name)
         /* Try creating userlist, too */
         if (list_init(&(tmp->users)) != 0)
         {
-            free(tmp);
+            mm_free(tmp);
             return 1;
         }
 
@@ -137,7 +138,7 @@ channel_add_user(luna_state *state, const char *chan_name, const char *nick,
     if ((channel = list_find(state->channels, key, &channel_cmp)) != NULL)
     {
         irc_channel *chan = (irc_channel *)channel;
-        irc_user *tmp = malloc(sizeof(*tmp));
+        irc_user *tmp = mm_malloc(sizeof(*tmp));
 
         if (tmp)
         {
@@ -173,7 +174,7 @@ channel_remove_user(luna_state *state, const char *chan_name, const char *nick)
         if ((user = list_find(chan->users, key_user, &user_cmp)) != NULL)
         {
             /* User found */
-            list_delete(chan->users, user, &free);
+            list_delete(chan->users, user, &mm_free);
 
             return 0;
         }

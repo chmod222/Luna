@@ -33,6 +33,7 @@
 #include "channel.h"
 #include "handlers.h"
 #include "lua_api/lua_util.h"
+#include "mm.h"
 
 
 int
@@ -54,10 +55,10 @@ int
 state_destroy(luna_state *state)
 {
     logger_destroy(state->logger);
-    list_destroy(state->users,   &free);
+    list_destroy(state->users,   &mm_free);
     list_destroy(state->scripts, &script_free);
 
-    free(state->chantypes);
+    mm_free(state->chantypes);
 
     return 0;
 }

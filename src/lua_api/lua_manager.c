@@ -32,6 +32,8 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include "../mm.h"
+
 #include "lua_manager.h"
 #include "lua_util.h"
 
@@ -65,7 +67,7 @@ script_free(void *list_data)
     luna_script *script = (luna_script *)list_data;
 
     lua_close(script->state);
-    free(list_data);
+    mm_free(list_data);
 
     return;
 }
@@ -98,9 +100,9 @@ script_load(luna_state *state, const char *file)
     int api_table = 0;
 
     /* Script can be openened and allocated, or Lua state cannot be created ? */
-    if (!(script = malloc(sizeof(*script))) || !((L = luaL_newstate())))
+    if (!(script = mm_malloc(sizeof(*script))) || !((L = lua_newstate(&mm_lalloc, NULL))))
     {
-        free(script);
+        mm_free(script);
 
         return 1;
     }

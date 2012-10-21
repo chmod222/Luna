@@ -31,6 +31,9 @@
 /* Enable or disable debugging */
 #define DEBUG 1
 
+/* Enable or disable memory debugging (spammy) */
+/* #define MMDEBUG 1 */
+
 /* Maximum file name length */
 #define FILENAMELEN 128
 

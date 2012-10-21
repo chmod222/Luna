@@ -31,6 +31,8 @@ luna_SOURCES = \
 	src/logger.h \
 	src/linked_list.c \
 	src/linked_list.h \
+	src/mm.c \
+	src/mm.h \
 	src/lua_api/lua_api_functions.c \
 	src/lua_api/lua_api_functions.h \
 	src/lua_api/lua_channel.c \

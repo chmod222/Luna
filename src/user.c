@@ -32,6 +32,7 @@
 
 #include "user.h"
 #include "linked_list.h"
+#include "mm.h"
 
 
 int
@@ -65,7 +66,7 @@ users_load(luna_state *state, const char *file)
 
             if (id && mask && flags)
             {
-                luna_user *user = malloc(sizeof(*user));
+                luna_user *user = mm_malloc(sizeof(*user));
 
                 if (user)
                 {
@@ -95,7 +96,7 @@ users_unload(luna_state *state)
     list_node *cur = NULL;
 
     for (cur = state->users->root; cur != NULL; cur = state->users->root)
-        list_delete(state->users, cur->data, &free);
+        list_delete(state->users, cur->data, &mm_free);
 
     return 0;
 }
@@ -145,7 +146,7 @@ users_add(luna_state *state, const char *id, const char *hostmask,
     if (user)
         return 1;
 
-    user = malloc(sizeof(*user));
+    user = mm_malloc(sizeof(*user));
 
     if (user)
     {
@@ -170,7 +171,7 @@ users_remove(luna_state *state, const char *hostmask)
 
     if (user)
     {
-        list_delete(state->users, user, &free);
+        list_delete(state->users, user, &mm_free);
         return 0;
     }
 

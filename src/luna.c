@@ -63,6 +63,8 @@ main(int argc, char **argv)
     char log_file[FILENAMELEN]    = "luna.log";   /* Default log file */
     int opt;
 
+    mm_init(128);
+
     /* Initialize logger */
     luna_state state;
     luna_log *log = NULL;
@@ -134,6 +136,8 @@ main(int argc, char **argv)
 
     log_session_end(log);
     state_destroy(&state);
+
+    mm_destroy();
 
     return EXIT_SUCCESS;
 }

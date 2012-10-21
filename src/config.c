@@ -34,6 +34,7 @@
 
 #include "state.h"
 #include "logger.h"
+#include "mm.h"
 
 
 int config_get_userinfo(luna_state *, lua_State *);
@@ -47,7 +48,7 @@ config_load(luna_state *state, const char *filename)
     lua_State *L = NULL;
 
     /* Create lua environment */
-    if ((L = luaL_newstate()))
+    if ((L = lua_newstate(&mm_lalloc, NULL)))
     {
         int status = 0;
 
@@ -149,7 +150,7 @@ config_get_netinfo(luna_state *state, lua_State *L)
 
     if (bind && strcmp("", bind))
     {
-        if ((state->bind = malloc(strlen(bind) + 1)) == NULL)
+        if ((state->bind = mm_malloc(strlen(bind) + 1)) == NULL)
         {
             logger_log(state->logger, LOGLEV_WARNING,
                        "Couldn't allocate memory for bind, keeping NULL");

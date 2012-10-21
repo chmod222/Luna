@@ -34,11 +34,12 @@
 
 #include "../net.h"
 #include "../state.h"
+#include "../mm.h"
 #include "lua_util.h"
-
 
 int luaX_self_getuserinfo(lua_State *);
 int luaX_self_getserver(lua_State *);
+int luaX_self_getmeminfo(lua_State *);
 int luaX_self_getruntimes(lua_State *);
 
 
@@ -46,6 +47,7 @@ static const struct luaL_Reg luaX_self_functions[] =
 {
     { "getUserInfo", luaX_self_getuserinfo },
     { "getServerInfo", luaX_self_getserver },
+    { "getMemoryInfo", luaX_self_getmeminfo },
     { "getRuntimeInfo", luaX_self_getruntimes },
 
     { NULL, NULL }
@@ -74,6 +76,17 @@ luaX_self_getserver(lua_State *L)
     lua_pushnumber(L, state->serverinfo.port);
 
     return 2;
+}
+
+
+int
+luaX_self_getmeminfo(lua_State *L)
+{
+    lua_pushnumber(L, mm_inuse());
+    lua_pushnumber(L, mm_state.mm_allocs);
+    lua_pushnumber(L, mm_state.mm_frees);
+
+    return 3;
 }
 
 

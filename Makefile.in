@@ -72,6 +72,7 @@ am_luna_OBJECTS = src/luna-luna.$(OBJEXT) src/luna-bot.$(OBJEXT) \
 	src/luna-irc.$(OBJEXT) src/luna-state.$(OBJEXT) \
 	src/luna-util.$(OBJEXT) src/luna-net.$(OBJEXT) \
 	src/luna-logger.$(OBJEXT) src/luna-linked_list.$(OBJEXT) \
+	src/luna-mm.$(OBJEXT) \
 	src/lua_api/luna-lua_api_functions.$(OBJEXT) \
 	src/lua_api/luna-lua_channel.$(OBJEXT) \
 	src/lua_api/luna-lua_manager.$(OBJEXT) \
@@ -234,6 +235,8 @@ luna_SOURCES = \
 	src/logger.h \
 	src/linked_list.c \
 	src/linked_list.h \
+	src/mm.c \
+	src/mm.h \
 	src/lua_api/lua_api_functions.c \
 	src/lua_api/lua_api_functions.h \
 	src/lua_api/lua_channel.c \
@@ -361,6 +364,8 @@ src/luna-logger.$(OBJEXT): src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/luna-linked_list.$(OBJEXT): src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
+src/luna-mm.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 src/lua_api/$(am__dirstamp):
 	@$(MKDIR_P) src/lua_api
 	@: > src/lua_api/$(am__dirstamp)
@@ -410,6 +415,7 @@ mostlyclean-compile:
 	-rm -f src/luna-linked_list.$(OBJEXT)
 	-rm -f src/luna-logger.$(OBJEXT)
 	-rm -f src/luna-luna.$(OBJEXT)
+	-rm -f src/luna-mm.$(OBJEXT)
 	-rm -f src/luna-net.$(OBJEXT)
 	-rm -f src/luna-state.$(OBJEXT)
 	-rm -f src/luna-user.$(OBJEXT)
@@ -426,6 +432,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/luna-linked_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/luna-logger.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/luna-luna.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/luna-mm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/luna-net.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/luna-state.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/luna-user.Po@am__quote@
@@ -623,6 +630,20 @@ src/luna-linked_list.obj: src/linked_list.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/linked_list.c' object='src/luna-linked_list.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/luna-linked_list.obj `if test -f 'src/linked_list.c'; then $(CYGPATH_W) 'src/linked_list.c'; else $(CYGPATH_W) '$(srcdir)/src/linked_list.c'; fi`
+
+src/luna-mm.o: src/mm.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/luna-mm.o -MD -MP -MF src/$(DEPDIR)/luna-mm.Tpo -c -o src/luna-mm.o `test -f 'src/mm.c' || echo '$(srcdir)/'`src/mm.c
+@am__fastdepCC_TRUE@	$(am__mv) src/$(DEPDIR)/luna-mm.Tpo src/$(DEPDIR)/luna-mm.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/mm.c' object='src/luna-mm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/luna-mm.o `test -f 'src/mm.c' || echo '$(srcdir)/'`src/mm.c
+
+src/luna-mm.obj: src/mm.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/luna-mm.obj -MD -MP -MF src/$(DEPDIR)/luna-mm.Tpo -c -o src/luna-mm.obj `if test -f 'src/mm.c'; then $(CYGPATH_W) 'src/mm.c'; else $(CYGPATH_W) '$(srcdir)/src/mm.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) src/$(DEPDIR)/luna-mm.Tpo src/$(DEPDIR)/luna-mm.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/mm.c' object='src/luna-mm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/luna-mm.obj `if test -f 'src/mm.c'; then $(CYGPATH_W) 'src/mm.c'; else $(CYGPATH_W) '$(srcdir)/src/mm.c'; fi`
 
 src/lua_api/luna-lua_api_functions.o: src/lua_api/lua_api_functions.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(luna_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/lua_api/luna-lua_api_functions.o -MD -MP -MF src/lua_api/$(DEPDIR)/luna-lua_api_functions.Tpo -c -o src/lua_api/luna-lua_api_functions.o `test -f 'src/lua_api/lua_api_functions.c' || echo '$(srcdir)/'`src/lua_api/lua_api_functions.c

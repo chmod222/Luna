@@ -34,6 +34,7 @@
 #include "irc.h"
 #include "net.h"
 #include "util.h"
+#include "mm.h"
 
 
 void free_stringtable(char **dest, size_t size);
@@ -143,7 +144,7 @@ irc_parse_line(struct irc_event *dest, char *line)
     else
         dest->type = irc_event_type_from_string(arg_command);
 
-    dest->param = (char **)malloc(sizeof(char *));
+    dest->param = (char **)mm_malloc(sizeof(char *));
     tmp = strtok(arg_params, " "); /* get first argument */
 
     dest->msg = NULL;
@@ -169,14 +170,14 @@ irc_parse_line(struct irc_event *dest, char *line)
 
             *(j + 1) = 0;
 
-            dest->msg = (char *)malloc(strlen(msg) + 1);
+            dest->msg = (char *)mm_malloc(strlen(msg) + 1);
 
             if (dest->msg == NULL)
             {
                 fprintf(stderr, "parse(): Couldn't allocate memory "
                         "for message\n");
 
-                free(dest->msg);
+                mm_free(dest->msg);
 
                 free_stringtable(dest->param, dest->param_count);
 
@@ -191,8 +192,8 @@ irc_parse_line(struct irc_event *dest, char *line)
             break;
         }
 
-        dest->param[i] = (char *)malloc(strlen(tmp) + 1);
-        dest->param = (char **)realloc(dest->param, sizeof(char *) * (i + 2));
+        dest->param[i] = (char *)mm_malloc(strlen(tmp) + 1);
+        dest->param = (char **)mm_realloc(dest->param, sizeof(char *) * (i + 2));
 
         if ((dest->param[i] == NULL) ||
                 (dest->param == NULL))
@@ -227,16 +228,16 @@ free_stringtable(char **t, size_t size)
     int i;
 
     for (i = 0; i < size; i++)
-        free(t[i]);
+        mm_free(t[i]);
 
-    free(t);
+    mm_free(t);
 }
 
 
 void
 irc_free_irc_event(struct irc_event *d)
 {
-    free(d->msg);
+    mm_free(d->msg);
 
     free_stringtable(d->param, d->param_count);
 }

@@ -29,6 +29,7 @@
 
 #include "luna.h"
 #include "logger.h"
+#include "mm.h"
 
 extern int errno;
 
@@ -43,7 +44,7 @@ logger_init(luna_log **log, const char *file)
     if (!(temp_file = fopen(file, "a")))
         return errno;
 
-    if ((*log = malloc(sizeof(**log))) != NULL)
+    if ((*log = mm_malloc(sizeof(**log))) != NULL)
     {
         memset(*log, 0, sizeof(**log));
         strncpy((*log)->filename, file, sizeof((*log)->filename) - 1);
@@ -60,7 +61,7 @@ int
 logger_destroy(luna_log *log)
 {
     fclose(log->file);
-    free(log);
+    mm_free(log);
 
     return 0;
 }

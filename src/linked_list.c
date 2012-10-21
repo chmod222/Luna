@@ -34,7 +34,7 @@
 int
 list_init(linked_list **list)
 {
-    *list = malloc(sizeof(**list));
+    *list = mm_malloc(sizeof(**list));
 
     if (*list)
     {
@@ -66,7 +66,7 @@ list_push_front(linked_list *list, void *data)
     if (list == NULL)
         return NULL;
 
-    tmp = malloc(sizeof(list_node));
+    tmp = mm_malloc(sizeof(list_node));
 
     if (tmp)
     {
@@ -114,7 +114,7 @@ list_insert_before(linked_list *list, list_node *pos, void *data)
             return NULL;
     }
 
-    tmp = malloc(sizeof(list_node));
+    tmp = mm_malloc(sizeof(list_node));
 
     if (tmp)
     {
@@ -152,7 +152,7 @@ list_push_back(linked_list *list, void *data)
     if (list == NULL)
         return NULL;
 
-    tmp = malloc(sizeof(list_node));
+    tmp = mm_malloc(sizeof(list_node));
 
     if (tmp)
     {
@@ -215,7 +215,7 @@ list_delete(linked_list *list, void *plugin, void (*f)(void *))
                 old->next = current->next;
 
             f(current->data);
-            free(current);
+            mm_free(current);
 
             list->length--;
 
@@ -266,11 +266,11 @@ list_destroy(linked_list *list, void (*free_content)(void *))
         if (free_content != NULL)
             free_content(current->data);
 
-        free(current);
+        mm_free(current);
         current = next;
     }
 
-    free(list);
+    mm_free(list);
 
     return;
 }
