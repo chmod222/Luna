@@ -172,7 +172,6 @@ function dump(t, max)
         elseif type(val) == 'number' then
             str = tostring(val)
         elseif type(val) == 'table' then
-            i = i + 1
             str = dump(val, max - 1)
         elseif type(val) == 'function' then
             str = 'f()'
