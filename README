@@ -1,26 +1,23 @@
 Luna is a small IRC Bot written in C with very few external dependencies (libc,
-lua) that interfaces with Lua scripts both as initial and runtime configuration
+lua 5.2) that interfaces with Lua scripts both as initial and runtime
+configuration
 
-Current core features done:
-  * Handling core events such as JOIN, PART, QUIT and updating the
-    global state accordingly to keep a snychronized list of users
-  * Keep-alive
+Features:
   * Lua driven initial configuration
   * User management
-  * Lua script support, loadable on runtime
+  * Lua scripting support, loadable on runtime, with a pretty full featured
+    standard library (See API_Documentation.txt)
 
 Luna is written to run on UNIX-like operating systems (and tested on Linux),
 but it should be easy to port to other systems.
 
----
-
-Luna loads users from the "users.txt" file. Each line in the file as a user,
+Luna reads users from the "users.txt" file. Each line in the file as a user,
 his/her permission flags and an optional level, separated by a ':' like:
 
 id:foo!bar@baz:flags:level
 
 Wildcards are suported, so the following is possible:
 
-foo!*@baz:admin
-f?o!b*@baz:admin
+foo!*@baz:o:admin
+f?o!b*@baz:o:admin
 
