@@ -162,8 +162,16 @@ handle_privmsg(luna_state *env, irc_event *ev)
     {
         char *ctcp = NULL;
         char *args = NULL;
+        char *j;
 
         ev->msg[strlen(ev->msg) - 1] = '\0';
+
+        j = ev->msg + strlen(ev->msg) - 1;
+
+        while ((j >= ev->msg) && isspace(*j))
+            j--;
+
+        *(j + 1) = 0;
 
         ctcp = strtok(ev->msg + 1, " ");
         args = strtok(NULL, "");
@@ -595,8 +603,16 @@ handle_notice(luna_state *env, irc_event *ev)
     {
         char *ctcp;
         char *args;
+        char *j;
 
         ev->msg[strlen(ev->msg) - 1] = '\0';
+
+        j = ev->msg + strlen(ev->msg) - 1;
+
+        while ((j >= ev->msg) && isspace(*j))
+            j--;
+
+        *(j + 1) = 0;
 
         ctcp = strtok(ev->msg + 1, " ");
         args = strtok(NULL, "");
