@@ -249,3 +249,126 @@ Additions to standard library:
         str = 'fancy'
         channel:privmsg(str:bold():underline():color(4, 8))
 
+Signals:
+  Signals are dispatched for various IRC events. Scripts can 'subscribe' to
+  one or more signals using:
+
+    luna.addSignal(signal, callback)
+
+  where callback is a function accepting zero or more arguments, thus the
+  following is idiomatic:
+
+    luna.addSignal(signal, function(...) [...] end)
+
+  Currently implemented signals are:
+    * raw
+      + source      (luna.types.source_user)
+      + command     (string, e.g. 'PRIVMSG' or number, e.g. 367)
+      + args        (list of strings)
+      + msg         (string or nil)
+
+    * private_message
+      + source  (luna.types.source_user)
+      + msg     (string)
+
+    * public_message
+      + source  (luna.types.channel_user)
+      + target  (luna.types.channel)
+      + msg     (string)
+
+    * private_ctcp
+      + source      (luna.types.source_user)
+      + ctcp        (string, e.g. 'VERSION')
+      + args        (string or nil)
+
+    * private_ctcp_response
+      + source      (luna.types.source_user)
+      + ctcp        (string, e.g. 'VERSION')
+      + args        (string or nil)
+
+    * public_ctcp
+      + source  (luna.types.channel_user)
+      + target  (luna.types.channel)
+      + ctcp        (string, e.g. 'VERSION')
+      + args        (string or nil)
+
+    * public_ctcp_response
+      + source  (luna.types.channel_user)
+      + target  (luna.types.channel)
+      + ctcp    (string, e.g. 'VERSION')
+      + args    (string or nil)
+
+    * private_action
+      + source  (luna.types.source_user)
+      + msg     (string)
+
+    * public_action
+      + source  (luna.types.channel_user)
+      + target  (luna.types.channel)
+      + msg     (string)
+
+    * private_command
+      + source  (luna.types.source_user)
+      + command (string)
+      + args    (string or nil)
+
+    * public_command
+      + source  (luna.types.channel_user)
+      + target  (luna.types.channel)
+      + command (string)
+      + args    (string or nil)
+
+    * channel_join
+      + source  (luna.types.channel_user)
+      + target  (luna.types.channel)
+
+    * connect
+        - called after the end of the MOTD has been received. Earlier numerics
+          can be caught with signal 'raw'.
+
+    * disconnect
+        - called just before internal data is destroyed.
+
+    * ping
+        - called on server keepalive ping (can vary).
+
+    * idle
+        - called when no data was received in the last 250 milliseconds.
+
+    * channel_part
+      + source  (luna.types.channel_user)
+      + target  (luna.types.channel)
+      + reason  (string or nil)
+
+    * user_quit
+      + source  (luna.types.source_user)
+      + reason  (string)
+
+    * notice
+      + source  (luna.types.source_user)
+      + message (string)
+
+    * nick_change
+      + source  (luna.types.source_user)
+      + newnick (string)
+
+    * invite
+      + source  (luna.types.source_user)
+      + channel (string)
+
+    * topic_change
+      + source      (luna.types.channel_user)
+      + target      (luna.types.channel)
+      + newtopic    (string)
+
+    * user_kicked
+      + source  (luna.types.channel_user)
+      + target  (luna.types.channel)
+      + kicked  (luna.types.channel_user)
+      + reason  (string)
+
+    * script_load
+      + script  (luna.types.script)
+
+    * script_unload
+      + script  (luna.types.script)
