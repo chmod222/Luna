@@ -265,7 +265,7 @@ signal_dispatch(luna_state *state, const char *sig, ...)
 
 int
 script_emit(luna_state *state, luna_script *script, const char *sig,
-            va_list args)
+            va_list vargs)
 {
     int api_table;
     int callbacks_array;
@@ -298,6 +298,8 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
         if (!strcmp(lua_tostring(L, -1), sig))
         {
             /* Emit */
+            va_list args;
+            va_copy(args, vargs);
 
             /* Push function to stack
              * luna.__callbacks[i].callback(...) */
@@ -306,6 +308,7 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
 
             for (j = 0;; ++j)
             {
+
                 luaX_serializable *v = va_arg(args, luaX_serializable *);
 
                 if (v == NULL)
@@ -327,12 +330,16 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
             }
 
             if (lua_pcall(L, j, 0, 0) != 0)
+            {
                 logger_log(state->logger, LOGLEV_ERROR,
                            "Lua error ('%s@%s'): %s",
                            sig, script->filename, lua_tostring(L, -1));
 
-            lua_pop(L, -1);
-            return 0;
+                /* Pop off error message */
+                lua_pop(L, 1);
+            }
+
+            //lua_pop(L, -1);
         }
 
         lua_pop(L, 2);

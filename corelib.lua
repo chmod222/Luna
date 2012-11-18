@@ -101,14 +101,6 @@ end
 -- Add and delete signal handlers
 --
 function luna.addSignal(sig, handler)
-    for i, v in ipairs(luna.__callbacks) do
-        for k, v2 in pairs(luna.__callbacks[i]) do
-            if v2 == sig then
-                error("signal '" .. v2 .. "' already in use", 2)
-            end
-        end
-    end
-
     new_handler = {signal = sig, callback = handler}
     table.insert(luna.__callbacks, new_handler)
 
