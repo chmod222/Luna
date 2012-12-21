@@ -73,6 +73,17 @@ script_free(void *list_data)
 }
 
 
+void
+script_emit_helper(luna_state *state, luna_script *s,
+		   const char *sig, ...)
+{
+    va_list args;
+    va_start(args, sig);
+    script_emit(state, s, sig, args);
+    va_end(args);
+}
+
+
 int
 script_unload(luna_state *state, const char *file)
 {
@@ -82,7 +93,7 @@ script_unload(luna_state *state, const char *file)
     if (result)
     {
         /* Call unload signal */
-        script_emit(state, (luna_script *)result, "unload", NULL);
+        script_emit_helper(state, (luna_script *)result, "unload", NULL);
         list_delete(state->scripts, result, &script_free);
 
         return 0;
@@ -162,7 +173,7 @@ script_load(luna_state *state, const char *file)
         list_push_back(state->scripts, script);
         strncpy(script->filename, file, sizeof(script->filename) - 1);
 
-        script_emit(state, script, "load", NULL);
+        script_emit_helper(state, script, "load", NULL);
 
         return 0;
     }
