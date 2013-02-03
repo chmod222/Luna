@@ -39,7 +39,7 @@
 const luaL_Reg api_library[] =
 {
     { "log",             api_log },
-    { "sendLine",        api_sendline },
+    { "sendline",        api_sendline },
 
     { NULL, NULL }
 };
@@ -72,4 +72,6 @@ int
 api_register(lua_State *L)
 {
     luaL_newlib(L, api_library);
+
+    return 0;
 }

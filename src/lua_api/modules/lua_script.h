@@ -18,44 +18,18 @@
 
 /*******************************************************************************
  *
- *  Lua channel object management (lua_self.h)
+ *  Lua script object management (lua_self.h)
  *  ---
- *  Provide access to the global channel list within scripts
+ *  Provide meta info about loaded scripts to scripts
  *
- *  Created: 03.02.2012 20:41:01
+ *  Created: 03.02.2012 19:37:01
  *
  ******************************************************************************/
-#ifndef LUA_CHANNEL_H
-#define LUA_CHANNEL_H
+#ifndef LUA_SCRIPT_H
+#define LUA_SCRIPT_H
 
 #include <lua.h>
 
-#include "lua_serializable.h"
-
-/* Only store enough information to retrieve the actual information
- * via the global state */
-typedef struct luaX_channel
-{
-    int (*serialize)(lua_State *, struct luaX_serializable *);
-
-    char name[64];
-} luaX_channel;
-
-typedef struct luaX_chanuser
-{
-    int (*serialize)(lua_State *, struct luaX_serializable *);
-
-    luaX_channel channel;
-    char nick[32];
-} luaX_chanuser;
-
-
-int luaX_register_channel(lua_State *, int);
-
-int luaX_push_chanuser(lua_State *, struct luaX_serializable *);
-int luaX_push_channel(lua_State *, struct luaX_serializable *);
-
-int luaX_make_channel(luaX_channel *, const char *);
-int luaX_make_chanuser(luaX_chanuser *, const char *, luaX_channel *);
+int luaX_register_script(lua_State *, int);
 
 #endif

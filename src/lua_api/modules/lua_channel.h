@@ -18,31 +18,18 @@
 
 /*******************************************************************************
  *
- *  Lua script object management (lua_script.h)
+ *  Lua channel object management (lua_channel.h)
  *  ---
- *  Provide access to Luna scripts within scripts
+ *  Provide meta info about active channels to scripts
  *
- *  Created: 03.02.2012 17:57:01
+ *  Created: 03.02.2012 19:37:01
  *
  ******************************************************************************/
-#ifndef LUA_SCRIPT_H
-#define LUA_SCRIPT_H
+#ifndef LUA_CHANNEL
+#define LUA_CHANNEL
 
 #include <lua.h>
 
-#include "lua_serializable.h"
-
-typedef struct luaX_script
-{
-    int (*serialize)(lua_State *, struct luaX_serializable *);
-
-    luna_script script;
-} luaX_script;
-
-
-int luaX_register_script(lua_State *, int);
-
-luaX_script luaX_make_script(const luna_script *);
-int luaX_push_script(lua_State *, luaX_serializable *);
+int luaX_register_channel(lua_State *, int);
 
 #endif

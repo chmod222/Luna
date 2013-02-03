@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT(Luna, 3.14159265, webmaster@flippeh.de)
+AC_INIT(Luna, 3.14159265, lukas.niederbremer@gmail.com)
 AC_CONFIG_SRCDIR([src/])
 
 AM_INIT_AUTOMAKE([subdir-objects])
@@ -14,7 +14,9 @@ AC_CONFIG_FILES([Makefile])
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h unistd.h])
+AC_CHECK_HEADERS(
+    [arpa/inet.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h unistd.h]
+)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T

@@ -38,15 +38,15 @@
 #include "lua_util.h"
 
 #include "lua_api_functions.h"
-#include "lua_user.h"
-#include "lua_script.h"
-#include "lua_self.h"
-#include "lua_channel.h"
-#include "lua_source.h"
+#include "lua_util.h"
 
+#include "modules/lua_self.h"
+#include "modules/lua_script.h"
+#include "modules/lua_channel.h"
 
-int script_emit(luna_state *, luna_script *, const char *, va_list);
-int script_identify(lua_State *, luna_script *);
+int script_emit(luna_state *, luna_script *, const char *,
+                luaX_push_helper, va_list vargs);
+int script_identify(luna_state *, lua_State *, luna_script *);
 
 const char *env_key = "LUNA_ENV";
 
@@ -73,14 +73,52 @@ script_free(void *list_data)
 }
 
 
-void
-script_emit_helper(luna_state *state, luna_script *s,
-		   const char *sig, ...)
+int
+script_identify(luna_state *state, lua_State *L, luna_script *script)
 {
-    va_list args;
-    va_start(args, sig);
-    script_emit(state, s, sig, args);
-    va_end(args);
+    int api_table;
+
+    /* Strings */
+    const char *name = NULL;
+    const char *descr = NULL;
+    const char *author = NULL;
+    const char *version = NULL;
+
+    /* Get API table */
+    lua_getglobal(L, LIBNAME);
+    api_table = lua_gettop(L);
+
+    lua_pushstring(L, "register_script");
+    lua_gettable(L, api_table);
+
+    if (lua_pcall(L, 0, 4, 0) == 0)
+    {
+        /* Pop off error message */
+        name = lua_tostring(L, -4);
+        descr = lua_tostring(L, -3);
+        author = lua_tostring(L, -2);
+        version = lua_tostring(L, -1);
+
+        if (name && descr && author && version)
+        {
+            strncpy(script->name, name, sizeof(script->name));
+            strncpy(script->description, descr, sizeof(script->description));
+            strncpy(script->version, version, sizeof(script->version));
+            strncpy(script->author, author, sizeof(script->author));
+
+            return 0;
+        }
+
+        lua_pushstring(L, "invalid script registration");
+
+        return 1;
+    }
+
+    logger_log(state->logger, LOGLEV_ERROR,
+               "Lua error ('luna.register_script@%s'): %s",
+               script->filename, lua_tostring(L, -1));
+
+    return 1;
 }
 
 
@@ -93,7 +131,9 @@ script_unload(luna_state *state, const char *file)
     if (result)
     {
         /* Call unload signal */
-        script_emit_helper(state, (luna_script *)result, "unload", NULL);
+        signal_dispatch(state, "script_unload", &luaX_push_script_unload,
+                        file, NULL);
+
         list_delete(state->scripts, result, &script_free);
 
         return 0;
@@ -111,7 +151,9 @@ script_load(luna_state *state, const char *file)
     int api_table = 0;
 
     /* Script can be openened and allocated, or Lua state cannot be created ? */
-    if (!(script = mm_malloc(sizeof(*script))) || !((L = lua_newstate(&mm_lalloc, NULL))))
+    //if (!(script = mm_malloc(sizeof(*script))) || !((L = lua_newstate(&mm_lalloc, NULL))))
+
+    if (!(script = mm_malloc(sizeof(*script))) || !((L = luaL_newstate())))
     {
         mm_free(script);
 
@@ -120,42 +162,28 @@ script_load(luna_state *state, const char *file)
 
     memset(script, 0, sizeof(*script));
     script->state = L;
+    strncpy(script->filename, file, sizeof(script->filename));
 
     luaL_openlibs(L);
 
-    /* Push Luna state pointer to script so it has access to data
-     * _G["LUNA_ENV"] = state */
+    /* Push Luna state pointer to script so it has access to data */
     lua_pushlightuserdata(L, (void *)env_key);
     lua_pushlightuserdata(L, state);
     lua_settable(L, LUA_REGISTRYINDEX);
 
-    /* Register library methods */
-    /* luaL_Register(L, LIBNAME, api_library); */
+    /* Register core library methods */
     api_table = (api_register(L), lua_gettop(L));
 
     /* Copy the value for call to lua_setglobal() and make the call */
     lua_pushvalue(L, -1);
     lua_setglobal(L, LIBNAME);
 
-    lua_pushstring(L, "types");
-    lua_newtable(L);
-    lua_settable(L, api_table);
+    /* Register modules */
+    luaX_register_self(L, api_table);   /* luna.self */
+    luaX_register_script(L, api_table); /* luna.scripts */
+    luaX_register_channel(L, api_table); /* luna.channels */
+    luaX_register_user(L, api_table); /* luna.users */
 
-    /* Register custom types */
-    luaX_register_user(L, api_table);
-    luaX_register_script(L, api_table);
-    luaX_register_self(L, api_table);
-    luaX_register_channel(L, api_table);
-    luaX_register_source(L, api_table);
-
-    /* Register empty callbacks table
-     * luna.__callbacks = {} */
-    lua_getglobal(L, LIBNAME);
-    lua_pushstring(L, "__callbacks");
-    lua_newtable(L);
-    lua_settable(L, -3);
-
-    /* TODO: Make this... better */
     if (luaL_dofile(L, "corelib.lua") != 0)
     {
         logger_log(state->logger, LOGLEV_WARNING,
@@ -168,12 +196,13 @@ script_load(luna_state *state, const char *file)
     lua_pop(L, -1);
 
     /* Execute */
-    if ((luaL_dofile(L, file) == 0) && (script_identify(L, script) == 0))
+    if ((luaL_dofile(L, file) == 0) && (script_identify(state, L, script) == 0))
     {
         list_push_back(state->scripts, script);
         strncpy(script->filename, file, sizeof(script->filename) - 1);
 
-        script_emit_helper(state, script, "load", NULL);
+        signal_dispatch(state, "script_load", &luaX_push_script_load,
+                        file, NULL);
 
         return 0;
     }
@@ -191,82 +220,15 @@ script_load(luna_state *state, const char *file)
 
 
 int
-script_identify(lua_State *L, luna_script *script)
-{
-    int api_table;
-    int info_table;
-
-    /* Strings */
-    const char *name = NULL;
-    const char *descr = NULL;
-    const char *author = NULL;
-    const char *version = NULL;
-
-    /* Get API table */
-    lua_getglobal(L, LIBNAME);
-    api_table = lua_gettop(L);
-
-    /* Push key of scriptinfo table and get it's value */
-    lua_pushstring(L, "__scriptinfo");
-    lua_gettable(L, api_table);
-    info_table = lua_gettop(L);
-
-    /* Is it defined and a table? */
-    if (lua_type(L, info_table) != LUA_TTABLE)
-    {
-        lua_pop(L, -1);
-        return 1;
-    }
-
-    lua_pushstring(L, "name");
-    lua_gettable(L, info_table);
-    name = lua_tostring(L, lua_gettop(L));
-
-    lua_pushstring(L, "description");
-    lua_gettable(L, info_table);
-    descr = lua_tostring(L, lua_gettop(L));
-
-    lua_pushstring(L, "version");
-    lua_gettable(L, info_table);
-    version = lua_tostring(L, lua_gettop(L));
-
-    lua_pushstring(L, "author");
-    lua_gettable(L, info_table);
-    author = lua_tostring(L, lua_gettop(L));
-
-    /* Values must be strings and nonempty */
-    if ((name && strcmp(name, ""))   &&
-            (descr && strcmp(descr, "")) &&
-            (author && strcmp(author, "")) &&
-            (version && strcmp(version, "")))
-    {
-        /* Copy values over */
-        strncpy(script->name, name, sizeof(script->name) - 1);
-        strncpy(script->description, descr, sizeof(script->description) - 1);
-        strncpy(script->version, version, sizeof(script->version) - 1);
-        strncpy(script->author, author, sizeof(script->author) - 1);
-
-        lua_pop(L, -1);
-        return 0;
-    }
-    else
-    {
-        lua_pop(L, -1);
-        return 1;
-    }
-}
-
-
-int
-signal_dispatch(luna_state *state, const char *sig, ...)
+signal_dispatch(luna_state *state, const char *sig, luaX_push_helper f, ...)
 {
     va_list args;
     list_node *cur;
 
     for (cur = state->scripts->root; cur != NULL; cur = cur->next)
     {
-        va_start(args, sig);
-        script_emit(state, cur->data, sig, args);
+        va_start(args, f);
+        script_emit(state, cur->data, sig, f, args);
         va_end(args);
     }
 
@@ -276,85 +238,33 @@ signal_dispatch(luna_state *state, const char *sig, ...)
 
 int
 script_emit(luna_state *state, luna_script *script, const char *sig,
-            va_list vargs)
+            luaX_push_helper f, va_list vargs)
 {
     int api_table;
-    int callbacks_array;
-    int len;
     int i = 1;
 
     lua_State *L = script->state;
 
-    /* For each {signal, callback_function} in luna.__callbacks ... */
     lua_getglobal(L, LIBNAME);
     api_table = lua_gettop(L);
 
-    lua_pushstring(L, "__callbacks");
+    lua_pushstring(L, "emit_signal");
     lua_gettable(L, api_table);
-    callbacks_array = lua_gettop(L);
-    len = lua_rawlen(L, callbacks_array);
 
-    while (i <= len)
+    lua_pushstring(L, sig);
+
+    /* Push arguments */
+    if (f != NULL)
+        i += f(state, script->state, vargs);
+
+    if (lua_pcall(L, i, 0, 0) != 0)
     {
-        int callback_table;
-        int j = 0;
+        logger_log(state->logger, LOGLEV_ERROR,
+                   "Lua error ('%s@%s'): %s",
+                   sig, script->filename, lua_tostring(L, -1));
 
-        lua_rawgeti(L, callbacks_array, i);
-        callback_table = lua_gettop(L);
-
-        lua_pushstring(L, "signal");
-        lua_gettable(L, callback_table);
-
-        /* luna.__callbacks[i].signal == sig? */
-        if (!strcmp(lua_tostring(L, -1), sig))
-        {
-            /* Emit */
-            va_list args;
-            va_copy(args, vargs);
-
-            /* Push function to stack
-             * luna.__callbacks[i].callback(...) */
-            lua_pushstring(L, "callback");
-            lua_gettable(L, callback_table);
-
-            for (j = 0;; ++j)
-            {
-
-                luaX_serializable *v = va_arg(args, luaX_serializable *);
-
-                if (v == NULL)
-                    break;
-
-                if (v->serialize != NULL)
-                {
-                    v->serialize(L, v);
-                }
-                else
-                {
-                    logger_log(state->logger, LOGLEV_ERROR,
-                               "No serializer function for argument %d of "
-                               "signal '%s'!", j, sig);
-
-                    lua_pop(L, -1);
-                    return 0;
-                }
-            }
-
-            if (lua_pcall(L, j, 0, 0) != 0)
-            {
-                logger_log(state->logger, LOGLEV_ERROR,
-                           "Lua error ('%s@%s'): %s",
-                           sig, script->filename, lua_tostring(L, -1));
-
-                /* Pop off error message */
-                lua_pop(L, 1);
-            }
-
-            //lua_pop(L, -1);
-        }
-
-        lua_pop(L, 2);
-        ++i;
+        /* Pop off error message */
+        lua_pop(L, 1);
     }
 
     lua_pop(L, -1);

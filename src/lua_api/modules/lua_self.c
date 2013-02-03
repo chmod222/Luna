@@ -32,10 +32,10 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
-#include "../net.h"
-#include "../state.h"
-#include "../mm.h"
-#include "lua_util.h"
+#include "../../net.h"
+#include "../../state.h"
+#include "../../mm.h"
+#include "../lua_util.h"
 
 int luaX_self_getuserinfo(lua_State *);
 int luaX_self_getserver(lua_State *);
@@ -45,10 +45,10 @@ int luaX_self_getruntimes(lua_State *);
 
 static const struct luaL_Reg luaX_self_functions[] =
 {
-    { "getUserInfo", luaX_self_getuserinfo },
-    { "getServerInfo", luaX_self_getserver },
-    { "getMemoryInfo", luaX_self_getmeminfo },
-    { "getRuntimeInfo", luaX_self_getruntimes },
+    { "get_user_info", luaX_self_getuserinfo },
+    { "get_server_info", luaX_self_getserver },
+    { "get_memory_info", luaX_self_getmeminfo },
+    { "get_runtime_info", luaX_self_getruntimes },
 
     { NULL, NULL }
 };
@@ -57,13 +57,25 @@ static const struct luaL_Reg luaX_self_functions[] =
 int
 luaX_self_getuserinfo(lua_State *L)
 {
+    int table;
+
     luna_state *state = api_getstate(L);
 
-    lua_pushstring(L, state->userinfo.nick);
-    lua_pushstring(L, state->userinfo.user);
-    lua_pushstring(L, state->userinfo.real);
+    table = (lua_newtable(L), lua_gettop(L));
 
-    return 3;
+    lua_pushstring(L, "nick");
+    lua_pushstring(L, state->userinfo.nick);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "user");
+    lua_pushstring(L, state->userinfo.user);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "realname");
+    lua_pushstring(L, state->userinfo.real);
+    lua_settable(L, table);
+
+    return 1;
 }
 
 
@@ -82,36 +94,52 @@ luaX_self_getserver(lua_State *L)
 int
 luaX_self_getmeminfo(lua_State *L)
 {
-    lua_pushnumber(L, mm_inuse());
-    lua_pushnumber(L, mm_state.mm_allocs);
-    lua_pushnumber(L, mm_state.mm_frees);
+    int table = (lua_newtable(L), lua_gettop(L));
 
-    return 3;
+    lua_pushstring(L, "used");
+    lua_pushnumber(L, mm_inuse());
+    lua_settable(L, table);
+
+    lua_pushstring(L, "allocs");
+    lua_pushnumber(L, mm_state.mm_allocs);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "frees");
+    lua_pushnumber(L, mm_state.mm_frees);
+    lua_settable(L, table);
+
+    return 1;
 }
 
 
 int
 luaX_self_getruntimes(lua_State *L)
 {
+    int table;
+
     luna_state *state = api_getstate(L);
 
-    lua_pushnumber(L, state->started);
-    lua_pushnumber(L, state->connected);
+    table = (lua_newtable(L), lua_gettop(L));
 
-    return 2;
+    lua_pushstring(L, "started");
+    lua_pushnumber(L, state->started);
+    lua_settable(L, table);
+
+    lua_pushstring(L, "connected");
+    lua_pushnumber(L, state->connected);
+    lua_settable(L, table);
+
+    return 1;
 }
 
 
 int
 luaX_register_self(lua_State *L, int regtable)
 {
-    /* And register other functions inside regtable
+    /* Register functions inside regtable
      * luna.self = { ... } */
     lua_pushstring(L, "self");
-    /*
-     * lua_newtable(L);
-     * luaL_Register(L, NULL, luaX_self_functions);
-     */
+
     luaL_newlib(L, luaX_self_functions);
     lua_settable(L, regtable);
 

@@ -1,6 +1,444 @@
 --
 -- Luna API core functions
 --
+luna.__callbacks = {}
+
+--
+-- Command aliases
+--
+function luna.join_channel(where, pass)
+    if not pass then
+        return luna.sendline(string.format('JOIN %s', where))
+    else
+        return luna.sendline(string.format('JOIN %s :%s', where, pass))
+    end
+end
+
+function luna.quit(why)
+    return luna.sendline('QUIT :' .. why)
+end
+
+function luna.change_nick(new)
+    return luna.sendline('NICK ' .. new)
+end
+
+--
+-- Types
+--
+
+-- Somewhat abstract supertype for anything you can message, not to be
+-- instantiated
+luna.addressable = {
+    privmsg = function(self, what)
+        return luna.sendline(string.format('PRIVMSG %s :%s',
+            self:get_addr(),
+            what))
+    end,
+
+    notice = function(self, what)
+        return luna.sendline(string.format('NOTICE %s :%s',
+            self:get_addr(),
+            what))
+    end,
+
+    ctcp = function(self, what, args)
+        if args then
+            return self:privmsg(string.format('\001%s %s\001', what, args))
+        else
+            return self:privmsg(string.format('\001%s\001', what))
+        end
+    end,
+
+    ctcp_reply = function(self, what, args)
+        if args then
+            return self:notice(string.format('\001%s %s\001', what, args))
+        else
+            return self:notice(string.format('\001%s\001', what))
+        end
+    end,
+}
+
+-- Type for unknown users (not in a known channel)
+luna.user_meta = {}
+luna.user = setmetatable({
+    new = function(self, a)
+        return setmetatable({ addr = a }, luna.user_meta)
+    end,
+
+    get_nick = function(self)
+        return self.addr:sub(0, self.addr:find('!') - 1)
+    end,
+
+    get_user = function(self)
+        return self.addr:sub(self.addr:find('!') + 1, self.addr:find('@') - 1)
+    end,
+
+    get_host = function(self)
+        return self.addr:sub(self.addr:find('@') + 1, #self.addr)
+    end,
+
+    get_reguser = function(self)
+        local id = luna.regusers.match_user(self.addr)
+
+        if id then
+            return luna.regusers.get_user_info(id)
+        else
+            return nil
+        end
+    end,
+
+    -- implement interface for addressable
+    get_addr = function(self)
+        return self:get_nick()
+    end
+}, {
+    __index = luna.addressable
+})
+
+luna.user_meta = {
+    __index = luna.user,
+    __tostring = function(self)
+        return self.addr
+    end,
+
+    __eq = function(a, b)
+        return a.addr == b.addr
+    end
+}
+
+-- Type for a (known, joined) channel
+luna.channel_meta = {}
+luna.channel = setmetatable({
+    new = function(self, c)
+        assert(c ~= nil)
+
+        return setmetatable({ name = c }, luna.channel_meta)
+    end,
+
+    get_name = function(self)
+        return self.name
+    end,
+
+    get_user_mode = function(self, addr)
+        return luna.channels.get_channel_user_info(self.name, addr).modes
+    end,
+
+    -- implement interface for addressable
+    get_addr = function(self)
+        return self:get_name()
+    end,
+
+    get_users = function(self)
+        local userlist = {}
+
+        for i, addr in ipairs(luna.channels.get_channel_users(self.name)) do
+            table.insert(userlist, luna.channel_user:new(self, addr))
+        end
+
+        return userlist
+    end,
+
+    get_modes = function(self)
+        return luna.channels.get_channel_info(self.name).modes
+    end,
+
+    get_topic = function(self)
+        local meta = luna.channels.get_channel_info(self.name)
+
+        return {
+            topic = meta.topic,
+            set_by = meta.topic_set_by,
+            set_at = meta.topic_set_at
+        }
+    end,
+
+    get_created = function(self)
+        return luna.channels.get_channel_info(self.name).created
+    end
+}, {
+    __index = luna.addressable
+})
+
+luna.channel_meta = {
+    __index = luna.channel,
+    __tostring = function(self) return self.name end,
+    __eq = function(a, b) return a.name == b.name end
+}
+
+-- Type for a known user, joined in a known channel
+luna.channel_user_meta = {}
+luna.channel_user = setmetatable({
+    new = function(self, c, u)
+        assert(c ~= nil)
+
+        ua = nil
+
+        -- not a full address? Look it up
+        if not u:find('!') then
+            for i, a in ipairs(luna.channels.get_channel_users(c.name)) do
+                if u:sub(0, u:find('!') - 1) == a then
+                    ua = a
+                    break
+                end
+            end
+        else
+            ua = u
+        end
+
+        return setmetatable({ channel = c, addr = u }, luna.channel_user_meta)
+    end,
+
+    get_channel_modes = function(self)
+        return self.channel:get_user_mode(self.addr)
+    end,
+
+    respond = function(self, what)
+        return self.channel:privmsg(self:get_nick() .. ': ' .. what)
+    end
+}, {
+    __index = luna.user
+})
+
+luna.channel_user_meta = {
+    __index = luna.channel_user,
+
+    __tostring = function(self)
+        return self.addr
+    end,
+
+    __eq = luna.user_meta.__eq
+}
+
+-- Register script to Luna
+--
+-- Must be overridden by scripts
+--
+function luna.register_script()
+    error('luna.register_script() not defined.')
+end
+
+-- Add a "managed" signal handler (automatically replace plaintext
+-- values supplied from C with actual types and meta info and check
+-- for a valid signal)
+function luna.add_signal_handler(sig, id, fn)
+    local substitutes = {
+        idle = fn,
+        connect = fn,
+        disconnect = fn,
+        raw = fn,
+
+        private_message = function(who, where, what)
+            who = luna.user:new(who)
+
+            fn(who, what)
+        end,
+
+        public_message = function(who, where, what)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+
+            fn(who, where, what)
+        end,
+
+        private_ctcp = function(who, where, what, args)
+            who = luna.user:new(who)
+
+            fn(who, what, args)
+        end,
+
+        private_ctcp_response = function(who, where, what, args)
+            who = luna.user:new(who)
+
+            fn(who, what, args)
+        end,
+
+        public_ctcp = function(who, where, what, args)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+
+            fn(who, where, what, args)
+        end,
+
+        public_ctcp_response = function(who, where, what, args)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+
+            fn(who, where, what, args)
+        end,
+
+        private_action = function(who, where, what)
+            who = luna.user:new(who)
+
+            fn(who, what)
+        end,
+
+        public_action = function(who, where, what)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+
+            fn(who, where, what)
+        end,
+
+        private_command = function(who, where, what, args)
+            who = luna.user:new(who)
+
+            fn(who, what, args)
+        end,
+
+        public_command = function(who, where, what, args)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+
+            fn(who, where, what, args)
+        end,
+
+        ping = fn,
+
+        channel_join = function(who, where)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+
+            fn(who, where)
+        end,
+
+        channel_join_sync = function(where)
+            where = luna.channel:new(where)
+
+            fn(where)
+        end,
+
+        channel_part = function(who, where, why)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+
+            fn(who, where, why)
+        end,
+
+        user_quit = function(who, why)
+            who = luna.user:new(who)
+
+            fn(who, why)
+        end,
+
+        public_notice = function(who, where, what)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+
+            fn(who, where, what)
+        end,
+
+        private_notice = function(who, where, what)
+            who = luna.user:new(who)
+
+            fn(who, what)
+        end,
+
+        nick_change = function(who_old, who_new)
+            local addr = who_old:sub(who_old:find('!'), #who_old)
+
+            who_new = luna.user:new(who_new .. addr)
+
+            fn(who_old, who_new)
+        end,
+
+        invite = fn,
+
+        topic_change = function(who, where, what)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+
+            fn(who, where, what)
+        end,
+
+        user_kicked = function(who, where, whom, why)
+            where = luna.channel:new(where)
+            who = luna.channel_user:new(where, who)
+            whom = luna.channel_user:new(where, whom)
+
+            fn(who, where, whom, why)
+        end,
+
+        script_unload = function(filename)
+            fn(luna.scripts.get_script_info(filename))
+        end,
+
+        script_load = function(filename)
+            fn(luna.scripts.get_script_info(filename))
+        end,
+    }
+
+    if substitutes[sig] then
+        luna.add_raw_signal_handler(sig, id, substitutes[sig])
+    else
+        error(string.format('unknown signal %q', sig), 2)
+    end
+end
+
+-- Add "unmanaged" signal handler. Handler functions receive the
+-- parameters untouched.
+function luna.add_raw_signal_handler(sig, id, fn)
+    local newhandler = {
+        signal = sig,
+        callback = fn,
+        enabled = true,
+        priority = 0
+    }
+
+    luna.__callbacks[id] = newhandler
+end
+
+-- Helper function. Get handler or error out.
+function luna.__get_signal_handler(id, fn)
+    if luna.__callbacks[id] then
+        fn(luna.__callbacks[id])
+    else
+        error(string.format('no signal handler with id "%s"', id), 3)
+    end
+end
+
+-- Emit a signal, passing an arbitrary amount of parameters to it. Called via C.
+function luna.emit_signal(signal, ...)
+    local handlers = {}
+
+    for id, handler in pairs(luna.__callbacks) do
+        table.insert(handlers, handler)
+    end
+
+    table.sort(handlers, function(a, b)
+        return a.priority < b.priority
+    end)
+
+    for i, handler in ipairs(handlers) do
+        if handler.signal == signal and handler.enabled then
+            handler.callback(unpack{...})
+        end
+    end
+end
+
+-- Delete a signal handler
+function luna.delete_signal_handler(id)
+    if luna.__callbacks[id] then
+        -- disable because the list is cached during iteration
+        luna.__callbacks[id].enabled = false
+        luna.__callbacks[id] = nil
+    else
+        error(string.format('no signal handler with id "%s"', id), 2)
+    end
+end
+
+-- Change signal handler priority
+function luna.set_signal_handler_priority(id, priority)
+    luna.__get_signal_handler(id, function(h)
+        h.priority = priority or 0
+    end)
+end
+
+-- Disable (state = true) or enable (state = false) a  signal handler.
+function luna.disable_signal_handler(id, state)
+    luna.__get_signal_handler(id, function(h)
+        h.enabled = not state or false
+    end)
+end
 
 --
 -- Utils
@@ -13,147 +451,16 @@ function table.copy(t)
     return t2
 end
 
--- Copy a metatables methods and introduce getter attributes
-function make_getters(tab, attrs)
-    local meth = table.copy(tab)
-
-    tab.__index = function(self, key)
-        if attrs[key] ~= nil then
-            return meth[attrs[key]](self)
-        else
-            return meth[key]
-        end
-    end
-end
-
--- Same with setters
-function make_setters(tab, attrs)
-    local meth = table.copy(tab)
-
-    tab.__newindex = function(self, key, value)
-        if attrs[key] ~= nil then
-            meth[attrs[key]](self, value)
-        else
-            error(string.format('no such field \'%s\'', key))
-        end
-    end
-end
-
--- And getters for library functions
-function make_lib_getters(tab, attrs)
-    tab = setmetatable(tab, {
-        __index = function(self, key)
-            if attrs[key] ~= nil then
-                return tab[attrs[key]]()
-            end
-        end
-    })
-end
-
---
--- Command helpers
---
-function luna.changeNick(new_nick)
-    luna.sendLine(string.format("NICK :%s", new_nick))
-end
-
-function luna.quit(reason)
-    if reason == nil then
-        reason = "BAI"
-    end
-
-    luna.sendLine(string.format("QUIT :%s", reason))
-end
-
-function luna.joinChannel(channel, key)
-    if key == nil then
-        luna.sendLine(string.format("JOIN %s", channel))
-    else
-        luna.sendLine(string.format("JOIN %s :%s", channel, key))
-    end
-end
-
-function luna.notice(target, message)
-    luna.sendLine(string.format("NOTICE %s :%s", target, message))
-end
-
-function luna.privmsg(target, message)
-    luna.sendLine(string.format("PRIVMSG %s :%s", target, message))
-end
-
-function luna.ctcp(target, ctcp, message)
-    if message then
-        luna.privmsg(target, string.format('\001%s %s\001', ctcp, message))
-    else
-        luna.privmsg(target, string.format('\001%s\001', ctcp))
-    end
-end
-
-function luna.ctcpReply(target, ctcp, message)
-    if message then
-        luna.notice(target, string.format('\001%s %s\001', ctcp, message))
-    else
-        luna.notice(target, string.format('\001%s\001', ctcp))
-    end
-end
-
---
--- Add and delete signal handlers
---
-function luna.addSignal(sig, handler)
-    new_handler = {signal = sig, callback = handler}
-    table.insert(luna.__callbacks, new_handler)
-
-    return new_handler
-end
-
-function luna.delSignal(handler)
-    for i, v in ipairs(luna.__callbacks) do
-        if v == handler then
-            return table.remove(luna.__callbacks, i)
-        end
-    end
-end
-
---
--- Register script to Luna
---
--- While everything in luna.__scriptinfo can be changed at runtime,
--- all it really does is confuse the user. The scripts will respect
--- the value within __scriptinfo but the bot itself has its own
--- copy of these values.
---
--- TODO: Make bot only save lua_State and grab __scriptinfo
---
-function luna.registerScript(inf)
-    if luna.__scriptinfo ~= nil then
-        error('script has already been registered', 2)
-    end
-
-    if (type(inf.name) == 'string' and #inf.name ~= 0) and
-        (type(inf.author) == 'string' and #inf.author ~= 0) and
-        (type(inf.description) == 'string' and #inf.description ~= 0) and
-        (type(inf.version) == 'string' and #inf.version ~= 0) then
-
-        luna.__scriptinfo = inf
-    else
-        error("fields 'name', 'author', 'description' " ..
-        "and 'version' are required", 2)
-    end
-end
-
---
--- Some type goodness
---
-
----- Channel methods
---
 
 function dump(t, max)
     local res = '{'
 
     if max == 0 then
         return 'overflow'
+    end
+
+    if not t then
+        return 'nil'
     end
 
     for key, val in pairs(t) do
@@ -167,6 +474,8 @@ function dump(t, max)
             str = dump(val, max - 1)
         elseif type(val) == 'function' then
             str = 'f()'
+        elseif type(val) == 'boolean' then
+            str = tostring(val)
         else
             str = '<unknown@' .. type(val) .. '>'
         end
@@ -180,242 +489,6 @@ function dump(t, max)
 
     return res:sub(1, res:len() - 2) .. '}'
 end
-
-function luna.types.channel:getName()
-    return ({self:getChannelInfo()})[1]
-end
-
-function luna.types.channel:getCreationDate()
-    return ({self:getChannelInfo()})[2]
-end
-
-function luna.types.channel:privmsg(msg)
-    luna.privmsg(self:getName(), msg)
-end
-
-make_getters(luna.types.channel, {
-    name    = 'getName',
-    created = 'getCreationDate',
-    modes   = 'getModes',
-    topic   = 'getTopic',
-    userlist = 'getUserList'
-})
-
-
----- Unknown users
---
-function luna.types.source_user:__tostring()
-    return string.format('%s!%s@%s', self:getUserInfo())
-end
-
-function luna.types.source_user:privmsg(msg)
-    local nick = self:getUserInfo()
-    luna.privmsg(nick, msg)
-end
-
-function luna.types.source_user:getRegUser()
-    local n, u, h = self:getUserInfo()
-    return luna.users.find{nick = n, user = u, host = h}
-end
-
-function luna.types.source_user:respond(msg)
-    local nick = self:getUserInfo()
-    self:privmsg(string.format('%s: %s', nick, msg))
-end
-
-function luna.types.source_user:notice(msg)
-    local nick = self:getUserInfo()
-    luna.notice(nick, msg)
-end
-
-function luna.types.source_user:ctcp(ctcp, msg)
-    local nick = self:getUserInfo()
-    luna.ctcp(nick, ctcp, msg)
-end
-
-function luna.types.source_user:ctcpReply(ctcp, msg)
-    local nick = self:getUserInfo()
-    luna.ctcpReply(nick, ctcp, msg)
-end
-
-function luna.types.source_user:getNick()
-    return ({self:getUserInfo()})[1]
-end
-
-function luna.types.source_user:getUser()
-    return ({self:getUserInfo()})[2]
-end
-
-function luna.types.source_user:getHost()
-    return ({self:getUserInfo()})[3]
-end
-
-make_getters(luna.types.source_user, {
-    nick = 'getNick',
-    user = 'getUser',
-    host = 'getHost'
-})
-
----- Known channel users
---
-function luna.types.channel_user:getRegUser()
-    return luna.users.find(self:getUserInfo())
-end
-
-function luna.types.channel_user:respond(msg)
-    local nick = self:getUserInfo()
-    self:getChannel():privmsg(string.format("%s: %s", nick, msg))
-end
-
-function luna.types.channel_user:isMe()
-    return self.nick == ({luna.self.getUserInfo()})[1]
-end
-
-function luna.types.channel_user:getNick()
-    return ({self:getUserInfo()})[1]
-end
-
-function luna.types.channel_user:getUser()
-    return ({self:getUserInfo()})[2]
-end
-
-function luna.types.channel_user:getHost()
-    return ({self:getUserInfo()})[3]
-end
-
-function luna.types.channel_user:notice(msg)
-    local nick = self:getUserInfo()
-    luna.notice(nick, msg)
-end
-
-function luna.types.channel_user:privmsg(msg)
-    local nick = self:getUserInfo()
-    luna.privmsg(nick, msg)
-end
-
-function luna.types.channel_user:ctcp(ctcp, msg)
-    local nick = self:getUserInfo()
-    luna.ctcp(nick, ctcp, msg)
-end
-
-function luna.types.channel_user:ctcpReply(ctcp, msg)
-    local nick = self:getUserInfo()
-    luna.ctcpReply(nick, ctcp, msg)
-end
-
-
-make_getters(luna.types.channel_user, {
-    status  = 'getStatus',
-    modes   = 'getModes',
-    channel = 'getChannel',
-    nick    = 'getNick',
-    user    = 'getUser',
-    host    = 'getHost'
-})
-
-function luna.types.user:isOperator()
-    return self:getFlags():find('o') ~= nil
-end
-
-make_getters(luna.types.user, {
-    flags = 'getFlags',
-    level = 'getLevel',
-    id    = 'getId'
-})
-
-make_setters(luna.types.user, {
-    flags = 'setFlags',
-    level = 'setLevel',
-    id    = 'setId'
-})
-
----- Scripts
---
-function luna.types.script:getFilename()
-    return ({self:getScriptInfo()})[1]
-end
-
-function luna.types.script:getName()
-    return ({self:getScriptInfo()})[2]
-end
-
-function luna.types.script:getDescription()
-    return ({self:getScriptInfo()})[3]
-end
-
-function luna.types.script:getAuthor()
-    return ({self:getScriptInfo()})[4]
-end
-
-function luna.types.script:getVersion()
-    return ({self:getScriptInfo()})[5]
-end
-
-make_getters(luna.types.script, {
-    file        = 'getFilename',
-    name        = 'getName',
-    description = 'getDescription',
-    author      = 'getAuthor',
-    version     = 'getVersion'
-})
-
----- Some more utilities
---
-function luna.self.getNick()
-    return ({luna.self.getUserInfo()})[1]
-end
-
-function luna.self.getUser()
-    return ({luna.self.getUserInfo()})[2]
-end
-
-function luna.self.getReal()
-    return ({luna.self.getUserInfo()})[3]
-end
-
-function luna.self.getStarted()
-    return ({luna.self.getRuntimeInfo()})[1]
-end
-
-function luna.self.getConnected()
-    return ({luna.self.getRuntimeInfo()})[2]
-end
-
-function luna.self.getMemoryInUse()
-    return ({luna.self.getMemoryInfo()})[1]
-end
-
-function luna.self.getMemoryAllocations()
-    return ({luna.self.getMemoryInfo()})[2]
-end
-
-function luna.self.getMemoryDeallocations()
-    return ({luna.self.getMemoryInfo()})[3]
-end
-
-make_lib_getters(luna.self, {
-    nick = 'getNick',
-    user = 'getUser',
-    real = 'getReal',
-    connected = 'getConnected',
-    started   = 'getStarted',
-    memory =  'getMemoryInUse',
-    allocs =  'getMemoryAllocations',
-    dealloc = 'getMemoryDeallocations'
-})
-
-make_lib_getters(luna.channels, {
-    channellist = 'getChannelList'
-})
-
-make_lib_getters(luna.scripts, {
-    scriptlist = 'getScriptList'
-})
-
-make_lib_getters(luna.users, {
-    userlist = 'getUserList'
-})
-
 
 -- str = 'a b c'
 -- str:split(' ') = {'a', 'b', 'c'}
@@ -445,6 +518,7 @@ function string:split(sep)
 
     return parts
 end
+
 
 function string:colour(f,b)
     if not b then

@@ -36,7 +36,6 @@
 
 #define LIBNAME "luna"
 
-
 typedef struct luna_script
 {
     char filename[256];
@@ -49,6 +48,8 @@ typedef struct luna_script
     lua_State *state;
 } luna_script;
 
+typedef int (*luaX_push_helper)(luna_state *, lua_State *, va_list);
+
 extern const char *env_key;
 
 int script_cmp(const void *, const void *);
@@ -56,6 +57,6 @@ int script_load(luna_state *, const char *);
 int script_unload(luna_state *, const char *);
 void script_free(void *);
 
-int signal_dispatch(luna_state *, const char *, ...);
+int signal_dispatch(luna_state *, const char *, luaX_push_helper, ...);
 
 #endif

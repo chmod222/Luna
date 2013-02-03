@@ -158,16 +158,20 @@ users_add(luna_state *state, const char *id, const char *hostmask,
         strncpy(user->level, level, sizeof(user->level) - 1);
 
         list_push_back(state->users, user);
-    }
 
-    return 0;
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
 }
 
 
 int
-users_remove(luna_state *state, const char *hostmask)
+users_remove(luna_state *state, const char *id)
 {
-    void *user = list_find(state->users, (void *)hostmask, &luna_user_host_cmp);
+    void *user = list_find(state->users, (void *)id, &luna_user_id_cmp);
 
     if (user)
     {
@@ -182,15 +186,20 @@ users_remove(luna_state *state, const char *hostmask)
 int
 luna_user_cmp(const void *data, const void *list_data)
 {
-    char host[256];
-
     luna_user *user = (luna_user *)list_data;
-    irc_sender *key = (irc_sender *)data;
+    const char *key = (const char *)data;
 
-    memset(host, 0, sizeof(host));
-    snprintf(host, sizeof(host), "%s!%s@%s", key->nick, key->user, key->host);
+    return !(strwcasecmp(key, user->hostmask));
+}
 
-    return !(strwcasecmp(host, user->hostmask));
+
+int
+luna_user_id_cmp(const void *data, const void *list_data)
+{
+    luna_user *user = (luna_user *)list_data;
+    const char *key = (const char *)data;
+
+    return strcasecmp(key, user->id);
 }
 
 

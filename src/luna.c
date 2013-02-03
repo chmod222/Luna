@@ -36,6 +36,7 @@
 #include "state.h"
 #include "config.h"
 #include "bot.h"
+#include "mm.h"
 
 void print_usage(const char *);
 void log_session_start(luna_log *);

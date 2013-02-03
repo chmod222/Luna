@@ -66,3 +66,284 @@ api_getstate(lua_State *L)
     return state;
 }
 
+int
+luaX_push_sender(lua_State *L, irc_sender *src)
+{
+    size_t n = NICKLEN + IDENTLEN + HOSTLEN + 1;
+    char addr[n];
+
+    if (strlen(src->nick) != 0)
+        snprintf(addr, n, "%s!%s@%s", src->nick, src->user, src->host);
+    else
+        snprintf(addr, n, "%s", src->host);
+
+    lua_pushstring(L, addr);
+
+    return 1;
+}
+
+int
+luaX_push_args(lua_State *L, int n, char **param)
+{
+    int i;
+    int table = (lua_newtable(L), lua_gettop(L));
+
+    for (i = 0; i < n; ++i)
+    {
+        lua_pushstring(L, param[i]);
+        lua_rawseti(L, table, i + 1);
+    }
+
+    return 1;
+}
+
+
+int
+luaX_push_raw(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+
+    luaX_push_sender(L, &(ev->from));
+
+    if (ev->type == IRCEV_NUMERIC)
+    {
+        lua_pushnumber(L, ev->numeric);
+    }
+    else
+    {
+        const char *evname = NULL;
+
+        switch (ev->type)
+        {
+        case IRCEV_ERROR: evname = "ERROR"; break;
+        case IRCEV_JOIN: evname = "JOIN"; break;
+        case IRCEV_PART: evname = "PART"; break;
+        case IRCEV_QUIT: evname = "QUIT"; break;
+        case IRCEV_PRIVMSG: evname = "PRIVMSG"; break;
+        case IRCEV_NOTICE: evname = "NOTICE"; break;
+        case IRCEV_NICK: evname = "NICK"; break;
+        case IRCEV_MODE: evname = "MODE"; break;
+        case IRCEV_PING: evname = "PING"; break;
+        case IRCEV_INVITE: evname = "INVITE"; break;
+        case IRCEV_TOPIC: evname = "TOPIC"; break;
+        case IRCEV_KICK: evname = "KICK"; break;
+        default: evname = NULL; break;
+        }
+
+        lua_pushstring(L, evname);
+    }
+
+    luaX_push_args(L, ev->param_count, ev->param);
+    lua_pushstring(L, ev->msg);
+
+    return 4;
+}
+
+
+int
+luaX_push_privmsg(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->msg);
+
+    return 3;
+}
+
+
+int
+luaX_push_ctcp(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+    const char *ctcp = va_arg(args, const char *);
+    const char *msg = va_arg(args, const char *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ctcp);
+    lua_pushstring(L, msg);
+
+    return 4;
+}
+
+
+int
+luaX_push_ctcp_rsp(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+    const char *ctcp = va_arg(args, const char *);
+    const char *msg = va_arg(args, const char *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ctcp);
+    lua_pushstring(L, msg);
+
+    return 4;
+}
+
+
+int
+luaX_push_action(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+    const char *msg = va_arg(args, const char *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, msg);
+
+    return 3;
+}
+
+
+int
+luaX_push_command(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+    const char *cmd = va_arg(args, const char *);
+    const char *rest = va_arg(args, const char *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, cmd);
+    lua_pushstring(L, rest);
+
+    return 4;
+}
+
+
+int
+luaX_push_join(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+
+    return 2;
+}
+
+
+int
+luaX_push_join_sync(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+
+    lua_pushstring(L, ev->param[1]);
+
+    return 1;
+}
+
+
+int
+luaX_push_part(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->msg);
+
+    return 3;
+}
+
+
+int
+luaX_push_quit(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->msg);
+
+    return 2;
+}
+
+
+int
+luaX_push_notice(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->msg);
+
+    return 3;
+}
+
+
+int
+luaX_push_nick(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+    const char *newnick = va_arg(args, const char *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, newnick);
+
+    return 2;
+}
+
+
+int
+luaX_push_invite(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+    const char *target = va_arg(args, const char *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, target);
+
+    return 2;
+}
+
+
+int
+luaX_push_topic(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->msg);
+
+    return 3;
+}
+
+
+int
+luaX_push_kick(luna_state *st, lua_State *L, va_list args)
+{
+    irc_event *ev = va_arg(args, irc_event *);
+
+    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->param[1]);
+    lua_pushstring(L, ev->msg);
+
+    return 4;
+}
+
+
+int
+luaX_push_script_load(luna_state *st, lua_State *L, va_list args)
+{
+    const char *name = va_arg(args, const char *);
+
+    lua_pushstring(L, name);
+    return 1;
+}
+
+
+int
+luaX_push_script_unload(luna_state *st, lua_State *L, va_list args)
+{
+    const char *name = va_arg(args, const char *);
+
+    lua_pushstring(L, name);
+    return 1;
+}

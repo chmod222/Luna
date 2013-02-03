@@ -18,32 +18,18 @@
 
 /*******************************************************************************
  *
- *  Lua source object management (lua_source.h)
+ *  Lua user object management (lua_user.h)
  *  ---
- *  Provide access to message sources (user, server(?)) within scripts
+ *  Provide meta info about registered users to scripts
  *
- *  Created: 08.02.2012 05:21:03
+ *  Created: 03.02.2012 19:37:01
  *
  ******************************************************************************/
-#ifndef LUA_SOURCE_H
-#define LUA_SOURCE_H
+#ifndef LUA_USER
+#define LUA_USER
 
 #include <lua.h>
 
-#include "../irc.h"
-#include "lua_serializable.h"
-
-typedef struct luaX_source
-{
-    int (*serialize)(lua_State *, struct luaX_serializable *);
-
-    const irc_sender *source;
-} luaX_source;
-
-int luaX_register_source(lua_State *, int);
-
-int luaX_push_source(lua_State *, luaX_serializable *);
-
-luaX_source luaX_make_source(const irc_sender *);
+int luaX_register_user(lua_State *, int);
 
 #endif

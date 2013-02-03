@@ -35,19 +35,15 @@ luna_SOURCES = \
 	src/mm.h \
 	src/lua_api/lua_api_functions.c \
 	src/lua_api/lua_api_functions.h \
-	src/lua_api/lua_channel.c \
-	src/lua_api/lua_channel.h \
 	src/lua_api/lua_manager.c \
 	src/lua_api/lua_manager.h \
-	src/lua_api/lua_script.c \
-	src/lua_api/lua_script.h \
-	src/lua_api/lua_self.c \
-	src/lua_api/lua_self.h \
-	src/lua_api/lua_source.c \
-	src/lua_api/lua_source.h \
-	src/lua_api/lua_user.c \
-	src/lua_api/lua_user.h \
+	src/lua_api/modules/lua_self.c \
+	src/lua_api/modules/lua_self.h \
+	src/lua_api/modules/lua_script.c \
+	src/lua_api/modules/lua_script.h \
+	src/lua_api/modules/lua_channel.c \
+	src/lua_api/modules/lua_channel.h \
+	src/lua_api/modules/lua_user.c \
+	src/lua_api/modules/lua_user.h \
 	src/lua_api/lua_util.c \
-	src/lua_api/lua_util.h \
-	src/lua_api/lua_serializable.h \
-	src/lua_api/lua_serializable.c
+	src/lua_api/lua_util.h

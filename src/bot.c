@@ -37,6 +37,7 @@
 #include "net.h"
 #include "handlers.h"
 #include "user.h"
+
 #include "lua_api/lua_manager.h"
 #include "lua_api/lua_util.h"
 
@@ -152,6 +153,7 @@ luna_mainloop(luna_state *state)
         }
 
         signal_dispatch(state, "disconnect", NULL);
+
         list_destroy(state->channels, &channel_free);
         net_disconnect(state);
     }

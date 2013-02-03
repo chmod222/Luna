@@ -38,4 +38,23 @@
 int api_loglevel_from_string(const char *);
 luna_state *api_getstate(lua_State *);
 
+int luaX_push_raw(luna_state *, lua_State *, va_list);
+int luaX_push_idle(luna_state *, lua_State *, va_list);
+int luaX_push_privmsg(luna_state *, lua_State *, va_list);
+int luaX_push_ctcp(luna_state *, lua_State *, va_list);
+int luaX_push_ctcp_rsp(luna_state *, lua_State *, va_list);
+int luaX_push_action(luna_state *, lua_State *, va_list);
+int luaX_push_command(luna_state *, lua_State *, va_list);
+int luaX_push_join(luna_state *, lua_State *, va_list);
+int luaX_push_join_sync(luna_state *, lua_State *, va_list);
+int luaX_push_part(luna_state *, lua_State *, va_list);
+int luaX_push_quit(luna_state *, lua_State *, va_list);
+int luaX_push_notice(luna_state *, lua_State *, va_list);
+int luaX_push_nick(luna_state *, lua_State *, va_list);
+int luaX_push_invite(luna_state *, lua_State *, va_list);
+int luaX_push_topic(luna_state *, lua_State *, va_list);
+int luaX_push_kick(luna_state *, lua_State *, va_list);
+int luaX_push_script_load(luna_state *, lua_State *, va_list);
+int luaX_push_script_unload(luna_state *, lua_State *, va_list);
+
 #endif
