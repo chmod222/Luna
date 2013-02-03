@@ -33,10 +33,10 @@ luna_SOURCES = \
 	src/linked_list.h \
 	src/mm.c \
 	src/mm.h \
-	src/lua_api/lua_api_functions.c \
-	src/lua_api/lua_api_functions.h \
 	src/lua_api/lua_manager.c \
 	src/lua_api/lua_manager.h \
+	src/lua_api/modules/lua_core.c \
+	src/lua_api/modules/lua_core.h \
 	src/lua_api/modules/lua_self.c \
 	src/lua_api/modules/lua_self.h \
 	src/lua_api/modules/lua_script.c \

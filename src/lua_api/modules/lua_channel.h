@@ -25,8 +25,8 @@
  *  Created: 03.02.2012 19:37:01
  *
  ******************************************************************************/
-#ifndef LUA_CHANNEL
-#define LUA_CHANNEL
+#ifndef LUA_CHANNEL_H
+#define LUA_CHANNEL_H
 
 #include <lua.h>
 

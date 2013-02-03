@@ -37,12 +37,13 @@
 #include "lua_manager.h"
 #include "lua_util.h"
 
-#include "lua_api_functions.h"
 #include "lua_util.h"
 
+#include "modules/lua_core.h"
 #include "modules/lua_self.h"
 #include "modules/lua_script.h"
 #include "modules/lua_channel.h"
+#include "modules/lua_user.h"
 
 int script_emit(luna_state *, luna_script *, const char *,
                 luaX_push_helper, va_list vargs);
@@ -172,7 +173,7 @@ script_load(luna_state *state, const char *file)
     lua_settable(L, LUA_REGISTRYINDEX);
 
     /* Register core library methods */
-    api_table = (api_register(L), lua_gettop(L));
+    api_table = (luaX_register_core(L), lua_gettop(L));
 
     /* Copy the value for call to lua_setglobal() and make the call */
     lua_pushvalue(L, -1);

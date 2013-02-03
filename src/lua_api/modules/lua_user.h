@@ -25,8 +25,8 @@
  *  Created: 03.02.2012 19:37:01
  *
  ******************************************************************************/
-#ifndef LUA_USER
-#define LUA_USER
+#ifndef LUA_USER_H
+#define LUA_USER_H
 
 #include <lua.h>
 

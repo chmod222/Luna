@@ -18,23 +18,61 @@
 
 /*******************************************************************************
  *
- *  Lua api functions (lua_api_functions.h)
+ *  Lua api functions (lua_api_functions.c)
  *  ---
  *  Functions to register in each script environment
  *
  *  Created: 03.02.2012 02:25:34
  *
  ******************************************************************************/
-#ifndef LUA_API_FUNCTIONS_H
-#define LUA_API_FUNCTIONS_H
+#include <stdlib.h>
+#include <string.h>
 
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
 
-int api_log(lua_State *);
-int api_sendline(lua_State *);
+#include "../lua_util.h"
 
-int api_register(lua_State *);
+int luaX_core_log(lua_State *);
+int luaX_core_sendline(lua_State *);
 
-#endif
+const luaL_Reg luaX_core_functions[] =
+{
+    { "log",             luaX_core_log },
+    { "sendline",        luaX_core_sendline },
+
+    { NULL, NULL }
+};
+
+
+int
+luaX_core_log(lua_State *L)
+{
+    int level = api_loglevel_from_string(luaL_checkstring(L, 1));
+    const char *message = luaL_checkstring(L, 2);
+    luna_state *state = api_getstate(L);
+
+    logger_log(state->logger, level, "%s", message);
+
+    return 0;
+}
+
+int
+luaX_core_sendline(lua_State *L)
+{
+    const char *line = luaL_checkstring(L, 1);
+    luna_state *state = api_getstate(L);
+
+    lua_pushnumber(L, net_sendfln(state, "%s", line));
+
+    return 1;
+}
+
+int
+luaX_register_core(lua_State *L)
+{
+    luaL_newlib(L, luaX_core_functions);
+
+    return 0;
+}
