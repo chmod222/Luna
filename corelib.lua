@@ -116,7 +116,13 @@ luna.channel = setmetatable({
     new = function(self, c)
         assert(c ~= nil)
 
-        return setmetatable({ name = c }, luna.channel_meta)
+        for i, name in ipairs(luna.channels.get_channels()) do
+            if name == c then
+                return setmetatable({ name = c }, luna.channel_meta)
+            end
+        end
+
+        error(string.format('no such channel %q', c), 2)
     end,
 
     get_name = function(self)
@@ -177,16 +183,16 @@ luna.channel_user = setmetatable({
 
         ua = nil
 
-        -- not a full address? Look it up
-        if not u:find('!') then
-            for i, a in ipairs(luna.channels.get_channel_users(c.name)) do
-                if a:sub(0, a:find('!') - 1):lower() == u:lower() then
-                    ua = a
-                    break
-                end
+        -- Look it up
+        for i, a in ipairs(luna.channels.get_channel_users(c.name)) do
+            if u == a or a:sub(0, a:find('!') - 1):lower() == u:lower() then
+                ua = a
+                break
             end
-        else
-            ua = u
+        end
+
+        if not ua then
+            error(string.format('no such user %q in channel %q', u, c.name), 2)
         end
 
         return setmetatable({ channel = c, addr = ua }, luna.channel_user_meta)
