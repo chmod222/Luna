@@ -279,7 +279,7 @@ luna.regusers = {
         end
     end,
 
-    user_add = function(id, newinf)
+    add_user = function(id, newinf)
         if luna.regusers.__userlist[id:lower()] then
             error(string.format('user %q already exists', id), 2)
         else
@@ -294,7 +294,7 @@ luna.regusers = {
         end
     end,
 
-    user_delete = function(id)
+    delete_user = function(id)
         if luna.regusers.__userlist[id:lower()] then
             luna.regusers.__userlist[id:lower()] = nil
 
