@@ -72,7 +72,12 @@ luaX_core_sendline(lua_State *L)
 int
 luaX_register_core(lua_State *L)
 {
+#if LUA_VERSION_NUM == 502
     luaL_newlib(L, luaX_core_functions);
+#else
+    lua_newtable(L);
+    luaL_register(L, NULL, luaX_core_functions);
+#endif
 
     return 0;
 }

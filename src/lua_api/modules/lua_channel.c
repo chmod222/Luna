@@ -259,7 +259,13 @@ luaX_register_channel(lua_State *L, int regtable)
      * luna.scripts = { ... } */
     lua_pushstring(L, "channels");
 
+#if LUA_VERSION_NUM == 502
     luaL_newlib(L, luaX_channel_functions);
+#else
+    lua_newtable(L);
+    luaL_register(L, NULL, luaX_channel_functions);
+#endif
+
     lua_settable(L, regtable);
 
     return 1;

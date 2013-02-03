@@ -25,7 +25,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset select socket strcasecmp strchr strstr])
-PKG_CHECK_MODULES([LUA], [lua5.2 >= 5.2])
+PKG_CHECK_MODULES([LUA], [lua5.1 < 5.2])
 
 AC_SEARCH_LIBS([socket], [socket], [], [
     AC_MSG_ERROR([unable to find socket()])

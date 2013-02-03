@@ -140,7 +140,13 @@ luaX_register_self(lua_State *L, int regtable)
      * luna.self = { ... } */
     lua_pushstring(L, "self");
 
+#if LUA_VERSION_NUM == 502
     luaL_newlib(L, luaX_self_functions);
+#else
+    lua_newtable(L);
+    luaL_register(L, NULL, luaX_self_functions);
+#endif
+
     lua_settable(L, regtable);
 
     return 1;

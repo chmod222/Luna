@@ -211,7 +211,13 @@ luaX_register_script(lua_State *L, int regtable)
      * luna.scripts = { ... } */
     lua_pushstring(L, "scripts");
 
+#if LUA_VERSION_NUMBER
     luaL_newlib(L, luaX_script_functions);
+#else
+    lua_newtable(L);
+    luaL_register(L, NULL, luaX_script_functions);
+#endif
+
     lua_settable(L, regtable);
 
     return 1;
