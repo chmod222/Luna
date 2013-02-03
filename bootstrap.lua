@@ -8,7 +8,7 @@ function luna.register_script()
 end
 
 luna.add_signal_handler('connect', 1, function()
-    luna.sendline('JOIN #luna')
+    luna.join_channel('#luna')
 end)
 
 luna.add_signal_handler('public_command', 2, function(who, where, what, args)
