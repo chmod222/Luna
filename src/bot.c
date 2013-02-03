@@ -59,9 +59,9 @@ luna_mainloop(luna_state *state)
     signal(SIGINT, exit_gracefully);
 
     /* Try to load base script */
-    if (script_load(state, "base.lua") != 0)
+    if (script_load(state, "bootstrap.lua") != 0)
     {
-        logger_log(state->logger, LOGLEV_ERROR, "Failed to load base script");
+        logger_log(state->logger, LOGLEV_ERROR, "Failed to load bootstrapper");
 
         return 1;
     }
