@@ -211,7 +211,7 @@ luaX_register_script(lua_State *L, int regtable)
      * luna.scripts = { ... } */
     lua_pushstring(L, "scripts");
 
-#if LUA_VERSION_NUMBER
+#if LUA_VERSION_NUM == 502
     luaL_newlib(L, luaX_script_functions);
 #else
     lua_newtable(L);

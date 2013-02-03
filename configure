@@ -716,6 +716,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_dependency_tracking
+with_lua52
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1347,6 +1348,11 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-lua52            compile and link against Lua 5.2
 
 Some influential environment variables:
   CC          C compiler command
@@ -4274,6 +4280,24 @@ done
 
 
 
+# Check whether --with-lua52 was given.
+if test "${with_lua52+set}" = set; then :
+  withval=$with_lua52; with_lua52=$withval
+else
+  with_lua52=no
+fi
+
+
+if test "x$with_lua52" = "xyes"; then
+    pkg="lua5.2"
+    min="5.2"
+else
+    pkg="lua5.1"
+    min="5.1"
+fi
+
+
+
 
 
 
@@ -4401,12 +4425,12 @@ if test -n "$LUA_CFLAGS"; then
     pkg_cv_LUA_CFLAGS="$LUA_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lua5.1 < 5.2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "lua5.1 < 5.2") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$pkg >= \$min\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$pkg >= $min") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LUA_CFLAGS=`$PKG_CONFIG --cflags "lua5.1 < 5.2" 2>/dev/null`
+  pkg_cv_LUA_CFLAGS=`$PKG_CONFIG --cflags "$pkg >= $min" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -4418,12 +4442,12 @@ if test -n "$LUA_LIBS"; then
     pkg_cv_LUA_LIBS="$LUA_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lua5.1 < 5.2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "lua5.1 < 5.2") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$pkg >= \$min\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$pkg >= $min") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LUA_LIBS=`$PKG_CONFIG --libs "lua5.1 < 5.2" 2>/dev/null`
+  pkg_cv_LUA_LIBS=`$PKG_CONFIG --libs "$pkg >= $min" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -4444,14 +4468,14 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LUA_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "lua5.1 < 5.2" 2>&1`
+	        LUA_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$pkg >= $min" 2>&1`
         else
-	        LUA_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "lua5.1 < 5.2" 2>&1`
+	        LUA_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$pkg >= $min" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LUA_PKG_ERRORS" >&5
 
-	as_fn_error $? "Package requirements (lua5.1 < 5.2) were not met:
+	as_fn_error $? "Package requirements ($pkg >= $min) were not met:
 
 $LUA_PKG_ERRORS
 

@@ -25,7 +25,21 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset select socket strcasecmp strchr strstr])
-PKG_CHECK_MODULES([LUA], [lua5.1 < 5.2])
+
+AC_ARG_WITH([lua52],
+    [AC_HELP_STRING([--with-lua52], [compile and link against Lua 5.2])],
+    [with_lua52=$withval],
+    [with_lua52=no])
+
+if test "x$with_lua52" = "xyes"; then
+    pkg="lua5.2"
+    min="5.2"
+else
+    pkg="lua5.1"
+    min="5.1"
+fi
+
+PKG_CHECK_MODULES([LUA], [$pkg >= $min])
 
 AC_SEARCH_LIBS([socket], [socket], [], [
     AC_MSG_ERROR([unable to find socket()])
