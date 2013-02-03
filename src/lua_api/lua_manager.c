@@ -43,7 +43,6 @@
 #include "modules/lua_self.h"
 #include "modules/lua_script.h"
 #include "modules/lua_channel.h"
-#include "modules/lua_user.h"
 
 int script_emit(luna_state *, luna_script *, const char *,
                 luaX_push_helper, va_list vargs);
@@ -177,7 +176,6 @@ script_load(luna_state *state, const char *file)
     luaX_register_self(L, api_table);   /* luna.self */
     luaX_register_script(L, api_table); /* luna.scripts */
     luaX_register_channel(L, api_table); /* luna.channels */
-    luaX_register_user(L, api_table); /* luna.users */
 
     if (luaL_dofile(L, "corelib.lua") != 0)
     {

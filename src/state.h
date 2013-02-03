@@ -81,7 +81,6 @@ typedef struct luna_state
 
     linked_list *channels;
     linked_list *scripts;
-    linked_list *users;
 
     char *bind;
 

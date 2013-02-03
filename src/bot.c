@@ -36,7 +36,6 @@
 #include "logger.h"
 #include "net.h"
 #include "handlers.h"
-#include "user.h"
 
 #include "lua_api/lua_manager.h"
 #include "lua_api/lua_util.h"
@@ -66,14 +65,6 @@ luna_mainloop(luna_state *state)
 
         return 1;
     }
-
-    if ((users_load(state, "users.txt") != 0) || !(state->users->length))
-        logger_log(state->logger, LOGLEV_WARNING, "Failed to load userlist! "
-                   "You will be unable to load and unload scripts without "
-                   "administration privileges!");
-    else
-        logger_log(state->logger, LOGLEV_INFO, "Loaded %d users.",
-                   state->users->length);
 
     while (!(state->killswitch))
     {

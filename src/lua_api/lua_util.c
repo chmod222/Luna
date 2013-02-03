@@ -34,7 +34,8 @@
 
 #include "lua_manager.h"
 #include "lua_util.h"
-#include "../user.h"
+
+#include "../irc.h"
 
 
 int

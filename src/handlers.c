@@ -35,7 +35,6 @@
 #include "util.h"
 #include "channel.h"
 #include "mm.h"
-#include "user.h"
 
 #include "lua_api/lua_manager.h"
 #include "lua_api/lua_util.h"
@@ -62,10 +61,6 @@ int handle_unknown(luna_state *, irc_event *);
 int handle_command(luna_state *, irc_event *, const char *, char *);
 int handle_ctcp(luna_state *,    irc_event *, const char *, char *);
 int handle_action(luna_state *,  irc_event *, const char *);
-
-int handle_command_load(luna_state *, irc_event *, const char *);
-int handle_command_reload(luna_state *, irc_event *, const char *);
-int handle_command_unload(luna_state *, irc_event *, const char *);
 
 int handle_server_supports(luna_state *, irc_event *);
 

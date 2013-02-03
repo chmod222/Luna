@@ -209,6 +209,104 @@ luna.channel_user_meta = {
     __eq = luna.user_meta.__eq
 }
 
+
+--
+-- Regusers
+--
+luna.regusers = {
+    __userlist = {},
+
+    load_userlist = function(file)
+        __userlist = {}
+
+        for line in io.lines(file) do
+            local parts = line:split(':')
+
+            if #parts >= 4 then
+                luna.regusers.__userlist[parts[1]:lower()] = {
+                    id = parts[1],
+                    mask = parts[2],
+                    flags = parts[3],
+                    level = parts[4]
+                }
+            end
+        end
+    end,
+
+    write_userlist = function(file)
+        local f = io.open(file, 'w')
+
+        for i, user in pairs(luna.regusers.__userlist) do
+            f:write(string.format('%s:%s:%s:%s\n',
+                user.id, user.mask, user.flags, user.level))
+        end
+
+        f:close()
+    end,
+
+    match_user = function(addr)
+        for i, user in pairs(luna.regusers.__userlist) do
+            print(string.format('%q - %q', user.mask, addr))
+
+            if addr:find(user.mask) then
+                return user.id
+            end
+        end
+
+        return nil
+    end,
+
+    get_user_info = function(id)
+        if luna.regusers.__userlist[id:lower()] then
+            return luna.regusers.__userlist[id:lower()]
+        else
+            error(string.format('no such user %q', id), 2)
+        end
+    end,
+
+    set_user_info = function(id, newinf)
+        if luna.regusers.__userlist[id:lower()] then
+            if newinf.id and newinf.mask and newinf.flags and newinf.level then
+                luna.regusers.__userlist[id:lower()] = nil
+                luna.regusers.__userlist[newinf.id:lower()] = newin
+
+                luna.regusers.write_userlist('users.txt')
+            else
+                error(string.format('invalid user table, one or more '
+                                 .. 'of %q, %q, %q or &q not set',
+                    'id', 'mask', 'flags', 'level'), 2)
+            end
+        else
+            error(string.format('no such user %q', id), 2)
+        end
+    end,
+
+    user_add = function(id, newinf)
+        if luna.regusers.__userlist[id:lower()] then
+            error(string.format('user %q already exists', id), 2)
+        else
+            if newinf.id and newinf.mask and newinf.flags and newinf.level then
+                luna.regusers.__userlist[newinf.id:lower()] = newinf
+                luna.regusers.write_userlist('users.txt')
+            else
+                error(string.format('invalid user table, one or more '
+                                 .. 'of %q, %q, %q or &q not set',
+                    'id', 'mask', 'flags', 'level'), 2)
+            end
+        end
+    end,
+
+    user_delete = function(id)
+        if luna.regusers.__userlist[id:lower()] then
+            luna.regusers.__userlist[id:lower()] = nil
+
+            luna.regusers.write_userlist('users.txt')
+        else
+            error(string.format('no such user %q', id), 2)
+        end
+    end
+}
+
 -- Register script to Luna
 --
 -- Must be overridden by scripts
@@ -539,3 +637,9 @@ end
 function string:reverse()
     return string.format('\x16%s\x16', self)
 end
+
+
+--
+-- Initialization
+--
+luna.regusers.load_userlist('users.txt')

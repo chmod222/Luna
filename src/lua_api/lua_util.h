@@ -31,7 +31,6 @@
 #include <lua.h>
 
 #include "lua_manager.h"
-#include "../user.h"
 #include "../channel.h"
 
 

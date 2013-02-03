@@ -15,8 +15,6 @@ luna_SOURCES = \
 	src/handlers.h \
 	src/channel.c \
 	src/channel.h \
-	src/user.c \
-	src/user.h \
 	src/config.c \
 	src/config.h \
 	src/irc.c \
@@ -43,7 +41,5 @@ luna_SOURCES = \
 	src/lua_api/modules/lua_script.h \
 	src/lua_api/modules/lua_channel.c \
 	src/lua_api/modules/lua_channel.h \
-	src/lua_api/modules/lua_user.c \
-	src/lua_api/modules/lua_user.h \
 	src/lua_api/lua_util.c \
 	src/lua_api/lua_util.h
