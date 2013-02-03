@@ -41,6 +41,10 @@ luna.addressable = {
             what))
     end,
 
+    action = function(self, what)
+        return self:ctcp('ACTION', what)
+    end,
+
     ctcp = function(self, what, args)
         if args then
             return self:privmsg(string.format('\001%s %s\001', what, args))
@@ -176,7 +180,7 @@ luna.channel_user = setmetatable({
         -- not a full address? Look it up
         if not u:find('!') then
             for i, a in ipairs(luna.channels.get_channel_users(c.name)) do
-                if u:sub(0, u:find('!') - 1) == a then
+                if a:sub(0, a:find('!') - 1):lower() == u:lower() then
                     ua = a
                     break
                 end
@@ -185,7 +189,7 @@ luna.channel_user = setmetatable({
             ua = u
         end
 
-        return setmetatable({ channel = c, addr = u }, luna.channel_user_meta)
+        return setmetatable({ channel = c, addr = ua }, luna.channel_user_meta)
     end,
 
     get_channel_modes = function(self)
