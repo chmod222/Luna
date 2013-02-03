@@ -246,8 +246,6 @@ luna.regusers = {
 
     match_user = function(addr)
         for i, user in pairs(luna.regusers.__userlist) do
-            print(string.format('%q - %q', user.mask, addr))
-
             if addr:find(user.mask) then
                 return user.id
             end

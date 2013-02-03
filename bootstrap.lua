@@ -1,9 +1,14 @@
 function luna.register_script()
-    return 'Base', 'Provides basic functionality', 'FliPPeh', '2.0'
+    return unpack{
+        'Bootsrap',
+        'Provides basic functionality and availability to load other scripts',
+        'FliPPeh',
+        '2.0'
+    }
 end
 
 luna.add_signal_handler('connect', 1, function()
-    luna.sendline('JOIN #luna,#techbot')
+    luna.sendline('JOIN #luna')
 end)
 
 luna.add_signal_handler('public_command', 2, function(who, where, what, args)
