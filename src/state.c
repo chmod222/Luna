@@ -32,9 +32,9 @@
 #include "linked_list.h"
 #include "channel.h"
 #include "handlers.h"
-#include "lua_api/lua_util.h"
 #include "mm.h"
 
+#include "lua_api/lua_util.h"
 
 int
 state_init(luna_state *state)
