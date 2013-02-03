@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.68])
-AC_INIT(Luna, 3.14159265, lukas.niederbremer@gmail.com)
+AC_INIT(Luna, 6.28318530, lukas.niederbremer@gmail.com)
 AC_CONFIG_SRCDIR([src/])
 
 AM_INIT_AUTOMAKE([subdir-objects])
