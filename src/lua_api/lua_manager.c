@@ -79,12 +79,6 @@ script_identify(luna_state *state, lua_State *L, luna_script *script)
 {
     int api_table;
 
-    /* Strings */
-    const char *name = NULL;
-    const char *descr = NULL;
-    const char *author = NULL;
-    const char *version = NULL;
-
     /* Get API table */
     lua_getglobal(L, LIBNAME);
     api_table = lua_gettop(L);
@@ -95,10 +89,10 @@ script_identify(luna_state *state, lua_State *L, luna_script *script)
     if (lua_pcall(L, 0, 4, 0) == 0)
     {
         /* Pop off error message */
-        name = lua_tostring(L, -4);
-        descr = lua_tostring(L, -3);
-        author = lua_tostring(L, -2);
-        version = lua_tostring(L, -1);
+        const char *name = lua_tostring(L, -4);
+        const char *descr = lua_tostring(L, -3);
+        const char *author = lua_tostring(L, -2);
+        const char *version = lua_tostring(L, -1);
 
         if (name && descr && author && version)
         {
