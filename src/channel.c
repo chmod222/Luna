@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Channel management (channel.c)
- *  ---
- *  Handle channels
- *
- *  Created: 25.02.2011 16:08:16
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,8 +24,7 @@
 #include "mm.h"
 
 
-int
-channel_cmp(const void *data, const void *list_data)
+int channel_cmp(const void *data, const void *list_data)
 {
     const char *name = (const char *)data;
     irc_channel *channel = (irc_channel *)list_data;
@@ -42,9 +32,7 @@ channel_cmp(const void *data, const void *list_data)
     return strcasecmp(name, channel->name);
 }
 
-
-int
-user_cmp(const void *data, const void *list_data)
+int user_cmp(const void *data, const void *list_data)
 {
     const char *name = (const char *)data;
     irc_user *user = (irc_user *)list_data;
@@ -52,9 +40,7 @@ user_cmp(const void *data, const void *list_data)
     return strcasecmp(name, user->nick);
 }
 
-
-void
-channel_free(void *data)
+void channel_free(void *data)
 {
     irc_channel *channel = (irc_channel *)data;
     int max = 64; /* TODO: calculate */
@@ -77,9 +63,7 @@ channel_free(void *data)
     return;
 }
 
-
-int
-channel_add(luna_state *state, const char *channel_name)
+int channel_add(luna_state *state, const char *channel_name)
 {
     irc_channel *tmp = (irc_channel *)list_find(state->channels,
                        (void *)channel_name, &channel_cmp);
@@ -108,9 +92,7 @@ channel_add(luna_state *state, const char *channel_name)
     return 1;
 }
 
-
-int
-channel_remove(luna_state *state, const char *channel_name)
+int channel_remove(luna_state *state, const char *channel_name)
 {
     /* Not really a reason to use actual types here */
     void *channel = NULL;
@@ -127,10 +109,8 @@ channel_remove(luna_state *state, const char *channel_name)
     return 1;
 }
 
-
-int
-channel_add_user(luna_state *state, const char *chan_name, const char *nick,
-                 const char *user, const char *host)
+int channel_add_user(luna_state *state, const char *chan_name, const char *nick,
+                     const char *user, const char *host)
 {
     void *key = (void *)chan_name;
     void *channel = NULL;
@@ -157,9 +137,8 @@ channel_add_user(luna_state *state, const char *chan_name, const char *nick,
     return 1;
 }
 
-
-int
-channel_remove_user(luna_state *state, const char *chan_name, const char *nick)
+int channel_remove_user(luna_state *state, const char *chan_name,
+                        const char *nick)
 {
     void *key_chan = (void *)chan_name;
     void *channel = NULL;
@@ -183,9 +162,7 @@ channel_remove_user(luna_state *state, const char *chan_name, const char *nick)
     return 1;
 }
 
-
-int
-user_rename(luna_state *state, const char *oldnick, const char *newnick)
+int user_rename(luna_state *state, const char *oldnick, const char *newnick)
 {
     list_node *cur = NULL;
 
@@ -207,9 +184,7 @@ user_rename(luna_state *state, const char *oldnick, const char *newnick)
     return 0;
 }
 
-
-int
-channel_set_topic(luna_state *state, const char *channel, const char *topic)
+int channel_set_topic(luna_state *state, const char *channel, const char *topic)
 {
     void *c = list_find(state->channels, (void *)channel, &channel_cmp);
 
@@ -226,9 +201,8 @@ channel_set_topic(luna_state *state, const char *channel, const char *topic)
     return 1;
 }
 
-
-int
-channel_set_creation_time(luna_state *state, const char *channel, time_t stamp)
+int channel_set_creation_time(luna_state *state, const char *channel,
+                              time_t stamp)
 {
     void *c = list_find(state->channels, (void *)channel, &channel_cmp);
 
@@ -243,10 +217,8 @@ channel_set_creation_time(luna_state *state, const char *channel, time_t stamp)
     return 1;
 }
 
-
-int
-channel_set_topic_meta(luna_state *state, const char *channel,
-                       const char *setter, time_t time)
+int channel_set_topic_meta(luna_state *state, const char *channel,
+                           const char *setter, time_t time)
 {
     void *c = list_find(state->channels, (void *)channel, &channel_cmp);
 
@@ -265,9 +237,8 @@ channel_set_topic_meta(luna_state *state, const char *channel,
     return 1;
 }
 
-
-irc_user *
-channel_get_user(luna_state *state, const char *channel, const char *user)
+irc_user *channel_get_user(luna_state *state, const char *channel,
+                           const char *user)
 {
     void *chan_data = list_find(state->channels, (void *)channel, &channel_cmp);
 

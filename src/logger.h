@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Logging functionality (logger.h)
- *  ---
- *  Manage file and console logging
- *
- *  Created: 25.02.2011 11:21:21
- *
- ******************************************************************************/
 #ifndef LOGGER_H
 #define LOGGER_H
 
@@ -32,14 +23,12 @@
 
 #include "luna.h"
 
-
 typedef enum luna_loglevel
 {
     LOGLEV_INFO,
     LOGLEV_WARNING,
     LOGLEV_ERROR
 } luna_loglevel;
-
 
 typedef struct luna_log
 {

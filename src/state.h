@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Bot state (state.h)
- *  ---
- *  Define state to be passed around between the various functions
- *
- *  Created: 25.02.2011 12:29:33
- *
- ******************************************************************************/
 #ifndef STATE_H
 #define STATE_H
 
@@ -33,7 +24,6 @@
 #include "logger.h"
 #include "linked_list.h"
 
-
 typedef struct luna_userinfo
 {
     char nick[32];
@@ -41,13 +31,11 @@ typedef struct luna_userinfo
     char real[128];
 } luna_userinfo;
 
-
 typedef struct luna_serverinfo
 {
     char host[128];
     unsigned short port;
 } luna_serverinfo;
-
 
 typedef struct channel_modes
 {
@@ -58,13 +46,11 @@ typedef struct channel_modes
     char param_nick[128];    // Things to add to channel user (o,v, ..)
 } channel_modes;
 
-
 typedef struct prefix
 {
     char prefix;
     char mode;
 } prefix;
-
 
 typedef struct luna_state
 {

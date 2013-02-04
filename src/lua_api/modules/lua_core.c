@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua api functions (lua_api_functions.c)
- *  ---
- *  Functions to register in each script environment
- *
- *  Created: 03.02.2012 02:25:34
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,6 +24,7 @@
 #include <lauxlib.h>
 
 #include "../lua_util.h"
+
 
 int luaX_core_log(lua_State *);
 int luaX_core_sendline(lua_State *);
@@ -46,8 +38,7 @@ const luaL_Reg luaX_core_functions[] =
 };
 
 
-int
-luaX_core_log(lua_State *L)
+int luaX_core_log(lua_State *L)
 {
     int level = api_loglevel_from_string(luaL_checkstring(L, 1));
     const char *message = luaL_checkstring(L, 2);
@@ -58,8 +49,7 @@ luaX_core_log(lua_State *L)
     return 0;
 }
 
-int
-luaX_core_sendline(lua_State *L)
+int luaX_core_sendline(lua_State *L)
 {
     const char *line = luaL_checkstring(L, 1);
     luna_state *state = api_getstate(L);
@@ -69,8 +59,7 @@ luaX_core_sendline(lua_State *L)
     return 1;
 }
 
-int
-luaX_register_core(lua_State *L)
+int luaX_register_core(lua_State *L)
 {
 #if LUA_VERSION_NUM == 502
     luaL_newlib(L, luaX_core_functions);

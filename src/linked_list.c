@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/******************************************************************************
- *
- *  Simple linked list implementation (linked_list.c)
- *  ---
- *  Construct, free and maintain a singly linked list
- *
- *  Created: 25.02.2011 16:22:07
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,8 +23,7 @@
 #include "linked_list.h"
 
 
-int
-list_init(linked_list **list)
+int list_init(linked_list **list)
 {
     *list = mm_malloc(sizeof(**list));
 
@@ -48,9 +38,7 @@ list_init(linked_list **list)
     return 1;
 }
 
-
-list_node *
-list_get_root(linked_list *list)
+list_node *list_get_root(linked_list *list)
 {
     if (list)
         return list->root;
@@ -58,9 +46,7 @@ list_get_root(linked_list *list)
         return NULL;
 }
 
-
-list_node *
-list_push_front(linked_list *list, void *data)
+list_node *list_push_front(linked_list *list, void *data)
 {
     list_node *tmp = NULL;
 
@@ -92,9 +78,7 @@ list_push_front(linked_list *list, void *data)
     return tmp;
 }
 
-
-list_node *
-list_insert_before(linked_list *list, list_node *pos, void *data)
+list_node *list_insert_before(linked_list *list, list_node *pos, void *data)
 {
     list_node *tmp = NULL;
     list_node *pre = NULL;
@@ -131,9 +115,7 @@ list_insert_before(linked_list *list, list_node *pos, void *data)
     return tmp;
 }
 
-
-list_node *
-list_insert_after(linked_list *list, list_node *pos, void *data)
+list_node *list_insert_after(linked_list *list, list_node *pos, void *data)
 {
     if ((list == NULL) || (pos == NULL))
         return NULL;
@@ -144,9 +126,7 @@ list_insert_after(linked_list *list, list_node *pos, void *data)
         return list_insert_before(list, pos->next, data);
 }
 
-
-list_node *
-list_push_back(linked_list *list, void *data)
+list_node *list_push_back(linked_list *list, void *data)
 {
     list_node *tmp = NULL;
 
@@ -182,10 +162,8 @@ list_push_back(linked_list *list, void *data)
     return tmp;
 }
 
-
-void *
-list_find(linked_list *list, const void *data,
-          int (*cmp)(const void *, const void *))
+void *list_find(linked_list *list, const void *data,
+                int (*cmp)(const void *, const void *))
 {
     list_node *cur = NULL;
 
@@ -196,9 +174,7 @@ list_find(linked_list *list, const void *data,
     return NULL;
 }
 
-
-void
-list_delete(linked_list *list, void *plugin, void (*f)(void *))
+void list_delete(linked_list *list, void *plugin, void (*f)(void *))
 {
     if (list == NULL)
         return;
@@ -230,9 +206,7 @@ list_delete(linked_list *list, void *plugin, void (*f)(void *))
     return;
 }
 
-
-void
-list_map(linked_list *list, void (*f)(void *))
+void list_map(linked_list *list, void (*f)(void *))
 {
     if (list == NULL)
         return;
@@ -249,9 +223,7 @@ list_map(linked_list *list, void (*f)(void *))
     return;
 }
 
-
-void
-list_destroy(linked_list *list, void (*free_content)(void *))
+void list_destroy(linked_list *list, void (*free_content)(void *))
 {
     list_node *current = NULL;
 

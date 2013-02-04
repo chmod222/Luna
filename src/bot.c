@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Main loop (bot.c)
- *  ---
- *  All the runtime action
- *
- *  Created: 25.02.2011 13:51:57
- *
- ******************************************************************************/
 #include <time.h>
 #include <signal.h>
 #include <string.h>
@@ -47,8 +38,7 @@ void exit_gracefully(int);
 void luna_send_login(luna_state *);
 
 
-int
-luna_mainloop(luna_state *state)
+int luna_mainloop(luna_state *state)
 {
     fd_set reads;
     int tries = RECONN_MAX;
@@ -152,18 +142,14 @@ luna_mainloop(luna_state *state)
     return 0;
 }
 
-
-void
-exit_gracefully(int sig)
+void exit_gracefully(int sig)
 {
     *killswitch_ptr = 1;
 
     return;
 }
 
-
-void
-luna_send_login(luna_state *state)
+void luna_send_login(luna_state *state)
 {
     net_sendfln(state, "NICK %s", state->userinfo.nick);
     net_sendfln(state, "USER %s * 0 :%s",

@@ -16,27 +16,18 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua script object management (lua_self.h)
- *  ---
- *  Provide meta info about loaded scripts to scripts
- *
- *  Created: 03.02.2012 19:37:01
- *
- ******************************************************************************/
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
 
 #include "../lua_util.h"
 
+
 int luaX_script_getloadedscripts(lua_State *);
 int luaX_script_getscriptinfo(lua_State *);
 int luaX_script_load(lua_State *);
 int luaX_script_unload(lua_State *);
 int luaX_script_getself(lua_State *);
-
 
 static const struct luaL_Reg luaX_script_functions[] =
 {
@@ -50,8 +41,7 @@ static const struct luaL_Reg luaX_script_functions[] =
 };
 
 
-int
-luaX_push_scriptinfo(lua_State *L, luna_script *script)
+int luaX_push_scriptinfo(lua_State *L, luna_script *script)
 {
     int table = (lua_newtable(L), lua_gettop(L));
 
@@ -78,9 +68,7 @@ luaX_push_scriptinfo(lua_State *L, luna_script *script)
     return 1;
 }
 
-
-int
-luaX_script_getloadedscripts(lua_State *L)
+int luaX_script_getloadedscripts(lua_State *L)
 {
     int arr;
     int i = 1;
@@ -98,10 +86,7 @@ luaX_script_getloadedscripts(lua_State *L)
     return 1;
 }
 
-
-
-int
-luaX_script_getscriptinfo(lua_State *L)
+int luaX_script_getscriptinfo(lua_State *L)
 {
     const char *file = luaL_checkstring(L, 1);
     void *result;
@@ -124,9 +109,7 @@ luaX_script_getscriptinfo(lua_State *L)
     return 1;
 }
 
-
-int
-luaX_script_load(lua_State *L)
+int luaX_script_load(lua_State *L)
 {
     const char *file = luaL_checkstring(L, 1);
     luna_script *result;
@@ -154,9 +137,7 @@ luaX_script_load(lua_State *L)
     }
 }
 
-
-int
-luaX_script_unload(lua_State *L)
+int luaX_script_unload(lua_State *L)
 {
     const char *file = luaL_checkstring(L, 1);
     luna_script *result;
@@ -184,9 +165,7 @@ luaX_script_unload(lua_State *L)
     return 0;
 }
 
-
-int
-luaX_script_getself(lua_State *L)
+int luaX_script_getself(lua_State *L)
 {
     list_node *cur;
     luna_state *state = api_getstate(L);
@@ -204,8 +183,7 @@ luaX_script_getself(lua_State *L)
     return 0;
 }
 
-int
-luaX_register_script(lua_State *L, int regtable)
+int luaX_register_script(lua_State *L, int regtable)
 {
     /* Register functions inside regtable
      * luna.scripts = { ... } */

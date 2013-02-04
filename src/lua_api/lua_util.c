@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua API utility functions (lua_util.c)
- *  ---
- *  Provide pushing and checking functions for internal structures
- *
- *  Created: 03.02.2012 02:25:34
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 
@@ -38,8 +29,7 @@
 #include "../irc.h"
 
 
-int
-api_loglevel_from_string(const char *lev)
+int api_loglevel_from_string(const char *lev)
 {
     if (!lev)
         return LOGLEV_ERROR;
@@ -53,8 +43,7 @@ api_loglevel_from_string(const char *lev)
 }
 
 
-luna_state *
-api_getstate(lua_State *L)
+luna_state *api_getstate(lua_State *L)
 {
     luna_state *state = NULL;
 
@@ -67,8 +56,7 @@ api_getstate(lua_State *L)
     return state;
 }
 
-int
-luaX_push_sender(lua_State *L, irc_sender *src)
+int luaX_push_sender(lua_State *L, irc_sender *src)
 {
     size_t n = NICKLEN + IDENTLEN + HOSTLEN + 1;
     char addr[n];
@@ -83,8 +71,7 @@ luaX_push_sender(lua_State *L, irc_sender *src)
     return 1;
 }
 
-int
-luaX_push_args(lua_State *L, int n, char **param)
+int luaX_push_args(lua_State *L, int n, char **param)
 {
     int i;
     int table = (lua_newtable(L), lua_gettop(L));
@@ -98,41 +85,16 @@ luaX_push_args(lua_State *L, int n, char **param)
     return 1;
 }
 
-
-int
-luaX_push_raw(luna_state *st, lua_State *L, va_list args)
+int luaX_push_raw(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
 
     luaX_push_sender(L, &(ev->from));
 
     if (ev->type == IRCEV_NUMERIC)
-    {
         lua_pushnumber(L, ev->numeric);
-    }
     else
-    {
-        const char *evname = NULL;
-
-        switch (ev->type)
-        {
-        case IRCEV_ERROR: evname = "ERROR"; break;
-        case IRCEV_JOIN: evname = "JOIN"; break;
-        case IRCEV_PART: evname = "PART"; break;
-        case IRCEV_QUIT: evname = "QUIT"; break;
-        case IRCEV_PRIVMSG: evname = "PRIVMSG"; break;
-        case IRCEV_NOTICE: evname = "NOTICE"; break;
-        case IRCEV_NICK: evname = "NICK"; break;
-        case IRCEV_MODE: evname = "MODE"; break;
-        case IRCEV_PING: evname = "PING"; break;
-        case IRCEV_INVITE: evname = "INVITE"; break;
-        case IRCEV_TOPIC: evname = "TOPIC"; break;
-        case IRCEV_KICK: evname = "KICK"; break;
-        default: evname = NULL; break;
-        }
-
-        lua_pushstring(L, evname);
-    }
+        lua_pushstring(L, irc_event_type_to_string(ev->type));
 
     luaX_push_args(L, ev->param_count, ev->param);
     lua_pushstring(L, ev->msg);
@@ -140,9 +102,7 @@ luaX_push_raw(luna_state *st, lua_State *L, va_list args)
     return 4;
 }
 
-
-int
-luaX_push_privmsg(luna_state *st, lua_State *L, va_list args)
+int luaX_push_privmsg(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
 
@@ -153,9 +113,7 @@ luaX_push_privmsg(luna_state *st, lua_State *L, va_list args)
     return 3;
 }
 
-
-int
-luaX_push_ctcp(luna_state *st, lua_State *L, va_list args)
+int luaX_push_ctcp(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
     const char *ctcp = va_arg(args, const char *);
@@ -169,9 +127,7 @@ luaX_push_ctcp(luna_state *st, lua_State *L, va_list args)
     return 4;
 }
 
-
-int
-luaX_push_ctcp_rsp(luna_state *st, lua_State *L, va_list args)
+int luaX_push_ctcp_rsp(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
     const char *ctcp = va_arg(args, const char *);
@@ -185,9 +141,7 @@ luaX_push_ctcp_rsp(luna_state *st, lua_State *L, va_list args)
     return 4;
 }
 
-
-int
-luaX_push_action(luna_state *st, lua_State *L, va_list args)
+int luaX_push_action(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
     const char *msg = va_arg(args, const char *);
@@ -199,9 +153,7 @@ luaX_push_action(luna_state *st, lua_State *L, va_list args)
     return 3;
 }
 
-
-int
-luaX_push_command(luna_state *st, lua_State *L, va_list args)
+int luaX_push_command(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
     const char *cmd = va_arg(args, const char *);
@@ -215,9 +167,7 @@ luaX_push_command(luna_state *st, lua_State *L, va_list args)
     return 4;
 }
 
-
-int
-luaX_push_join(luna_state *st, lua_State *L, va_list args)
+int luaX_push_join(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
 
@@ -227,9 +177,7 @@ luaX_push_join(luna_state *st, lua_State *L, va_list args)
     return 2;
 }
 
-
-int
-luaX_push_join_sync(luna_state *st, lua_State *L, va_list args)
+int luaX_push_join_sync(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
 
@@ -238,9 +186,7 @@ luaX_push_join_sync(luna_state *st, lua_State *L, va_list args)
     return 1;
 }
 
-
-int
-luaX_push_part(luna_state *st, lua_State *L, va_list args)
+int luaX_push_part(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
 
@@ -251,9 +197,7 @@ luaX_push_part(luna_state *st, lua_State *L, va_list args)
     return 3;
 }
 
-
-int
-luaX_push_quit(luna_state *st, lua_State *L, va_list args)
+int luaX_push_quit(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
 
@@ -263,9 +207,7 @@ luaX_push_quit(luna_state *st, lua_State *L, va_list args)
     return 2;
 }
 
-
-int
-luaX_push_notice(luna_state *st, lua_State *L, va_list args)
+int luaX_push_notice(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
 
@@ -276,9 +218,7 @@ luaX_push_notice(luna_state *st, lua_State *L, va_list args)
     return 3;
 }
 
-
-int
-luaX_push_nick(luna_state *st, lua_State *L, va_list args)
+int luaX_push_nick(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
     const char *newnick = va_arg(args, const char *);
@@ -289,9 +229,7 @@ luaX_push_nick(luna_state *st, lua_State *L, va_list args)
     return 2;
 }
 
-
-int
-luaX_push_invite(luna_state *st, lua_State *L, va_list args)
+int luaX_push_invite(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
     const char *target = va_arg(args, const char *);
@@ -302,9 +240,7 @@ luaX_push_invite(luna_state *st, lua_State *L, va_list args)
     return 2;
 }
 
-
-int
-luaX_push_topic(luna_state *st, lua_State *L, va_list args)
+int luaX_push_topic(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
 
@@ -315,9 +251,7 @@ luaX_push_topic(luna_state *st, lua_State *L, va_list args)
     return 3;
 }
 
-
-int
-luaX_push_kick(luna_state *st, lua_State *L, va_list args)
+int luaX_push_kick(luna_state *st, lua_State *L, va_list args)
 {
     irc_event *ev = va_arg(args, irc_event *);
 
@@ -329,9 +263,7 @@ luaX_push_kick(luna_state *st, lua_State *L, va_list args)
     return 4;
 }
 
-
-int
-luaX_push_script_load(luna_state *st, lua_State *L, va_list args)
+int luaX_push_script_load(luna_state *st, lua_State *L, va_list args)
 {
     const char *name = va_arg(args, const char *);
 
@@ -339,9 +271,7 @@ luaX_push_script_load(luna_state *st, lua_State *L, va_list args)
     return 1;
 }
 
-
-int
-luaX_push_script_unload(luna_state *st, lua_State *L, va_list args)
+int luaX_push_script_unload(luna_state *st, lua_State *L, va_list args)
 {
     const char *name = va_arg(args, const char *);
 

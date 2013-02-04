@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/******************************************************************************
- *
- *  IRC line parsing and utilities (irc.c)
- *  ---
- *  Parse IRC lines
- *
- *  Created: 25.02.2011 15:18:46
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +29,7 @@
 
 
 void free_stringtable(char **dest, size_t size);
+
 static char *irc_type_strings[] =
 {
     "???", "ERROR", "NUMERIC", "JOIN",
@@ -47,8 +39,7 @@ static char *irc_type_strings[] =
 };
 
 
-int
-irc_parse_line(struct irc_event *dest, char *line)
+int irc_parse_line(struct irc_event *dest, char *line)
 {
     char *arg_command, *arg_sender, *arg_params;
     char *nick, *user, *host;
@@ -221,9 +212,7 @@ irc_parse_line(struct irc_event *dest, char *line)
     return 0;
 }
 
-
-void
-free_stringtable(char **t, size_t size)
+void free_stringtable(char **t, size_t size)
 {
     int i;
 
@@ -233,18 +222,14 @@ free_stringtable(char **t, size_t size)
     mm_free(t);
 }
 
-
-void
-irc_free_irc_event(struct irc_event *d)
+void irc_free_irc_event(struct irc_event *d)
 {
     mm_free(d->msg);
 
     free_stringtable(d->param, d->param_count);
 }
 
-
-void
-irc_init_irc_event(struct irc_event *d)
+void irc_init_irc_event(struct irc_event *d)
 {
     strcpy(d->from.nick, "");
     strcpy(d->from.user, "");
@@ -256,9 +241,7 @@ irc_init_irc_event(struct irc_event *d)
     d->param_count = 0;
 }
 
-
-void
-irc_print_irc_event(struct irc_event *i)
+void irc_print_irc_event(struct irc_event *i)
 {
     int j;
 
@@ -288,9 +271,7 @@ irc_print_irc_event(struct irc_event *i)
     printf("\n");
 }
 
-
-char *
-irc_event_type_to_string(enum irc_event_type t)
+char *irc_event_type_to_string(enum irc_event_type t)
 {
     int i;
 
@@ -301,9 +282,7 @@ irc_event_type_to_string(enum irc_event_type t)
     return NULL;
 }
 
-
-enum irc_event_type
-irc_event_type_from_string(const char *s)
+enum irc_event_type irc_event_type_from_string(const char *s)
 {
     int i;
 

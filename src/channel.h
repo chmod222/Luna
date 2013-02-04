@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Channel management (channel.h)
- *  ---
- *  Handle channels
- *
- *  Created: 25.02.2011 16:09:36
- *
- ******************************************************************************/
 #ifndef CHANNEL_H
 #define CHANNEL_H
 
@@ -42,7 +33,6 @@ typedef enum flag_type
     FLAG_LIST
 } flag_type;
 
-
 typedef struct flag
 {
     int set;
@@ -55,7 +45,6 @@ typedef struct flag
         linked_list *list;
     };
 } flag;
-
 
 typedef struct irc_channel
 {
@@ -70,7 +59,6 @@ typedef struct irc_channel
     flag flags[64]; /* enough to cover flags [a-zA-Z] */
 } irc_channel;
 
-
 typedef struct irc_user
 {
     char nick[NICKLEN];
@@ -79,6 +67,7 @@ typedef struct irc_user
 
     char modes[16];
 } irc_user;
+
 
 int channel_cmp(const void *, const void *);
 int user_cmp(const void *, const void *);

@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua channel object management (lua_channel.c)
- *  ---
- *  Provide meta info about active channels to scripts
- *
- *  Created: 03.02.2012 19:37:01
- *
- ******************************************************************************/
 #include <string.h>
 
 #include <lua.h>
@@ -32,6 +23,7 @@
 #include <lauxlib.h>
 
 #include "../lua_util.h"
+
 
 int luaX_channel_getchannels(lua_State *);
 int luaX_channel_getchannelinfo(lua_State *);
@@ -49,21 +41,18 @@ static const struct luaL_Reg luaX_channel_functions[] =
 };
 
 
-const char *
-getaddr(irc_user *user)
+const char *getaddr(irc_user *user)
 {
     /* TODO: :( */
-    const size_t n = 32 + 16 + 128 + 1;
-    static char addr[32 + 16 + 128 + 1];
+    const size_t n = NICKLEN + IDENTLEN + HOSTLEN + 1;
+    static char addr[NICKLEN + IDENTLEN + HOSTLEN];
 
     snprintf(addr, n, "%s!%s@%s", user->nick, user->user, user->host);
 
     return addr;
 }
 
-
-int
-luaX_push_modes(lua_State *L, irc_channel *channel)
+int luaX_push_modes(lua_State *L, irc_channel *channel)
 {
     int max = 64; /* TODO: Calculate */
     int i;
@@ -109,8 +98,7 @@ luaX_push_modes(lua_State *L, irc_channel *channel)
     return 1;
 }
 
-int
-luaX_push_channelinfo(lua_State *L, irc_channel *channel)
+int luaX_push_channelinfo(lua_State *L, irc_channel *channel)
 {
     int table = (lua_newtable(L), lua_gettop(L));
 
@@ -141,9 +129,7 @@ luaX_push_channelinfo(lua_State *L, irc_channel *channel)
     return 1;
 }
 
-
-int
-luaX_push_channeluserinfo(lua_State *L, irc_user *user)
+int luaX_push_channeluserinfo(lua_State *L, irc_user *user)
 {
     int table = (lua_newtable(L), lua_gettop(L));
 
@@ -154,9 +140,7 @@ luaX_push_channeluserinfo(lua_State *L, irc_user *user)
     return 1;
 }
 
-
-int
-luaX_channel_getchannels(lua_State *L)
+int luaX_channel_getchannels(lua_State *L)
 {
     int arr;
     int i = 1;
@@ -174,9 +158,7 @@ luaX_channel_getchannels(lua_State *L)
     return 1;
 }
 
-
-int
-luaX_channel_getchannelinfo(lua_State *L)
+int luaX_channel_getchannelinfo(lua_State *L)
 {
     const char *name = luaL_checkstring(L, 1);
     irc_channel *result;
@@ -191,9 +173,7 @@ luaX_channel_getchannelinfo(lua_State *L)
     return 1;
 }
 
-
-int
-luaX_channel_getchannelusers(lua_State *L)
+int luaX_channel_getchannelusers(lua_State *L)
 {
     const char *name = luaL_checkstring(L, 1);
     irc_channel *result = NULL;
@@ -220,9 +200,7 @@ luaX_channel_getchannelusers(lua_State *L)
     }
 }
 
-
-int
-luaX_channel_getchanneluserinfo(lua_State *L)
+int luaX_channel_getchanneluserinfo(lua_State *L)
 {
     const char *name = luaL_checkstring(L, 1);
     const char *nick = luaL_checkstring(L, 2);
@@ -251,9 +229,7 @@ luaX_channel_getchanneluserinfo(lua_State *L)
     }
 }
 
-
-int
-luaX_register_channel(lua_State *L, int regtable)
+int luaX_register_channel(lua_State *L, int regtable)
 {
     /* Register functions inside regtable
      * luna.scripts = { ... } */

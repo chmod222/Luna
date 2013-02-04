@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua state object management (lua_self.h)
- *  ---
- *  Provide access to the global Luna state within scripts
- *
- *  Created: 03.02.2012 19:37:01
- *
- ******************************************************************************/
 #ifndef LUA_SELF_H
 #define LUA_SELF_H
 

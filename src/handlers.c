@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/******************************************************************************
- *
- *  Event handling (handlers.c)
- *  ---
- *  Takes care of core events
- *
- *  Created: 25.02.2011 14:37:59
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -39,9 +30,6 @@
 #include "lua_api/lua_manager.h"
 #include "lua_api/lua_util.h"
 
-/*
- * #include "lua_api/lua_util.h"
- */
 
 char *_strdup(const char *);
 
@@ -61,24 +49,21 @@ int handle_unknown(luna_state *, irc_event *);
 int handle_command(luna_state *, irc_event *, const char *, char *);
 int handle_ctcp(luna_state *,    irc_event *, const char *, char *);
 int handle_action(luna_state *,  irc_event *, const char *);
-
 int handle_server_supports(luna_state *, irc_event *);
-
 int handle_mode_change(luna_state *, const char *, const char *, char **, int);
+
 int mode_set(luna_state *, const char *, char, const char *);
 int mode_unset(luna_state *, const char *, char, const char *);
 
-char *
-_strdup(const char *s)
+
+char *_strdup(const char *s)
 {
     char *n = mm_malloc(strlen(s) + 1);
 
     return strcpy(n, s);
 }
 
-
-int
-handle_event(luna_state *env, irc_event *ev)
+int handle_event(luna_state *env, irc_event *ev)
 {
     signal_dispatch(env, "raw", &luaX_push_raw, ev, NULL);
 
@@ -116,9 +101,7 @@ handle_event(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_privmsg(luna_state *env, irc_event *ev)
+int handle_privmsg(luna_state *env, irc_event *ev)
 {
     char msgcopy[LINELEN];
     char *isitme = NULL;
@@ -173,9 +156,7 @@ handle_privmsg(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_ctcp(luna_state *env, irc_event *ev, const char *ctcp, char *msg)
+int handle_ctcp(luna_state *env, irc_event *ev, const char *ctcp, char *msg)
 {
     int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
 
@@ -207,9 +188,7 @@ handle_ctcp(luna_state *env, irc_event *ev, const char *ctcp, char *msg)
     return 0;
 }
 
-
-int
-handle_action(luna_state *env, irc_event *ev, const char *message)
+int handle_action(luna_state *env, irc_event *ev, const char *message)
 {
     int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
 
@@ -223,9 +202,7 @@ handle_action(luna_state *env, irc_event *ev, const char *message)
     return 0;
 }
 
-
-int
-handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
+int handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
 {
     int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
 
@@ -239,9 +216,7 @@ handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
     return 0;
 }
 
-
-int
-handle_ping(luna_state *env, irc_event *ev)
+int handle_ping(luna_state *env, irc_event *ev)
 {
     const char *pingstr;
 
@@ -256,9 +231,7 @@ handle_ping(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_numeric(luna_state *env, irc_event *ev)
+int handle_numeric(luna_state *env, irc_event *ev)
 {
     int i = 0;
 
@@ -386,9 +359,7 @@ handle_numeric(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_join(luna_state *env, irc_event *ev)
+int handle_join(luna_state *env, irc_event *ev)
 {
     const char *c;
 
@@ -418,9 +389,7 @@ handle_join(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_part(luna_state *env, irc_event *ev)
+int handle_part(luna_state *env, irc_event *ev)
 {
     if (ev->param_count < 1)
         return 1;
@@ -442,9 +411,7 @@ handle_part(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_quit(luna_state *env, irc_event *ev)
+int handle_quit(luna_state *env, irc_event *ev)
 {
     /* Remove user from all channels */
     list_node *cur;
@@ -460,9 +427,7 @@ handle_quit(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_notice(luna_state *env, irc_event *ev)
+int handle_notice(luna_state *env, irc_event *ev)
 {
     int priv;
 
@@ -506,9 +471,7 @@ handle_notice(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_nick(luna_state *env, irc_event *ev)
+int handle_nick(luna_state *env, irc_event *ev)
 {
     const char *newnick;
 
@@ -533,9 +496,7 @@ handle_nick(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_mode(luna_state *env, irc_event *ev)
+int handle_mode(luna_state *env, irc_event *ev)
 {
     /* <sender> MODE <channel> <flags> [param[,param[,...]]] */
 
@@ -549,18 +510,14 @@ handle_mode(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_invite(luna_state *env, irc_event *ev)
+int handle_invite(luna_state *env, irc_event *ev)
 {
     signal_dispatch(env, "invite", &luaX_push_invite, ev, NULL);
 
     return 0;
 }
 
-
-int
-handle_topic(luna_state *env, irc_event *ev)
+int handle_topic(luna_state *env, irc_event *ev)
 {
     char hoststring[128];
 
@@ -579,9 +536,7 @@ handle_topic(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_kick(luna_state *env, irc_event *ev)
+int handle_kick(luna_state *env, irc_event *ev)
 {
     if (ev->param_count < 2)
         return 1;
@@ -603,16 +558,12 @@ handle_kick(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_unknown(luna_state *env, irc_event *ev)
+int handle_unknown(luna_state *env, irc_event *ev)
 {
     return 0;
 }
 
-
-int
-handle_server_supports(luna_state *env, irc_event *ev)
+int handle_server_supports(luna_state *env, irc_event *ev)
 {
     int i;
 
@@ -670,10 +621,8 @@ handle_server_supports(luna_state *env, irc_event *ev)
     return 0;
 }
 
-
-int
-handle_mode_change(luna_state *state, const char *channel,
-                   const char *flags, char **args, int argind)
+int handle_mode_change(luna_state *state, const char *channel,
+                       const char *flags, char **args, int argind)
 {
     int action = 0; /* 0 = set, 1 = unset */
     int i = argind;
@@ -717,8 +666,8 @@ handle_mode_change(luna_state *state, const char *channel,
          * Do all modes that need an argument
          */
         if  (strchr(state->chanmodes.param_address, *flags) ||
-                strchr(state->chanmodes.param_always, *flags) ||
-                (strchr(state->chanmodes.param_whenset, *flags) && !action))
+             strchr(state->chanmodes.param_always, *flags) ||
+             (strchr(state->chanmodes.param_whenset, *flags) && !action))
         {
             /* Set/Unset flag "*flags" with argument "args[i]" */
             char *arg = args[i++];
@@ -848,4 +797,3 @@ handle_mode_change(luna_state *state, const char *channel,
 
     return 0;
 }
-

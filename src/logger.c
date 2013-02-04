@@ -1,6 +1,11 @@
 /*
  * This file is part of Luna
  *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
  * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
@@ -11,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Logging functionality (logger.c)
- *  ---
- *  Manage file and console logging
- *
- *  Created: 25.02.2011 11:25:36
- *
- ******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,13 +27,14 @@
 #include "logger.h"
 #include "mm.h"
 
+
 extern int errno;
 
 int logger_level_to_string(luna_loglevel, char *, size_t);
 int logger_format_timestamp(time_t, char *, size_t);
 
-int
-logger_init(luna_log **log, const char *file)
+
+int logger_init(luna_log **log, const char *file)
 {
     FILE *temp_file = NULL;
 
@@ -56,9 +53,7 @@ logger_init(luna_log **log, const char *file)
     return -1;
 }
 
-
-int
-logger_destroy(luna_log *log)
+int logger_destroy(luna_log *log)
 {
     fclose(log->file);
     mm_free(log);
@@ -66,9 +61,7 @@ logger_destroy(luna_log *log)
     return 0;
 }
 
-
-int
-logger_log(luna_log *log, luna_loglevel loglevel, const char *fmt, ...)
+int logger_log(luna_log *log, luna_loglevel loglevel, const char *fmt, ...)
 {
     va_list args;
     int retval = -1;
@@ -102,9 +95,7 @@ logger_log(luna_log *log, luna_loglevel loglevel, const char *fmt, ...)
     return retval + first;
 }
 
-
-int
-logger_level_to_string(luna_loglevel loglevel, char *dest, size_t len)
+int logger_level_to_string(luna_loglevel loglevel, char *dest, size_t len)
 {
     const char *string = NULL;
 
@@ -132,9 +123,7 @@ logger_level_to_string(luna_loglevel loglevel, char *dest, size_t len)
     return 0;
 }
 
-
-int
-logger_format_timestamp(time_t stamp, char *dest, size_t len)
+int logger_format_timestamp(time_t stamp, char *dest, size_t len)
 {
     char *format = TIMESTAMP_FORMAT;
 

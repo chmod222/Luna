@@ -16,23 +16,13 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua API utility functions (lua_util.h)
- *  ---
- *  Provide pushing and checking functions for internal structures
- *
- *  Created: 03.02.2012 02:25:34
- *
- ******************************************************************************/
-#ifndef LUA_UTIL
-#define LUA_UTIL
+#ifndef LUA_UTIL_H
+#define LUA_UTIL_H
 
 #include <lua.h>
 
 #include "lua_manager.h"
 #include "../channel.h"
-
 
 int api_loglevel_from_string(const char *);
 luna_state *api_getstate(lua_State *);

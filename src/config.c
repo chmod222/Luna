@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Configuration management (config.c)
- *  ---
- *  Read and apply configuration
- *
- *  Created: 25.02.2011 12:43:25
- *
- ******************************************************************************/
 #include <string.h>
 #include <stdlib.h>
 
@@ -42,8 +33,7 @@ int config_get_serverinfo(luna_state *, lua_State *);
 int config_get_netinfo(luna_state *, lua_State *);
 
 
-int
-config_load(luna_state *state, const char *filename)
+int config_load(luna_state *state, const char *filename)
 {
     lua_State *L = NULL;
 
@@ -77,9 +67,7 @@ config_load(luna_state *state, const char *filename)
     return 1;
 }
 
-
-int
-config_get_userinfo(luna_state *state, lua_State *L)
+int config_get_userinfo(luna_state *state, lua_State *L)
 {
     const char *nick = NULL;
     const char *user = NULL;
@@ -111,9 +99,7 @@ config_get_userinfo(luna_state *state, lua_State *L)
     return 1;
 }
 
-
-int
-config_get_serverinfo(luna_state *state, lua_State *L)
+int config_get_serverinfo(luna_state *state, lua_State *L)
 {
     const char *host = NULL;
 
@@ -139,9 +125,7 @@ config_get_serverinfo(luna_state *state, lua_State *L)
     return 1;
 }
 
-
-int
-config_get_netinfo(luna_state *state, lua_State *L)
+int config_get_netinfo(luna_state *state, lua_State *L)
 {
     const char *bind = NULL;
 

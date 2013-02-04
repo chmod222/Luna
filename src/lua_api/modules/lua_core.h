@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua core api functions (lua_core.h)
- *  ---
- *  Functions to register in each script environment
- *
- *  Created: 03.02.2012 02:25:34
- *
- ******************************************************************************/
 #ifndef LUA_CORE_H
 #define LUA_CORE_H
 

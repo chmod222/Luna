@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua script management (lua_manager.c)
- *  ---
- *  Manage script loading, unloading and bookkeeping
- *
- *  Created: 03.02.2012 02:25:34
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,6 +35,7 @@
 #include "modules/lua_script.h"
 #include "modules/lua_channel.h"
 
+
 int script_emit(luna_state *, luna_script *, const char *,
                 luaX_push_helper, va_list vargs);
 int script_identify(luna_state *, lua_State *, luna_script *);
@@ -51,8 +43,7 @@ int script_identify(luna_state *, lua_State *, luna_script *);
 const char *env_key = "LUNA_ENV";
 
 
-int
-script_cmp(const void *data, const void *list_data)
+int script_cmp(const void *data, const void *list_data)
 {
     char *name = (char *)data;
     luna_script *script = (luna_script *)list_data;
@@ -60,9 +51,7 @@ script_cmp(const void *data, const void *list_data)
     return strcmp(name, script->filename);
 }
 
-
-void
-script_free(void *list_data)
+void script_free(void *list_data)
 {
     luna_script *script = (luna_script *)list_data;
 
@@ -72,9 +61,7 @@ script_free(void *list_data)
     return;
 }
 
-
-int
-script_identify(luna_state *state, lua_State *L, luna_script *script)
+int script_identify(luna_state *state, lua_State *L, luna_script *script)
 {
     int api_table;
 
@@ -115,9 +102,7 @@ script_identify(luna_state *state, lua_State *L, luna_script *script)
     return 1;
 }
 
-
-int
-script_unload(luna_state *state, const char *file)
+int script_unload(luna_state *state, const char *file)
 {
     void *key = (void *)file;
     void *result = list_find(state->scripts, key, &script_cmp);
@@ -136,9 +121,7 @@ script_unload(luna_state *state, const char *file)
     return 1;
 }
 
-
-int
-script_load(luna_state *state, const char *file)
+int script_load(luna_state *state, const char *file)
 {
     lua_State *L = NULL;
     luna_script *script = NULL;
@@ -211,9 +194,7 @@ script_load(luna_state *state, const char *file)
     return 1;
 }
 
-
-int
-signal_dispatch(luna_state *state, const char *sig, luaX_push_helper f, ...)
+int signal_dispatch(luna_state *state, const char *sig, luaX_push_helper f, ...)
 {
     va_list args;
     list_node *cur;
@@ -228,10 +209,8 @@ signal_dispatch(luna_state *state, const char *sig, luaX_push_helper f, ...)
     return 0;
 }
 
-
-int
-script_emit(luna_state *state, luna_script *script, const char *sig,
-            luaX_push_helper f, va_list vargs)
+int script_emit(luna_state *state, luna_script *script, const char *sig,
+                luaX_push_helper f, va_list vargs)
 {
     int api_table;
     int i = 1;
@@ -263,4 +242,3 @@ script_emit(luna_state *state, luna_script *script, const char *sig,
     lua_pop(L, -1);
     return 1;
 }
-

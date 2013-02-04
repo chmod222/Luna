@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Configuration management (config.h)
- *  ---
- *  Read and apply configuration
- *
- *  Created: 25.02.2011 12:43:21
- *
- ******************************************************************************/
 #ifndef CONFIG_H
 #define CONFIG_H
 

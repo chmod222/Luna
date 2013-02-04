@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua script management (lua_manager.h)
- *  ---
- *  Manage script loading, unloading and bookkeeping
- *
- *  Created: 03.02.2012 02:25:34
- *
- ******************************************************************************/
 #ifndef LUA_MANAGER_H
 #define LUA_MANAGER_H
 
@@ -47,6 +38,7 @@ typedef struct luna_script
 
     lua_State *state;
 } luna_script;
+
 
 typedef int (*luaX_push_helper)(luna_state *, lua_State *, va_list);
 

@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/******************************************************************************
- *
- *  Linked List library (libll.h)
- *  ---
- *  Library interface
- *
- *  Created: 25.02.2011 16:22:16
- *
- ******************************************************************************/
 #ifndef LINKED_LIST_H
 #define LINKED_LIST_H
 
@@ -33,7 +24,6 @@ typedef struct list_node list_node;
 
 typedef linked_list list;
 typedef int (*list_find_fn)(const void *, const void *);
-
 
 struct linked_list
 {
@@ -49,6 +39,7 @@ struct list_node
     list_node *next;
 };
 
+
 int list_init(linked_list **);
 list_node *list_get_root(linked_list *);
 list_node *list_push_front(linked_list *, void *);
@@ -63,6 +54,4 @@ void list_delete(linked_list *, void *, void ( *)(void *));
 void list_map(linked_list *, void ( *)(void *));
 void list_destroy(linked_list *, void ( *)(void *));
 
-
-#endif /* ifndef LINKED_LIST_H */
-
+#endif

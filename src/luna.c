@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Program entrance point (luna.c)
- *  ---
- *  Provides the entrance point to the program, handle command line arguments.
- *
- *  Created: 25.02.2011 10:42:33
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -38,13 +29,13 @@
 #include "bot.h"
 #include "mm.h"
 
+
 void print_usage(const char *);
 void log_session_start(luna_log *);
 void log_session_end(luna_log *);
 
 
-void
-set_environment()
+void set_environment()
 {
     /*
      * Set some environment variables that scripts might use
@@ -57,8 +48,7 @@ set_environment()
     setenv("__TIME__", __TIME__, 1);
 }
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     char config_file[FILENAMELEN] = "config.lua"; /* Default config file */
     char log_file[FILENAMELEN]    = "luna.log";   /* Default log file */
@@ -143,9 +133,7 @@ main(int argc, char **argv)
     return EXIT_SUCCESS;
 }
 
-
-void
-print_usage(const char *program)
+void print_usage(const char *program)
 {
     printf("Usage: %s [FLAGS..]\n\n", program);
     printf("  -h           display this help\n");
@@ -155,18 +143,14 @@ print_usage(const char *program)
     return;
 }
 
-
-void
-log_session_start(luna_log *log)
+void log_session_start(luna_log *log)
 {
     logger_log(log, LOGLEV_INFO, "Starting session");
 
     return;
 }
 
-
-void
-log_session_end(luna_log *log)
+void log_session_end(luna_log *log)
 {
     logger_log(log, LOGLEV_INFO, "Stopping session");
     logger_log(log, LOGLEV_INFO, "---------------------------");

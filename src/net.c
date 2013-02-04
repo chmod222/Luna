@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/******************************************************************************
- *
- *  Network subsystem (net.c)
- *  ---
- *  Handle sending and receiving
- *
- *  Created: 25.02.2011 13:34:53
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -47,8 +38,7 @@
 int net_bind(luna_state *, int, int, const char *);
 
 
-int
-net_connect(luna_state *state)
+int net_connect(luna_state *state)
 {
     struct addrinfo hints, *resolv, *p;
     int fd, res;
@@ -91,9 +81,7 @@ net_connect(luna_state *state)
     return fd;
 }
 
-
-int
-net_bind(luna_state *state, int fam, int fd, const char *host)
+int net_bind(luna_state *state, int fam, int fd, const char *host)
 {
     struct addrinfo hints, *resolv, *p;
     int res;
@@ -131,16 +119,12 @@ net_bind(luna_state *state, int fam, int fd, const char *host)
     return 0;
 }
 
-
-int
-net_disconnect(luna_state *state)
+int net_disconnect(luna_state *state)
 {
     return close(state->fd);
 }
 
-
-int
-net_sendfln(luna_state *state, const char *format, ...)
+int net_sendfln(luna_state *state, const char *format, ...)
 {
     va_list args;
     int retval;
@@ -152,9 +136,7 @@ net_sendfln(luna_state *state, const char *format, ...)
     return retval;
 }
 
-
-int
-net_vsendfln(luna_state *state, const char *format, va_list args)
+int net_vsendfln(luna_state *state, const char *format, va_list args)
 {
     char buffer[LINELEN];
 
@@ -172,9 +154,7 @@ net_vsendfln(luna_state *state, const char *format, va_list args)
     return send(state->fd, buffer, strlen(buffer), 0);
 }
 
-
-int
-net_recvln(luna_state *state, char *buffer, size_t len)
+int net_recvln(luna_state *state, char *buffer, size_t len)
 {
     char ch;
     int i;

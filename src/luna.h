@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Global configurations (luna.h)
- *  ---
- *  Compilation relevant configuration (debugging, features, ...)
- *
- *  Created: 25.02.2011 11:08:37
- *
- ******************************************************************************/
 #ifndef LUNA_H
 #define LUNA_H
 

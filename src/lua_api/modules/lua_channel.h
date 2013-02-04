@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua channel object management (lua_channel.h)
- *  ---
- *  Provide meta info about active channels to scripts
- *
- *  Created: 03.02.2012 19:37:01
- *
- ******************************************************************************/
 #ifndef LUA_CHANNEL_H
 #define LUA_CHANNEL_H
 

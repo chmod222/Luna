@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/******************************************************************************
- *
- *  Event handling (handlers.h)
- *  ---
- *  Takes care of core events
- *
- *  Created: 25.02.2011 14:36:08
- *
- ******************************************************************************/
 #ifndef HANDLERS_H
 #define HANDLERS_H
 

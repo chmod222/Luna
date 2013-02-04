@@ -16,15 +16,6 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-/*******************************************************************************
- *
- *  Lua state object management (lua_self.h)
- *  ---
- *  Provide access to the global Luna state within scripts
- *
- *  Created: 03.02.2012 19:37:01
- *
- ******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 
@@ -37,11 +28,11 @@
 #include "../../mm.h"
 #include "../lua_util.h"
 
+
 int luaX_self_getuserinfo(lua_State *);
 int luaX_self_getserver(lua_State *);
 int luaX_self_getmeminfo(lua_State *);
 int luaX_self_getruntimes(lua_State *);
-
 
 static const struct luaL_Reg luaX_self_functions[] =
 {
@@ -54,8 +45,7 @@ static const struct luaL_Reg luaX_self_functions[] =
 };
 
 
-int
-luaX_self_getuserinfo(lua_State *L)
+int luaX_self_getuserinfo(lua_State *L)
 {
     int table;
 
@@ -78,9 +68,7 @@ luaX_self_getuserinfo(lua_State *L)
     return 1;
 }
 
-
-int
-luaX_self_getserver(lua_State *L)
+int luaX_self_getserver(lua_State *L)
 {
     luna_state *state = api_getstate(L);
 
@@ -90,9 +78,7 @@ luaX_self_getserver(lua_State *L)
     return 2;
 }
 
-
-int
-luaX_self_getmeminfo(lua_State *L)
+int luaX_self_getmeminfo(lua_State *L)
 {
     int table = (lua_newtable(L), lua_gettop(L));
 
@@ -111,9 +97,7 @@ luaX_self_getmeminfo(lua_State *L)
     return 1;
 }
 
-
-int
-luaX_self_getruntimes(lua_State *L)
+int luaX_self_getruntimes(lua_State *L)
 {
     int table;
 
@@ -132,9 +116,7 @@ luaX_self_getruntimes(lua_State *L)
     return 1;
 }
 
-
-int
-luaX_register_self(lua_State *L, int regtable)
+int luaX_register_self(lua_State *L, int regtable)
 {
     /* Register functions inside regtable
      * luna.self = { ... } */
