@@ -22,6 +22,8 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include "lua_channel.h"
+
 #include "../lua_util.h"
 
 
@@ -45,7 +47,7 @@ const char *getaddr(irc_user *user)
 {
     /* TODO: :( */
     const size_t n = NICKLEN + IDENTLEN + HOSTLEN + 1;
-    static char addr[NICKLEN + IDENTLEN + HOSTLEN];
+    static char addr[NICKLEN + IDENTLEN + HOSTLEN + 1];
 
     snprintf(addr, n, "%s!%s@%s", user->nick, user->user, user->host);
 
