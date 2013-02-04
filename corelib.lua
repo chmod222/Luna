@@ -22,6 +22,30 @@ function luna.change_nick(new)
     return luna.sendline('NICK ' .. new)
 end
 
+
+--
+-- Logging
+--
+
+-- Wrap the raw logger into a more useful function that logs origin and line
+function luna.log_message(lvl, msg)
+    return luna.log(lvl, string.format('<%s> %s',
+        luna.scripts.get_self(),
+        msg))
+end
+
+function luna.log_info(msg)
+    return luna.log_message('info', msg)
+end
+
+function luna.log_warning(msg)
+    return luna.log_message('warning', msg)
+end
+
+function luna.log_error(msg)
+    return luna.log_message('error', msg)
+end
+
 --
 -- Types
 --
