@@ -31,6 +31,7 @@
 #include <time.h>
 
 #include "state.h"
+#include "irc.h"
 
 #define FLAG(x) ((x) - 'A')
 
@@ -72,9 +73,9 @@ typedef struct irc_channel
 
 typedef struct irc_user
 {
-    char nick[32];
-    char user[16];
-    char host[128];
+    char nick[NICKLEN];
+    char user[IDENTLEN];
+    char host[HOSTLEN];
 
     char modes[16];
 } irc_user;
