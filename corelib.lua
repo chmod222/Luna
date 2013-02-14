@@ -89,7 +89,7 @@ luna.addressable = {
 -- Type for unknown users (not in a known channel)
 luna.user_meta = {}
 luna.user = setmetatable({
-    new = function(self, a)
+    new = function(a)
         return setmetatable({ addr = a }, luna.user_meta)
     end,
 
@@ -137,7 +137,7 @@ luna.user_meta = {
 -- Type for a (known, joined) channel
 luna.channel_meta = {}
 luna.channel = setmetatable({
-    new = function(self, c)
+    new = function(c)
         assert(c ~= nil)
 
         for i, name in ipairs(luna.channels.get_channels()) do
@@ -202,7 +202,7 @@ luna.channel_meta = {
 -- Type for a known user, joined in a known channel
 luna.channel_user_meta = {}
 luna.channel_user = setmetatable({
-    new = function(self, c, u)
+    new = function(c, u)
         assert(c ~= nil)
 
         ua = nil
@@ -358,66 +358,67 @@ function luna.add_signal_handler(sig, id, fn)
         raw = fn,
 
         private_message = function(who, where, what)
-            who = luna.user:new(who)
+            who = luna.user.new(who)
 
             fn(who, what)
         end,
 
         public_message = function(who, where, what)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
 
             fn(who, where, what)
         end,
 
         private_ctcp = function(who, where, what, args)
-            who = luna.user:new(who)
+            who = luna.user.new(who)
 
             fn(who, what, args)
         end,
 
         private_ctcp_response = function(who, where, what, args)
-            who = luna.user:new(who)
+            who = luna.user.new(who)
 
             fn(who, what, args)
         end,
 
         public_ctcp = function(who, where, what, args)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
 
             fn(who, where, what, args)
         end,
 
         public_ctcp_response = function(who, where, what, args)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
 
             fn(who, where, what, args)
         end,
 
         private_action = function(who, where, what)
-            who = luna.user:new(who)
+            who = luna.user.new(who)
 
             fn(who, what)
         end,
 
         public_action = function(who, where, what)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
 
             fn(who, where, what)
         end,
 
         private_command = function(who, where, what, args)
-            who = luna.user:new(who)
+            who = luna.user.new(who)
 
             fn(who, what, args)
         end,
 
         public_command = function(who, where, what, args)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
+            print(who, where, what, args)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
 
             fn(who, where, what, args)
         end,
@@ -425,40 +426,40 @@ function luna.add_signal_handler(sig, id, fn)
         ping = fn,
 
         channel_join = function(who, where)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
 
             fn(who, where)
         end,
 
         channel_join_sync = function(where)
-            where = luna.channel:new(where)
+            where = luna.channel.new(where)
 
             fn(where)
         end,
 
         channel_part = function(who, where, why)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
 
             fn(who, where, why)
         end,
 
         user_quit = function(who, why)
-            who = luna.user:new(who)
+            who = luna.user.new(who)
 
             fn(who, why)
         end,
 
         public_notice = function(who, where, what)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
 
             fn(who, where, what)
         end,
 
         private_notice = function(who, where, what)
-            who = luna.user:new(who)
+            who = luna.user.new(who)
 
             fn(who, what)
         end,
@@ -466,7 +467,7 @@ function luna.add_signal_handler(sig, id, fn)
         nick_change = function(who_old, who_new)
             local addr = who_old:sub(who_old:find('!'), #who_old)
 
-            who_new = luna.user:new(who_new .. addr)
+            who_new = luna.user.new(who_new .. addr)
 
             fn(who_old, who_new)
         end,
@@ -474,16 +475,16 @@ function luna.add_signal_handler(sig, id, fn)
         invite = fn,
 
         topic_change = function(who, where, what)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
 
             fn(who, where, what)
         end,
 
         user_kicked = function(who, where, whom, why)
-            where = luna.channel:new(where)
-            who = luna.channel_user:new(where, who)
-            whom = luna.channel_user:new(where, whom)
+            where = luna.channel.new(where)
+            who = luna.channel_user.new(where, who)
+            whom = luna.channel_user.new(where, whom)
 
             fn(who, where, whom, why)
         end,
@@ -526,6 +527,18 @@ function luna.__get_signal_handler(id, fn)
     end
 end
 
+-- Error handler stuff
+function luna.set_error_handler(f)
+    luna.error_handler = f
+end
+
+function luna.default_error_handler(e)
+    print(debug.traceback(e, 2))
+    return e
+end
+
+luna.error_handler = luna.default_error_handler
+
 -- Emit a signal, passing an arbitrary amount of parameters to it. Called via C.
 function luna.emit_signal(signal, ...)
     local handlers = {}
@@ -538,9 +551,14 @@ function luna.emit_signal(signal, ...)
         return a.priority < b.priority
     end)
 
+    local args = { ... }
+    local n = select('#', ...)
+
     for i, handler in ipairs(handlers) do
         if handler.signal == signal and handler.enabled then
-            handler.callback(unpack{...})
+            xpcall(function()
+                handler.callback(unpack(args))
+            end, luna.error_handler)
         end
     end
 end

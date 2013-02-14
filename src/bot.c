@@ -107,7 +107,7 @@ int luna_mainloop(luna_state *state)
                 if (net_recvln(state, current_line, sizeof(current_line)) < 0)
                     break;
 
-                logger_log(state->logger, LOGLEV_INFO,  ">> %s", current_line);
+                logger_log(state->logger, LOGLEV_INFO,  "<< %s", current_line);
                 last_sign_of_life = time(NULL);
                 irc_init_irc_event(&ev);
                 irc_parse_line(&ev, current_line);
