@@ -61,9 +61,7 @@ typedef struct irc_channel
 
 typedef struct irc_user
 {
-    char nick[NICKLEN];
-    char user[IDENTLEN];
-    char host[HOSTLEN];
+    char *prefix;
 
     char modes[16];
 } irc_user;
@@ -72,28 +70,20 @@ typedef struct irc_user
 int channel_cmp(const void *, const void *);
 int user_cmp(const void *, const void *);
 
+void channel_free(void *);
+void user_free(void *);
+
 int channel_add(luna_state *, const char *);
 int channel_remove(luna_state *, const char *);
-
-int channel_add_user(luna_state *, const char *, const char *,
-                     const char *, const char *);
-
-int channel_remove_user(luna_state *, const char *, const char *);
-int user_rename(luna_state *, const char *, const char *);
-
-void channel_free(void *);
+irc_channel *channel_get(luna_state *, const char *);
 
 int channel_set_topic(luna_state *, const char *, const char *);
 int channel_set_topic_meta(luna_state *, const char *, const char *, time_t);
-
 int channel_set_creation_time(luna_state *, const char *, time_t);
 
+int channel_add_user(luna_state *, const char *, const char *);
+int channel_remove_user(luna_state *, const char *, const char *);
+int channel_rename_user(luna_state *, const char *, const char *);
 irc_user *channel_get_user(luna_state *, const char *, const char *);
-
-int channel_op_user(luna_state *, const char *, const char *);
-int channel_deop_user(luna_state *, const char *, const char *);
-
-int channel_voice_user(luna_state *, const char *, const char *);
-int channel_devoice_user(luna_state *, const char *, const char *);
 
 #endif

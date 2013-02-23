@@ -51,7 +51,7 @@ void *list_find(linked_list *, const void *,
 
 void list_delete(linked_list *, void *, void ( *)(void *));
 
-void list_map(linked_list *, void ( *)(void *));
+void list_map(linked_list *, void ( *)(void *, void *), void *);
 void list_destroy(linked_list *, void ( *)(void *));
 
 #endif

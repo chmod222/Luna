@@ -21,9 +21,13 @@
 
 #include "channel.h"
 #include "state.h"
+#include "util.h"
 #include "mm.h"
 
 
+/*
+ * Linked list search comparators
+ */
 int channel_cmp(const void *data, const void *list_data)
 {
     const char *name = (const char *)data;
@@ -37,13 +41,16 @@ int user_cmp(const void *data, const void *list_data)
     const char *name = (const char *)data;
     irc_user *user = (irc_user *)list_data;
 
-    return strcasecmp(name, user->nick);
+    return irc_user_cmp(name, user->prefix);
 }
 
+/*
+ * Linked list deletion deallocators
+ */
 void channel_free(void *data)
 {
     irc_channel *channel = (irc_channel *)data;
-    int max = 64; /* TODO: calculate */
+    int max = 64;
     int i;
 
     for (i = 0; i < max; ++i)
@@ -57,24 +64,30 @@ void channel_free(void *data)
         }
     }
 
-    list_destroy(channel->users, &mm_free); /* No lists in irc_user -- free() */
+    list_destroy(channel->users, &user_free);
     mm_free(channel);
 
     return;
 }
 
+void user_free(void *data)
+{
+    irc_user *user = (irc_user *)data;
+
+    mm_free(user->prefix);
+    mm_free(user);
+}
+
+/*
+ * Channel management functions
+ */
 int channel_add(luna_state *state, const char *channel_name)
 {
     irc_channel *tmp = (irc_channel *)list_find(state->channels,
                        (void *)channel_name, &channel_cmp);
 
-    if (tmp)
-        return 1;
-
-    if ((tmp = mm_malloc(sizeof(*tmp))))
+    if (!tmp && (tmp = mm_malloc(sizeof(*tmp))))
     {
-        memset(tmp, 0, sizeof(*tmp));
-
         strncpy(tmp->name, channel_name, sizeof(tmp->name) - 1);
 
         /* Try creating userlist, too */
@@ -92,13 +105,11 @@ int channel_add(luna_state *state, const char *channel_name)
     return 1;
 }
 
-int channel_remove(luna_state *state, const char *channel_name)
+int channel_remove(luna_state *state, const char *name)
 {
     /* Not really a reason to use actual types here */
     void *channel = NULL;
-    void *key = (void *)channel_name;
-
-    if ((channel = list_find(state->channels, key, &channel_cmp)) != NULL)
+    if ((channel = list_find(state->channels, name, &channel_cmp)) != NULL)
     {
         /* Channel was found */
         list_delete(state->channels, channel, &channel_free);
@@ -109,25 +120,72 @@ int channel_remove(luna_state *state, const char *channel_name)
     return 1;
 }
 
-int channel_add_user(luna_state *state, const char *chan_name, const char *nick,
-                     const char *user, const char *host)
+irc_channel *channel_get(luna_state *state, const char *name)
 {
-    void *key = (void *)chan_name;
-    void *channel = NULL;
+    return list_find(state->channels, name, &channel_cmp);
+}
 
-    if ((channel = list_find(state->channels, key, &channel_cmp)) != NULL)
+int channel_set_topic(luna_state *state, const char *channel, const char *topic)
+{
+    irc_channel *chan = list_find(state->channels, channel, &channel_cmp);
+
+    if (chan)
     {
-        irc_channel *chan = (irc_channel *)channel;
-        irc_user *tmp = mm_malloc(sizeof(*tmp));
+        memset(chan->topic, 0, sizeof(chan->topic));
+        strncpy(chan->topic, topic, sizeof(chan->topic) - 1);
+
+        return 0;
+    }
+
+    return 1;
+}
+
+int channel_set_creation_time(luna_state *state, const char *channel, time_t t)
+{
+    irc_channel *chan = list_find(state->channels, channel, &channel_cmp);
+
+    if (chan)
+    {
+        chan->created = t;
+
+        return 0;
+    }
+
+    return 1;
+}
+
+int channel_set_topic_meta(luna_state *state, const char *channel,
+                           const char *setter, time_t time)
+{
+    irc_channel *chan = list_find(state->channels, channel, &channel_cmp);
+
+    if (chan)
+    {
+        memset(chan->topic_setter, 0, sizeof(chan->topic_setter));
+        strncpy(chan->topic_setter, setter, sizeof(chan->topic_setter) - 1);
+
+        chan->topic_set = time;
+
+        return 0;
+    }
+
+    return 1;
+}
+
+/*
+ * Channel user management functions
+ */
+int channel_add_user(luna_state *state, const char *chan_name, const char *pre)
+{
+    irc_channel *chan = NULL;
+
+    if ((chan = list_find(state->channels, chan_name, &channel_cmp)) != NULL)
+    {
+        irc_user *tmp = (irc_user *)mm_malloc(sizeof(*tmp));
 
         if (tmp)
         {
-            memset(tmp, 0, sizeof(*tmp));
-
-            strncpy(tmp->nick, nick, sizeof(tmp->nick) - 1);
-            strncpy(tmp->user, user, sizeof(tmp->user) - 1);
-            strncpy(tmp->host, host, sizeof(tmp->host) - 1);
-
+            tmp->prefix = xstrdup(pre);
             list_push_back(chan->users, tmp);
 
             return 0;
@@ -140,20 +198,16 @@ int channel_add_user(luna_state *state, const char *chan_name, const char *nick,
 int channel_remove_user(luna_state *state, const char *chan_name,
                         const char *nick)
 {
-    void *key_chan = (void *)chan_name;
-    void *channel = NULL;
+    irc_channel *chan = NULL;
 
-    if ((channel = list_find(state->channels, key_chan, &channel_cmp)) != NULL)
+    if ((chan = list_find(state->channels, chan_name, &channel_cmp)) != NULL)
     {
-        void *key_user = (void *)nick;
         void *user = NULL;
 
-        irc_channel *chan = (irc_channel *)channel;
-
-        if ((user = list_find(chan->users, key_user, &user_cmp)) != NULL)
+        if ((user = list_find(chan->users, nick, &user_cmp)) != NULL)
         {
             /* User found */
-            list_delete(chan->users, user, &mm_free);
+            list_delete(chan->users, user, &user_free);
 
             return 0;
         }
@@ -162,90 +216,41 @@ int channel_remove_user(luna_state *state, const char *chan_name,
     return 1;
 }
 
-int user_rename(luna_state *state, const char *oldnick, const char *newnick)
+int channel_rename_user(luna_state *state, const char *oldprefix,
+                        const char *newnick)
 {
     list_node *cur = NULL;
 
     for (cur = state->channels->root; cur != NULL; cur = cur->next)
     {
         irc_channel *channel = (irc_channel *)(cur->data);
-        void *key  = (void *)oldnick;
-        void *user = NULL;
+        irc_user *u = NULL;
 
-        if ((user = list_find(channel->users, key, &user_cmp)) != NULL)
+        if ((u = list_find(channel->users, oldprefix, &user_cmp)) != NULL)
         {
-            irc_user *u = (irc_user *)user;
+            char *oldpost = strchr(u->prefix, '!');
+            size_t len = strlen(oldpost) + strlen(newnick);;
+            char *newpref = (char *)mm_malloc(len + 1);
 
-            memset(u->nick, 0, sizeof(u->nick));
-            strncpy(u->nick, newnick, sizeof(u->nick) - 1);
+            memset(newpref, 0, len + 1);
+            strncat(newpref, newnick, len + 1);
+            strncat(newpref, oldpost, len + 1);
+
+            mm_free(u->prefix);
+            u->prefix = newpref;
         }
     }
 
     return 0;
 }
 
-int channel_set_topic(luna_state *state, const char *channel, const char *topic)
-{
-    void *c = list_find(state->channels, (void *)channel, &channel_cmp);
-
-    if (c)
-    {
-        irc_channel *chan = (irc_channel *)c;
-
-        memset(chan->topic, 0, sizeof(chan->topic));
-        strncpy(chan->topic, topic, sizeof(chan->topic) - 1);
-
-        return 0;
-    }
-
-    return 1;
-}
-
-int channel_set_creation_time(luna_state *state, const char *channel,
-                              time_t stamp)
-{
-    void *c = list_find(state->channels, (void *)channel, &channel_cmp);
-
-    if (c)
-    {
-        irc_channel *chan = (irc_channel *)c;
-        chan->created = stamp;
-
-        return 0;
-    }
-
-    return 1;
-}
-
-int channel_set_topic_meta(luna_state *state, const char *channel,
-                           const char *setter, time_t time)
-{
-    void *c = list_find(state->channels, (void *)channel, &channel_cmp);
-
-    if (c)
-    {
-        irc_channel *chan = (irc_channel *)c;
-
-        memset(chan->topic_setter, 0, sizeof(chan->topic_setter));
-        strncpy(chan->topic_setter, setter, sizeof(chan->topic_setter) - 1);
-
-        chan->topic_set = time;
-
-        return 0;
-    }
-
-    return 1;
-}
-
 irc_user *channel_get_user(luna_state *state, const char *channel,
                            const char *user)
 {
-    void *chan_data = list_find(state->channels, (void *)channel, &channel_cmp);
+    irc_channel *chan = list_find(state->channels, channel, &channel_cmp);
 
-    if (chan_data)
+    if (chan)
     {
-        irc_channel *chan = (irc_channel *)chan_data;
-
         void *user_data = list_find(chan->users, (void *)user, &user_cmp);
 
         if (user_data)

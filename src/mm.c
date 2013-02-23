@@ -73,6 +73,8 @@ void *mm_malloc(size_t n)
     if ((ptr = malloc(n)) == NULL)
         return NULL;
 
+    memset(ptr, 0, n);
+
     if (!(mm_state.mm_nentries < mm_state.mm_cap))
     {
         /* Allocate some more */

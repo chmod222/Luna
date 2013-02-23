@@ -34,14 +34,15 @@ int api_loglevel_from_string(const char *lev)
     if (!lev)
         return LOGLEV_ERROR;
 
-    if (!strcasecmp(lev, "info"))
+    if (!strcasecmp(lev, "debug"))
+        return LOGLEV_DEBUG;
+    else if (!strcasecmp(lev, "info"))
         return LOGLEV_INFO;
     else if (!strcasecmp(lev, "warning"))
         return LOGLEV_WARNING;
     else
         return LOGLEV_ERROR;
 }
-
 
 luna_state *api_getstate(lua_State *L)
 {
@@ -54,21 +55,6 @@ luna_state *api_getstate(lua_State *L)
     lua_pop(L, 1);
 
     return state;
-}
-
-int luaX_push_sender(lua_State *L, irc_sender *src)
-{
-    size_t n = NICKLEN + IDENTLEN + HOSTLEN + 1;
-    char addr[n];
-
-    if (strlen(src->nick) != 0)
-        snprintf(addr, n, "%s!%s@%s", src->nick, src->user, src->host);
-    else
-        snprintf(addr, n, "%s", src->host);
-
-    lua_pushstring(L, addr);
-
-    return 1;
 }
 
 int luaX_push_args(lua_State *L, int n, char **param)
@@ -87,40 +73,35 @@ int luaX_push_args(lua_State *L, int n, char **param)
 
 int luaX_push_raw(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
 
-    luaX_push_sender(L, &(ev->from));
-
-    if (ev->type == IRCEV_NUMERIC)
-        lua_pushnumber(L, ev->numeric);
-    else
-        lua_pushstring(L, irc_event_type_to_string(ev->type));
-
-    luaX_push_args(L, ev->param_count, ev->param);
-    lua_pushstring(L, ev->msg);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_command);
+    luaX_push_args(L, ev->m_paramcount, ev->m_params);
+    lua_pushstring(L, ev->m_msg);
 
     return 4;
 }
 
 int luaX_push_privmsg(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
-    lua_pushstring(L, ev->msg);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
+    lua_pushstring(L, ev->m_msg);
 
     return 3;
 }
 
 int luaX_push_ctcp(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
     const char *ctcp = va_arg(args, const char *);
     const char *msg = va_arg(args, const char *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
     lua_pushstring(L, ctcp);
     lua_pushstring(L, msg);
 
@@ -129,12 +110,12 @@ int luaX_push_ctcp(luna_state *st, lua_State *L, va_list args)
 
 int luaX_push_ctcp_rsp(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
     const char *ctcp = va_arg(args, const char *);
     const char *msg = va_arg(args, const char *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
     lua_pushstring(L, ctcp);
     lua_pushstring(L, msg);
 
@@ -143,11 +124,11 @@ int luaX_push_ctcp_rsp(luna_state *st, lua_State *L, va_list args)
 
 int luaX_push_action(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
     const char *msg = va_arg(args, const char *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
     lua_pushstring(L, msg);
 
     return 3;
@@ -155,12 +136,12 @@ int luaX_push_action(luna_state *st, lua_State *L, va_list args)
 
 int luaX_push_command(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
     const char *cmd = va_arg(args, const char *);
     const char *rest = va_arg(args, const char *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
     lua_pushstring(L, cmd);
     lua_pushstring(L, rest);
 
@@ -169,61 +150,61 @@ int luaX_push_command(luna_state *st, lua_State *L, va_list args)
 
 int luaX_push_join(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
 
     return 2;
 }
 
 int luaX_push_join_sync(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
 
-    lua_pushstring(L, ev->param[1]);
+    lua_pushstring(L, ev->m_params[1]);
 
     return 1;
 }
 
 int luaX_push_part(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
-    lua_pushstring(L, ev->msg);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
+    lua_pushstring(L, ev->m_msg);
 
     return 3;
 }
 
 int luaX_push_quit(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->msg);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_msg);
 
     return 2;
 }
 
 int luaX_push_notice(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
-    lua_pushstring(L, ev->msg);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
+    lua_pushstring(L, ev->m_msg);
 
     return 3;
 }
 
 int luaX_push_nick(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
     const char *newnick = va_arg(args, const char *);
 
-    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->m_prefix);
     lua_pushstring(L, newnick);
 
     return 2;
@@ -231,10 +212,10 @@ int luaX_push_nick(luna_state *st, lua_State *L, va_list args)
 
 int luaX_push_invite(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
     const char *target = va_arg(args, const char *);
 
-    luaX_push_sender(L, &(ev->from));
+    lua_pushstring(L, ev->m_prefix);
     lua_pushstring(L, target);
 
     return 2;
@@ -242,23 +223,23 @@ int luaX_push_invite(luna_state *st, lua_State *L, va_list args)
 
 int luaX_push_topic(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
-    lua_pushstring(L, ev->msg);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
+    lua_pushstring(L, ev->m_msg);
 
     return 3;
 }
 
 int luaX_push_kick(luna_state *st, lua_State *L, va_list args)
 {
-    irc_event *ev = va_arg(args, irc_event *);
+    irc_message *ev = va_arg(args, irc_message *);
 
-    luaX_push_sender(L, &(ev->from));
-    lua_pushstring(L, ev->param[0]);
-    lua_pushstring(L, ev->param[1]);
-    lua_pushstring(L, ev->msg);
+    lua_pushstring(L, ev->m_prefix);
+    lua_pushstring(L, ev->m_params[0]);
+    lua_pushstring(L, ev->m_params[1]);
+    lua_pushstring(L, ev->m_msg);
 
     return 4;
 }

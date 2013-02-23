@@ -145,7 +145,7 @@ int net_vsendfln(luna_state *state, const char *format, va_list args)
     /* Write at most LINELEN - 3 bytes to leave space for "\r\n\0" */
     vsnprintf(buffer, sizeof(buffer) - 3, format, args);
 
-    logger_log(state->logger, LOGLEV_INFO, ">> %s\n", buffer);
+    logger_log(state->logger, LOGLEV_DEBUG, ">> %s", buffer);
 
     /* Safe, space was left by vsnprintf */
     strcat(buffer, "\r\n");

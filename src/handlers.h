@@ -22,6 +22,6 @@
 #include "irc.h"
 #include "state.h"
 
-int handle_event(luna_state *, irc_event *);
+int handle_event(luna_state *, irc_message *);
 
 #endif

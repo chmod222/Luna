@@ -43,17 +43,6 @@ static const struct luaL_Reg luaX_channel_functions[] =
 };
 
 
-const char *getaddr(irc_user *user)
-{
-    /* TODO: :( */
-    const size_t n = NICKLEN + IDENTLEN + HOSTLEN + 1;
-    static char addr[NICKLEN + IDENTLEN + HOSTLEN + 1];
-
-    snprintf(addr, n, "%s!%s@%s", user->nick, user->user, user->host);
-
-    return addr;
-}
-
 int luaX_push_modes(lua_State *L, irc_channel *channel)
 {
     int max = 64; /* TODO: Calculate */
@@ -190,7 +179,9 @@ int luaX_channel_getchannelusers(lua_State *L)
 
         for (cur = result->users->root; cur != NULL; cur = cur->next)
         {
-            lua_pushstring(L, getaddr(cur->data));
+            irc_user *user = cur->data;
+
+            lua_pushstring(L, user->prefix);
             lua_rawseti(L, list, i++);
         }
 

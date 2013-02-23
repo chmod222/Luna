@@ -20,5 +20,7 @@
 #define UTIL_H
 
 char *itoa(int);
+char *xstrdup(const char *);
+char *xstrndup(const char *, size_t);
 
 #endif

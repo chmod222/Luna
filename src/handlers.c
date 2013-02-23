@@ -33,119 +33,110 @@
 
 char *_strdup(const char *);
 
-int handle_ping(luna_state *,    irc_event *);
-int handle_numeric(luna_state *, irc_event *);
-int handle_privmsg(luna_state *, irc_event *);
-int handle_join(luna_state *,    irc_event *);
-int handle_part(luna_state *,    irc_event *);
-int handle_quit(luna_state *,    irc_event *);
-int handle_notice(luna_state *,  irc_event *);
-int handle_nick(luna_state *,    irc_event *);
-int handle_mode(luna_state *,    irc_event *);
-int handle_invite(luna_state *,  irc_event *);
-int handle_topic(luna_state *,   irc_event *);
-int handle_kick(luna_state *,    irc_event *);
-int handle_unknown(luna_state *, irc_event *);
-int handle_command(luna_state *, irc_event *, const char *, char *);
-int handle_ctcp(luna_state *,    irc_event *, const char *, char *);
-int handle_action(luna_state *,  irc_event *, const char *);
-int handle_server_supports(luna_state *, irc_event *);
+int handle_ping(luna_state *,    irc_message *);
+int handle_numeric(luna_state *, irc_message *);
+int handle_privmsg(luna_state *, irc_message *);
+int handle_join(luna_state *,    irc_message *);
+int handle_part(luna_state *,    irc_message *);
+int handle_quit(luna_state *,    irc_message *);
+int handle_notice(luna_state *,  irc_message *);
+int handle_nick(luna_state *,    irc_message *);
+int handle_mode(luna_state *,    irc_message *);
+int handle_invite(luna_state *,  irc_message *);
+int handle_topic(luna_state *,   irc_message *);
+int handle_kick(luna_state *,    irc_message *);
+int handle_unknown(luna_state *, irc_message *);
+int handle_command(luna_state *, irc_message *, const char *, char *);
+int handle_ctcp(luna_state *,    irc_message *, const char *, char *);
+int handle_action(luna_state *,  irc_message *, const char *);
+int handle_server_supports(luna_state *, irc_message *);
 int handle_mode_change(luna_state *, const char *, const char *, char **, int);
 
 int mode_set(luna_state *, const char *, char, const char *);
 int mode_unset(luna_state *, const char *, char, const char *);
 
 
-char *_strdup(const char *s)
-{
-    char *n = mm_malloc(strlen(s) + 1);
-
-    return strcpy(n, s);
-}
-
-int handle_event(luna_state *env, irc_event *ev)
+int handle_event(luna_state *env, irc_message *ev)
 {
     signal_dispatch(env, "raw", &luaX_push_raw, ev, NULL);
 
     /* Core event handlers */
-    switch (ev->type)
-    {
-    case IRCEV_NUMERIC:
+    if (isdigit(*(ev->m_command)))
         return handle_numeric(env, ev);
-    case IRCEV_PING:
+    else if (!strcmp(ev->m_command, "PING"))
         return handle_ping(env, ev);
-    case IRCEV_PRIVMSG:
+    else if (!strcmp(ev->m_command, "PRIVMSG"))
         return handle_privmsg(env, ev);
-    case IRCEV_JOIN:
+    else if (!strcmp(ev->m_command, "JOIN"))
         return handle_join(env, ev);
-    case IRCEV_PART:
+    else if (!strcmp(ev->m_command, "PART"))
         return handle_part(env, ev);
-    case IRCEV_QUIT:
+    else if (!strcmp(ev->m_command, "QUIT"))
         return handle_quit(env, ev);
-    case IRCEV_NOTICE:
+    else if (!strcmp(ev->m_command, "NOTICE"))
         return handle_notice(env, ev);
-    case IRCEV_NICK:
+    else if (!strcmp(ev->m_command, "NICK"))
         return handle_nick(env, ev);
-    case IRCEV_MODE:
+    else if (!strcmp(ev->m_command, "MODE"))
         return handle_mode(env, ev);
-    case IRCEV_INVITE:
+    else if (!strcmp(ev->m_command, "INVITE"))
         return handle_invite(env, ev);
-    case IRCEV_TOPIC:
+    else if (!strcmp(ev->m_command, "TOPIC"))
         return handle_topic(env, ev);
-    case IRCEV_KICK:
+    else if (!strcmp(ev->m_command, "KICK"))
         return handle_kick(env, ev);
-    default:
+    else
         return handle_unknown(env, ev);
-    }
 
     return 0;
 }
 
-int handle_privmsg(luna_state *env, irc_event *ev)
+int handle_privmsg(luna_state *env, irc_message *ev)
 {
-    char msgcopy[LINELEN];
+    char *msgcopy;
     char *isitme = NULL;
     char *command = NULL;
     int priv;
 
     /* Needs at least the target */
-    if (ev->param_count < 1)
+    if (ev->m_paramcount < 1)
         return 1;
 
-    priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
+    priv = strchr(env->chantypes, ev->m_params[0][0]) == NULL;
 
     /* Make a copy of the message that we can modify without screwing
      * later operations */
-    memset(msgcopy, 0, sizeof(msgcopy));
-    strcpy(msgcopy, ev->msg);
+    if ((msgcopy = xstrdup(ev->m_msg)) == NULL)
+        return 1;
 
-    if ((ev->msg[0] == 0x01) && (ev->msg[strlen(ev->msg) - 1] == 0x01))
+    /* Check for CTCP */
+    if ((ev->m_msg[0] == 0x01) && (ev->m_msg[strlen(ev->m_msg) - 1] == 0x01))
     {
         char *ctcp = NULL;
         char *args = NULL;
-        char *j;
+        char *j = NULL;
 
-        ev->msg[strlen(ev->msg) - 1] = '\0';
+        ev->m_msg[strlen(ev->m_msg) - 1] = '\0';
+        j = ev->m_msg + strlen(ev->m_msg) - 1;
 
-        j = ev->msg + strlen(ev->msg) - 1;
-
-        while ((j >= ev->msg) && isspace(*j))
+        while ((j >= ev->m_msg) && isspace(*j))
             j--;
 
         *(j + 1) = 0;
 
-        ctcp = strtok(ev->msg + 1, " ");
+        ctcp = strtok(ev->m_msg + 1, " ");
         args = strtok(NULL, "");
 
         return handle_ctcp(env, ev, ctcp, args);
     }
 
     /* Check for a "<botnick>: <command> <...>" command */
+    // TODO: Make trigger configurable
     if  (((isitme = strtok(msgcopy, ":")) != NULL) &&
             (strcasecmp(isitme, env->userinfo.nick) == 0))
     {
         if ((command = strtok(NULL, " ")) != NULL)
-            handle_command(env, ev, command, strtok(NULL, ""));
+            return handle_command(env, ev, command, strtok(NULL, ""));
     }
 
     if (priv)
@@ -156,9 +147,9 @@ int handle_privmsg(luna_state *env, irc_event *ev)
     return 0;
 }
 
-int handle_ctcp(luna_state *env, irc_event *ev, const char *ctcp, char *msg)
+int handle_ctcp(luna_state *env, irc_message *ev, const char *ctcp, char *msg)
 {
-    int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
+    int priv = strchr(env->chantypes, ev->m_params[0][0]) == NULL;
 
     /* Special case for /ME commands */
     if (!strcmp(ctcp, "ACTION"))
@@ -166,21 +157,21 @@ int handle_ctcp(luna_state *env, irc_event *ev, const char *ctcp, char *msg)
 
     if (priv)
     {
-        if (ev->type == IRCEV_PRIVMSG)
+        if (!strcmp(ev->m_command, "PRIVMSG"))
             signal_dispatch(env, "private_ctcp", &luaX_push_ctcp,
                     ev, ctcp, msg, NULL);
 
-        else if (ev->type == IRCEV_NOTICE)
+        else if (!strcmp(ev->m_command, "NOTICE"))
             signal_dispatch(env, "private_ctcp_response", &luaX_push_ctcp_rsp,
                     ev, ctcp, msg, NULL);
     }
     else
     {
-        if (ev->type == IRCEV_PRIVMSG)
+        if (!strcmp(ev->m_command, "PRIVMSG"))
             signal_dispatch(env, "public_ctcp", &luaX_push_ctcp,
                     ev, ctcp, msg, NULL);
 
-        else if (ev->type == IRCEV_NOTICE)
+        else if (!strcmp(ev->m_command, "NOTICE"))
             signal_dispatch(env, "public_ctcp_response", &luaX_push_ctcp_rsp,
                     ev, ctcp, msg, NULL);
     }
@@ -188,9 +179,9 @@ int handle_ctcp(luna_state *env, irc_event *ev, const char *ctcp, char *msg)
     return 0;
 }
 
-int handle_action(luna_state *env, irc_event *ev, const char *message)
+int handle_action(luna_state *env, irc_message *ev, const char *message)
 {
-    int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
+    int priv = strchr(env->chantypes, ev->m_params[0][0]) == NULL;
 
     if (priv)
         signal_dispatch(env, "private_action", &luaX_push_action,
@@ -202,9 +193,9 @@ int handle_action(luna_state *env, irc_event *ev, const char *message)
     return 0;
 }
 
-int handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
+int handle_command(luna_state *env, irc_message *ev, const char *cmd, char *rest)
 {
-    int priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
+    int priv = strchr(env->chantypes, ev->m_params[0][0]) == NULL;
 
     if (priv)
         signal_dispatch(env, "private_command", &luaX_push_command,
@@ -216,14 +207,14 @@ int handle_command(luna_state *env, irc_event *ev, const char *cmd, char *rest)
     return 0;
 }
 
-int handle_ping(luna_state *env, irc_event *ev)
+int handle_ping(luna_state *env, irc_message *ev)
 {
     const char *pingstr;
 
-    if ((ev->msg == NULL) && (ev->param_count < 1))
+    if ((ev->m_msg == NULL) && (ev->m_paramcount < 1))
         return 1;
 
-    pingstr = (ev->param_count > 0) ? ev->param[0] : ev->msg;
+    pingstr = (ev->m_paramcount > 0) ? ev->m_params[0] : ev->m_msg;
     net_sendfln(env, "PONG :%s", pingstr);
 
     signal_dispatch(env, "ping", NULL);
@@ -231,13 +222,22 @@ int handle_ping(luna_state *env, irc_event *ev)
     return 0;
 }
 
-int handle_numeric(luna_state *env, irc_event *ev)
+void print_user(void *_env, void *_user)
+{
+    luna_state *env = _env;
+    irc_user *user = _user;
+
+    logger_log(env->logger, LOGLEV_DEBUG, "-> '%s' = %s", user->prefix, user->modes);
+}
+
+int handle_numeric(luna_state *env, irc_message *ev)
 {
     int i = 0;
+    int numeric = atoi(ev->m_command);
 
     irc_user *target = NULL;
 
-    switch (ev->numeric)
+    switch (numeric)
     {
     case 5: /* ISUPPORT */
         handle_server_supports(env, ev);
@@ -249,25 +249,34 @@ int handle_numeric(luna_state *env, irc_event *ev)
         /* param 0: me
          * param 1: channel
          */
-        if (ev->param_count < 2)
+        if (ev->m_paramcount < 2)
             return 1;
 
-        target = channel_get_user(env, ev->param[1], ev->param[0]);
+        target = channel_get_user(env, ev->m_params[1], ev->m_params[0]);
+        irc_channel *chan = channel_get(env, ev->m_params[1]);
+
+        logger_log(env->logger, LOGLEV_DEBUG, "Joined channel '%s'",
+                chan->name);
+        list_map(chan->users, &print_user, env);
+        logger_log(env->logger, LOGLEV_DEBUG, "Topic: '%s' (Set %d by %s)",
+                chan->topic, chan->topic_set, chan->topic_setter);
+
+        net_sendfln(env, "NICK Lunaa");
 
         if (target)
             signal_dispatch(env, "channel_join_sync", &luaX_push_join_sync,
                             ev, NULL);
-
 
         break;
 
     case 376:
         /* Dispatch connect event */
         signal_dispatch(env, "connect", NULL);
+        net_sendfln(env, "JOIN #luna");
 
         break;
 
-    case 352: /* EPL_WHO */
+    case 352: /* RPL_WHO */
 
         /* param : me
          * param : channel
@@ -277,25 +286,22 @@ int handle_numeric(luna_state *env, irc_event *ev)
          * param : nick
          * param : modestr
          * msg: <ops> <realname> */
-        if (ev->param_count < 7)
+        if (ev->m_paramcount < 7)
             return 1;
 
-        channel_add_user(env,
-                        ev->param[1],
-                        ev->param[5],
-                        ev->param[2],
-                        ev->param[3]);
+        char prefix[128] = {0};
+        snprintf(prefix, sizeof(prefix), "%s!%s@%s",
+                ev->m_params[5],
+                ev->m_params[2],
+                ev->m_params[3]);
 
-        target = channel_get_user(env, ev->param[1], ev->param[5]);
+        channel_add_user(env, ev->m_params[1], prefix);
+        target = channel_get_user(env, ev->m_params[1], ev->m_params[5]);
 
         if (target)
         {
-            /*
-             * TODO: Dynamic mode size in case IRC networks start
-             *       allowing Unicode flags?
-             */
             int max = sizeof(env->userprefix) / sizeof(env->userprefix[0]);
-            char *mode = ev->param[6];
+            char *mode = ev->m_params[6];
 
             while (*mode++)
             {
@@ -316,42 +322,45 @@ int handle_numeric(luna_state *env, irc_event *ev)
 
     case 332: /* TOPIC */
 
-        if (ev->param_count < 2)
+        if (ev->m_paramcount < 2)
             return 1;
 
-        channel_set_topic(env, ev->param[1], ev->msg);
+        channel_set_topic(env, ev->m_params[1], ev->m_msg);
 
         break;
 
     case 333: /* TOPIC META */
 
-        if (ev->param_count < 4)
+        if (ev->m_paramcount < 4)
             return 1;
 
         channel_set_topic_meta(env,
-                               ev->param[1],
-                               ev->param[2],
-                               atoi(ev->param[3]));
+                ev->m_params[1],
+                ev->m_params[2],
+                atoi(ev->m_params[3]));
 
         break;
 
     case 324: /* REPL_MODE */
 
         /* <server> 324 <me> <channel> <flags> [param[,param[,...]]] */
-        if (ev->param_count < 3)
+        if (ev->m_paramcount < 3)
             return 1;
 
-        handle_mode_change(env, ev->param[1], ev->param[2], ev->param, 3);
+        handle_mode_change(env,
+                ev->m_params[1],
+                ev->m_params[2],
+                ev->m_params, 3);
 
         break;
 
     case 329: /* REPL_MODE2 */
 
         /* :aperture.esper.net 329 Luna^ #lulz2 1298798377 */
-        if (ev->param_count < 3)
+        if (ev->m_paramcount < 3)
             return 1;
 
-        channel_set_creation_time(env, ev->param[1], atoi(ev->param[2]));
+        channel_set_creation_time(env, ev->m_params[1], atoi(ev->m_params[2]));
 
         break;
     }
@@ -359,59 +368,59 @@ int handle_numeric(luna_state *env, irc_event *ev)
     return 0;
 }
 
-int handle_join(luna_state *env, irc_event *ev)
+int handle_join(luna_state *env, irc_message *ev)
 {
     const char *c;
 
-    if ((ev->msg == NULL) && ev->param_count < 1)
+    /*
+     * Some IRC servers are weird like that and put the joined channel
+     * into the trailing message.
+     */
+    if ((ev->m_msg == NULL) && ev->m_paramcount < 1)
         return 1;
 
-    c = ev->msg ? ev->msg : ev->param[0];
+    c = ev->m_msg ? ev->m_msg : ev->m_params[0];
 
     /* Is it me? */
-    /* TODO: Instead of now, call join hook for self after /WHO END numeric */
-    if (!strcasecmp(ev->from.nick, env->userinfo.nick))
+    if (!irc_user_cmp(ev->m_prefix, env->userinfo.nick))
     {
         /* Yes! Add channel to list */
         channel_add(env, c);
 
-        /* Query userlist */
-        net_sendfln(env, "WHO %s", c);
+        /* Query userlist and modes */
         net_sendfln(env, "MODE %s", c);
+        net_sendfln(env, "WHO %s", c);
     }
     else
     {
         /* Nah, add user to channel */
-        channel_add_user(env, c, ev->from.nick, ev->from.user, ev->from.host);
+        channel_add_user(env, c, ev->m_prefix);
+
         signal_dispatch(env, "channel_join", &luaX_push_join, ev, NULL);
     }
 
     return 0;
 }
 
-int handle_part(luna_state *env, irc_event *ev)
+int handle_part(luna_state *env, irc_message *ev)
 {
-    if (ev->param_count < 1)
+    if (ev->m_paramcount < 1)
         return 1;
 
     signal_dispatch(env, "channel_part", &luaX_push_part, ev, NULL);
 
     /* Is it me? */
-    if (!strcasecmp(ev->from.nick, env->userinfo.nick))
-    {
+    if (!irc_user_cmp(ev->m_prefix, env->userinfo.nick))
         /* Yes! Remove channel from list */
-        channel_remove(env, ev->param[0]);
-    }
+        channel_remove(env, ev->m_params[0]);
     else
-    {
         /* Nah, remove user from channel */
-        channel_remove_user(env, ev->param[0], ev->from.nick);
-    }
+        channel_remove_user(env, ev->m_params[0], ev->m_prefix);
 
     return 0;
 }
 
-int handle_quit(luna_state *env, irc_event *ev)
+int handle_quit(luna_state *env, irc_message *ev)
 {
     /* Remove user from all channels */
     list_node *cur;
@@ -419,7 +428,7 @@ int handle_quit(luna_state *env, irc_event *ev)
     for (cur = env->channels->root; cur != NULL; cur = cur->next)
     {
         irc_channel *channel = (irc_channel *)(cur->data);
-        channel_remove_user(env, channel->name, ev->from.nick);
+        channel_remove_user(env, channel->name, ev->m_prefix);
     }
 
     signal_dispatch(env, "user_quit", &luaX_push_quit, ev, NULL);
@@ -427,35 +436,35 @@ int handle_quit(luna_state *env, irc_event *ev)
     return 0;
 }
 
-int handle_notice(luna_state *env, irc_event *ev)
+int handle_notice(luna_state *env, irc_message *ev)
 {
     int priv;
 
-    if (ev->param_count < 1)
+    if (ev->m_paramcount < 1)
         return 1;
 
     if (env->chantypes)
-        priv = strchr(env->chantypes, ev->param[0][0]) == NULL;
+        priv = strchr(env->chantypes, ev->m_params[0][0]) == NULL;
     else
         priv = 1;
 
-    /* CTCP response */
-    if ((ev->msg[0] == 0x01) && (ev->msg[strlen(ev->msg) - 1] == 0x01))
+    /* CTCP response? */
+    if ((ev->m_msg[0] == 0x01) && (ev->m_msg[strlen(ev->m_msg) - 1] == 0x01))
     {
         char *ctcp;
         char *args;
         char *j;
 
-        ev->msg[strlen(ev->msg) - 1] = '\0';
+        ev->m_msg[strlen(ev->m_msg) - 1] = '\0';
 
-        j = ev->msg + strlen(ev->msg) - 1;
+        j = ev->m_msg + strlen(ev->m_msg) - 1;
 
-        while ((j >= ev->msg) && isspace(*j))
+        while ((j >= ev->m_msg) && isspace(*j))
             j--;
 
         *(j + 1) = 0;
 
-        ctcp = strtok(ev->msg + 1, " ");
+        ctcp = strtok(ev->m_msg + 1, " ");
         args = strtok(NULL, "");
 
         return handle_ctcp(env, ev, ctcp, args);
@@ -471,17 +480,20 @@ int handle_notice(luna_state *env, irc_event *ev)
     return 0;
 }
 
-int handle_nick(luna_state *env, irc_event *ev)
+int handle_nick(luna_state *env, irc_message *ev)
 {
     const char *newnick;
 
-    if ((ev->msg == NULL) && (ev->param_count < 1))
+    /*
+     * Again, weird IRC servers.
+     */
+    if ((ev->m_msg == NULL) && (ev->m_paramcount < 1))
         return 1;
 
-    newnick = ev->msg ? ev->msg : ev->param[0];
+    newnick = ev->m_msg ? ev->m_msg : ev->m_params[0];
 
     /* Is it me? */
-    if (!strcasecmp(ev->from.nick, env->userinfo.nick))
+    if (!irc_user_cmp(ev->m_prefix, env->userinfo.nick))
     {
         /* Rename myself internally */
         memset(env->userinfo.nick, 0, sizeof(env->userinfo.nick));
@@ -489,87 +501,83 @@ int handle_nick(luna_state *env, irc_event *ev)
     }
 
     /* Rename user in all channels */
-    user_rename(env, ev->from.nick, newnick);
-
+    channel_rename_user(env, ev->m_prefix, newnick);
     signal_dispatch(env, "nick_change", &luaX_push_nick, ev, newnick, NULL);
 
     return 0;
 }
 
-int handle_mode(luna_state *env, irc_event *ev)
+int handle_mode(luna_state *env, irc_message *ev)
 {
     /* <sender> MODE <channel> <flags> [param[,param[,...]]] */
 
-    if (ev->param_count < 2)
+    if (ev->m_paramcount < 2)
         return 1;
 
     /* If not me... */
-    if (strcasecmp(ev->param[0], env->userinfo.nick))
-        handle_mode_change(env, ev->param[0], ev->param[1], ev->param, 2);
+    if (strcasecmp(ev->m_params[0], env->userinfo.nick))
+        handle_mode_change(env,
+                ev->m_params[0],
+                ev->m_params[1],
+                ev->m_params, 2);
 
     return 0;
 }
 
-int handle_invite(luna_state *env, irc_event *ev)
+int handle_invite(luna_state *env, irc_message *ev)
 {
     signal_dispatch(env, "invite", &luaX_push_invite, ev, NULL);
 
     return 0;
 }
 
-int handle_topic(luna_state *env, irc_event *ev)
+int handle_topic(luna_state *env, irc_message *ev)
 {
-    char hoststring[128];
-
-    if (ev->param_count < 1)
+    if (ev->m_paramcount < 1)
         return 1;
 
-    memset(hoststring, 0, sizeof(hoststring));
-    snprintf(hoststring, sizeof(hoststring), "%s!%s@%s",
-             ev->from.nick, ev->from.user, ev->from.host);
-
-    channel_set_topic(env, ev->param[0], ev->msg);
-    channel_set_topic_meta(env, ev->param[0], hoststring, time(NULL));
+    channel_set_topic(env, ev->m_params[0], ev->m_msg);
+    channel_set_topic_meta(env, ev->m_params[0], ev->m_prefix, time(NULL));
 
     signal_dispatch(env, "topic_change", &luaX_push_topic, ev, NULL);
 
     return 0;
 }
 
-int handle_kick(luna_state *env, irc_event *ev)
+int handle_kick(luna_state *env, irc_message *ev)
 {
-    if (ev->param_count < 2)
+    if (ev->m_paramcount < 2)
         return 1;
 
     signal_dispatch(env, "user_kicked", &luaX_push_kick, ev, NULL);
 
-    /* Remove user from all channels (ev->param[1]) */
-    if (!strcasecmp(ev->param[1], env->userinfo.nick))
+    /* Remove user from all channels (ev->m_params[1]) */
+    if (!irc_user_cmp(ev->m_params[1], env->userinfo.nick))
     {
         /* It's me! Geez! */
-        channel_remove(env, ev->param[0]);
+        channel_remove(env, ev->m_params[0]);
     }
     else
     {
         /* Remove user from channel! */
-        channel_remove_user(env, ev->param[0], ev->param[1]);
+        channel_remove_user(env, ev->m_params[0], ev->m_params[1]);
     }
 
     return 0;
 }
 
-int handle_unknown(luna_state *env, irc_event *ev)
+int handle_unknown(luna_state *env, irc_message *ev)
 {
     return 0;
 }
 
-int handle_server_supports(luna_state *env, irc_event *ev)
+int handle_server_supports(luna_state *env, irc_message *ev)
 {
     int i;
 
-    for (i = 1; i < ev->param_count; ++i)
+    for (i = 1; i < ev->m_paramcount; ++i)
     {
-        char *key = strtok(ev->param[i], "=");
+        char *key = strtok(ev->m_params[i], "=");
         char *val = strtok(NULL, "");
 
         if (!strcasecmp(key, "CHANMODES"))
@@ -614,7 +622,7 @@ int handle_server_supports(luna_state *env, irc_event *ev)
         }
         else if (!strcasecmp(key, "CHANTYPES"))
         {
-            env->chantypes = _strdup(val);
+            env->chantypes = xstrdup(val);
         }
     }
 
@@ -627,8 +635,7 @@ int handle_mode_change(luna_state *state, const char *channel,
     int action = 0; /* 0 = set, 1 = unset */
     int i = argind;
 
-    irc_channel *target = (irc_channel *)list_find(
-                              state->channels, (const void *)channel, &channel_cmp);
+    irc_channel *target = channel_get(state, channel);
 
     if (!target)
     {
@@ -685,13 +692,13 @@ int handle_mode_change(luna_state *state, const char *channel,
                         list_init(&target->flags[flag].list);
                     }
 
-                    list_push_back(target->flags[flag].list, _strdup(arg));
+                    list_push_back(target->flags[flag].list, xstrdup(arg));
                 }
                 else
                 {
                     target->flags[flag].set = 1;
                     target->flags[flag].type = FLAG_STRING;
-                    target->flags[flag].string = _strdup(arg);
+                    target->flags[flag].string = xstrdup(arg);
                 }
             }
             else

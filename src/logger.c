@@ -101,6 +101,10 @@ int logger_level_to_string(luna_loglevel loglevel, char *dest, size_t len)
 
     switch (loglevel)
     {
+    case LOGLEV_DEBUG:
+        string = "DEBUG";
+        break;
+
     case LOGLEV_INFO:
         string = "INFO";
         break;

@@ -73,14 +73,9 @@ int config_get_userinfo(luna_state *state, lua_State *L)
     const char *user = NULL;
     const char *real = NULL;
 
-    lua_getglobal(L, "nick");
-    nick = lua_tostring(L, lua_gettop(L));
-
-    lua_getglobal(L, "user");
-    user = lua_tostring(L, lua_gettop(L));
-
-    lua_getglobal(L, "realname");
-    real = lua_tostring(L, lua_gettop(L));
+    nick = (lua_getglobal(L, "nick"), lua_tostring(L, lua_gettop(L)));
+    user = (lua_getglobal(L, "user"), lua_tostring(L, lua_gettop(L)));
+    real = (lua_getglobal(L, "realname"), lua_tostring(L, lua_gettop(L)));
 
     /* Nick and user can not be empty */
     if ((nick && (strcmp("", nick))) && (user && (strcmp("", user))))
@@ -129,8 +124,7 @@ int config_get_netinfo(luna_state *state, lua_State *L)
 {
     const char *bind = NULL;
 
-    lua_getglobal(L, "bind");
-    bind = lua_tostring(L, lua_gettop(L));
+    bind = (lua_getglobal(L, "bind"), lua_tostring(L, lua_gettop(L)));
 
     if (bind && strcmp("", bind))
     {

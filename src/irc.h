@@ -21,55 +21,29 @@
 
 #include "net.h"
 
-#define NICKLEN 32
-#define IDENTLEN 16
-#define HOSTLEN 128
-
-#define MSGLEN LINELEN
-
-typedef enum irc_event_type
+typedef enum irc_parse_status
 {
-    IRCEV_UNKNOWN,
-    IRCEV_ERROR,
-    IRCEV_NUMERIC,
-    IRCEV_JOIN,
-    IRCEV_PART,
-    IRCEV_QUIT,
-    IRCEV_PRIVMSG,
-    IRCEV_NOTICE,
-    IRCEV_NICK,
-    IRCEV_MODE,
-    IRCEV_PING,
-    IRCEV_INVITE,
-    IRCEV_TOPIC,
-    IRCEV_KICK
-} irc_event_type;
+    SOK,
+    SINVALID,
+    SNOMEM
+} irc_parse_status;
 
-typedef struct irc_sender
+typedef struct irc_message
 {
-    char nick[NICKLEN]; /* NULL if server */
-    char user[IDENTLEN]; /* NULL if server */
-    char host[HOSTLEN];
-} irc_sender;
+    char *m_prefix;
+    char *m_command;
 
-typedef struct irc_event
-{
-    irc_sender from;
-    irc_event_type type;
+    char **m_params;
+    int m_paramcount;
 
-    char **param;
-    int param_count;
-    char *msg;
-    int numeric;
-} irc_event;
+    char *m_msg;
+} irc_message;
 
 
-int irc_parse_line(irc_event *, char *);
-void irc_init_irc_event(irc_event *);
-void irc_free_irc_event(irc_event *);
-void irc_print_irc_event(irc_event *);
+irc_parse_status irc_parse_message(const char *, irc_message *);
+void irc_free_message(irc_message *);
+void irc_print_message(irc_message *);
 
-char *irc_event_type_to_string(irc_event_type);
-enum irc_event_type irc_event_type_from_string(const char *);
+int irc_user_cmp(const char *, const char *);
 
 #endif

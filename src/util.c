@@ -17,8 +17,10 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "util.h"
+#include "mm.h"
 
 
 char *itoa(int n)
@@ -28,4 +30,24 @@ char *itoa(int n)
     snprintf(numstr, 21, "%d", n);
 
     return numstr;
+}
+
+char *xstrdup(const char *s)
+{
+    char *n = (char *)mm_malloc(strlen(s) + 1);
+
+    if (n)
+        return strcpy(n, s);
+    else
+        return NULL;
+}
+
+char *xstrndup(const char *s, size_t l)
+{
+    char *n = (char *)mm_malloc(l + 1);
+
+    if (n)
+        return strncpy(n, s, l);
+    else
+        return NULL;
 }

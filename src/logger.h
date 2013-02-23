@@ -25,6 +25,7 @@
 
 typedef enum luna_loglevel
 {
+    LOGLEV_DEBUG,
     LOGLEV_INFO,
     LOGLEV_WARNING,
     LOGLEV_ERROR

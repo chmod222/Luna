@@ -99,7 +99,7 @@ int luna_mainloop(luna_state *state)
             if ((ready > 0) && (FD_ISSET(state->fd, &reads)))
             {
                 /* We got data! */
-                irc_event ev;
+                irc_message ev;
                 char current_line[LINELEN];
 
                 memset(current_line, 0, sizeof(current_line));
@@ -107,16 +107,15 @@ int luna_mainloop(luna_state *state)
                 if (net_recvln(state, current_line, sizeof(current_line)) < 0)
                     break;
 
-                logger_log(state->logger, LOGLEV_INFO,  "<< %s", current_line);
+                logger_log(state->logger, LOGLEV_DEBUG,  "<< %s", current_line);
                 last_sign_of_life = time(NULL);
-                irc_init_irc_event(&ev);
-                irc_parse_line(&ev, current_line);
+                irc_parse_message(current_line, &ev);
 
                 /* Handle events */
                 handle_event(state, &ev);
 
                 /* Cleanup */
-                irc_free_irc_event(&ev);
+                irc_free_message(&ev);
             }
             else
             {

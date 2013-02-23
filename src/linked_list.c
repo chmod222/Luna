@@ -206,7 +206,7 @@ void list_delete(linked_list *list, void *plugin, void (*f)(void *))
     return;
 }
 
-void list_map(linked_list *list, void (*f)(void *))
+void list_map(linked_list *list, void (*f)(void *, void *), void *arg)
 {
     if (list == NULL)
         return;
@@ -215,7 +215,7 @@ void list_map(linked_list *list, void (*f)(void *))
 
     while (current != NULL)
     {
-        f(current->data);
+        f(arg, current->data);
 
         current = current->next;
     }
