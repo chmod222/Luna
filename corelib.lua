@@ -416,7 +416,6 @@ function luna.add_signal_handler(sig, id, fn)
         end,
 
         public_command = function(who, where, what, args)
-            print(who, where, what, args)
             where = luna.channel.new(where)
             who = luna.channel_user.new(where, who)
 
@@ -684,7 +683,7 @@ function string:underline()
     return string.format('\x1f%s\x1f', self)
 end
 
-function string:reverse()
+function string:freverse()
     return string.format('\x16%s\x16', self)
 end
 

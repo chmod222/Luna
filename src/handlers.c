@@ -261,8 +261,6 @@ int handle_numeric(luna_state *env, irc_message *ev)
         logger_log(env->logger, LOGLEV_DEBUG, "Topic: '%s' (Set %d by %s)",
                 chan->topic, chan->topic_set, chan->topic_setter);
 
-        net_sendfln(env, "NICK Lunaa");
-
         if (target)
             signal_dispatch(env, "channel_join_sync", &luaX_push_join_sync,
                             ev, NULL);
